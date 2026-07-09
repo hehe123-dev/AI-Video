@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI 视频中台</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="stylesheet" href="css/main.css">
+</head>
+<body class="flex flex-col h-screen">
+  <header class="h-14 flex items-center justify-between px-6 border-b border-gray-200 bg-white">
+    <div class="flex items-center gap-4">
+      <img src="logo.png" alt="VideoAI Hub" class="h-11 object-contain" />
+      <span class="text-sm text-gray-600">- 一站式 AI 视频生产平台</span>
+    </div>
+
+    <nav class="top-nav">
+      <div class="top-nav-item active" data-view="short-video">
+        <i class="fas fa-video"></i>
+        <span>AI 短视频</span>
+      </div>
+      <div class="top-nav-item" data-view="short-drama">
+        <i class="fas fa-film"></i>
+        <span>AI 短剧</span>
+      </div>
+    </nav>
+    <div class="flex items-center gap-4">
+      <button class="global-config-btn" id="open-global-config">
+        <div class="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center">
+          <i class="fas fa-cog text-blue-500 text-sm"></i>
+        </div>
+        <div class="flex flex-col text-left">
+          <span class="text-sm font-medium text-gray-700">系统配置</span>
+          <span class="text-xs text-red-500">全局 · 必需</span>
+        </div>
+      </button>
+      <div class="h-8 w-px bg-gray-200"></div>
+      <div class="relative">
+        <select class="input-field text-sm py-1.5 appearance-none pr-8">
+          <option>zh_CN - 简体中文</option>
+          <option>en_US - English</option>
+        </select>
+        <i class="fas fa-chevron-down text-gray-400 text-xs absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 overflow-y-auto p-4">
+    <div class="max-w-7xl mx-auto">
+
+      <div class="view-panel active" data-view-panel="short-video">
+        <div class="workspace">
+          <aside class="project-sidebar">
+            <div class="project-sidebar-header">
+              <div class="project-sidebar-header-title">
+                <i class="fas fa-folder-open text-orange-500"></i>
+                <span>我的项目</span>
+              </div>
+              <button class="new-project-btn" id="new-project-btn">
+                <i class="fas fa-plus"></i>
+                <span>新建</span>
+              </button>
+            </div>
+            <div class="project-search">
+              <input type="text" placeholder="搜索项目..." id="project-search-input" />
+            </div>
+            <div class="project-list" id="project-list">
+              <div class="project-item active" data-project-id="p-001">
+                <div class="project-item-actions">
+                  <button title="重命名"><i class="fas fa-pen"></i></button>
+                  <button class="delete" title="删除"><i class="fas fa-trash"></i></button>
+                </div>
+                <div class="project-item-title">如何增加被动收入</div>
+                <div class="project-item-meta">
+                  <span class="project-status done"><i class="fas fa-check-circle"></i>已完成</span>
+                  <span>11-16 14:53</span>
+                </div>
+              </div>
+              <div class="project-item" data-project-id="p-002">
+                <div class="project-item-actions">
+                  <button title="重命名"><i class="fas fa-pen"></i></button>
+                  <button class="delete" title="删除"><i class="fas fa-trash"></i></button>
+                </div>
+                <div class="project-item-title">AI 改变内容创作</div>
+                <div class="project-item-meta">
+                  <span class="project-status processing"><i class="fas fa-spinner fa-spin"></i>生成中</span>
+                  <span>11-15 21:07</span>
+                </div>
+              </div>
+              <div class="project-item" data-project-id="p-003">
+                <div class="project-item-actions">
+                  <button title="重命名"><i class="fas fa-pen"></i></button>
+                  <button class="delete" title="删除"><i class="fas fa-trash"></i></button>
+                </div>
+                <div class="project-item-title">未命名项目 · 草稿</div>
+                <div class="project-item-meta">
+                  <span class="project-status draft"><i class="fas fa-file"></i>草稿</span>
+                  <span>11-15 09:42</span>
+                </div>
+              </div>
+              <div class="project-item" data-project-id="p-004">
+                <div class="project-item-actions">
+                  <button title="重命名"><i class="fas fa-pen"></i></button>
+                  <button class="delete" title="删除"><i class="fas fa-trash"></i></button>
+                </div>
+                <div class="project-item-title">程序员的一天</div>
+                <div class="project-item-meta">
+                  <span class="project-status done"><i class="fas fa-check-circle"></i>已完成</span>
+                  <span>11-14 18:20</span>
+                </div>
+              </div>
+              <div class="project-item" data-project-id="p-005">
+                <div class="project-item-actions">
+                  <button title="重命名"><i class="fas fa-pen"></i></button>
+                  <button class="delete" title="删除"><i class="fas fa-trash"></i></button>
+                </div>
+                <div class="project-item-title">3 分钟看懂通货膨胀</div>
+                <div class="project-item-meta">
+                  <span class="project-status done"><i class="fas fa-check-circle"></i>已完成</span>
+                  <span>11-12 10:03</span>
+                </div>
+              </div>
+            </div>
+          </aside>
+
+          <div class="workspace-main">
+            <div class="stepper" id="stepper">
+        <div class="step-item active" data-step="1">
+          <div class="step-index">1</div>
+          <span class="step-label">视频脚本</span>
+        </div>
+        <div class="step-divider"></div>
+        <div class="step-item" data-step="2">
+          <div class="step-index">2</div>
+          <span class="step-label">插图生成</span>
+        </div>
+        <div class="step-divider"></div>
+        <div class="step-item" data-step="3">
+          <div class="step-index">3</div>
+          <span class="step-label">配音合成</span>
+        </div>
+        <div class="step-divider"></div>
+        <div class="step-item" data-step="4">
+          <div class="step-index">4</div>
+          <span class="step-label">背景音乐</span>
+        </div>
+        <div class="step-divider"></div>
+        <div class="step-item" data-step="5">
+          <div class="step-index">5</div>
+          <span class="step-label">分镜模板</span>
+        </div>
+        <div class="step-divider"></div>
+        <div class="step-item" data-step="6">
+          <div class="step-index">6</div>
+          <span class="step-label">生成视频</span>
+        </div>
+      </div>
+
+      <div class="step-panel active" data-panel="1">
+        <div class="panel">
+          <div class="section-title">
+            <i class="fas fa-video text-orange-500 text-sm"></i>
+            <span>视频脚本</span>
+          </div>
+          <div class="section-content space-y-4">
+            <div class="flex gap-2 p-1 bg-gray-100 rounded-lg">
+              <div class="toggle-option active flex-1 justify-center">
+                <i class="fas fa-lightbulb text-orange-500"></i>
+                <span>AI创作</span>
+              </div>
+              <div class="toggle-option flex-1 justify-center">
+                <i class="fas fa-pen text-gray-400"></i>
+                <span>自行创作</span>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs text-gray-500 mb-2">文本输入</label>
+              <textarea class="input-field textarea-field" placeholder="如何增加被动收入"></textarea>
+            </div>
+
+            <div>
+              <label class="block text-xs text-gray-500 mb-2">标题（可选）</label>
+              <div class="flex items-center gap-2 text-xs text-gray-400 mb-2">
+                <span>视频标题（留空则自动生成）</span>
+              </div>
+              <input type="text" class="input-field" placeholder="" />
+              <div class="flex items-center justify-between mt-2 gap-4">
+                <span class="text-xs text-gray-400 whitespace-nowrap">分镜数: <span class="text-gray-600">10</span></span>
+                <input type="range" class="param-slider" min="0" max="20" value="10" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step-panel" data-panel="2">
+        <div class="panel">
+          <div class="section-title">
+            <i class="fas fa-palette text-pink-500 text-sm"></i>
+            <span>插图生成</span>
+          </div>
+          <div class="section-content space-y-4">
+            <div class="accordion">
+              <div class="accordion-header">
+                <i class="fas fa-chevron-right acc-arrow"></i>
+                <i class="fas fa-lightbulb text-amber-400"></i>
+                <span>功能说明</span>
+              </div>
+              <div class="accordion-body">
+                <p class="text-xs text-gray-500 leading-relaxed">
+                  插图生成模块用于根据文本内容自动生成配图。可选择 RunningHub 云端 Workflow、本地 ComfyUI 或直接调用第三方 API 模型作为生成来源。生成的插图尺寸由所选 Workflow / 模板自动决定。
+                </p>
+              </div>
+            </div>
+
+            <div>
+              <label class="form-label label-with-help">
+                <span>生成来源</span>
+                <i class="fas fa-circle-question help-icon" title="选择插图的生成来源：RunningHub 云端、本地 ComfyUI 或直接使用 API 模型"></i>
+              </label>
+              <div class="radio-group" id="illustration-source">
+                <label class="radio-option">
+                  <input type="radio" name="illustration-source" value="runninghub" checked />
+                  <span>RunningHub</span>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="illustration-source" value="comfyui" />
+                  <span>本地 ComfyUI</span>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="illustration-source" value="api" />
+                  <span>API 模型</span>
+                </label>
+              </div>
+            </div>
+
+            <div>
+              <label class="form-label label-with-help">
+                <span>Workflow</span>
+                <i class="fas fa-circle-question help-icon" title="选择要使用的 Workflow 文件"></i>
+              </label>
+              <select class="input-field dropdown-field" id="illustration-workflow">
+                <option>image_flux.json - Runninghub</option>
+                <option>image_stable_diffusion.json - Runninghub</option>
+                <option>image_flux_local.json - ComfyUI</option>
+                <option>image_sd_local.json - ComfyUI</option>
+              </select>
+            </div>
+
+            <div class="info-banner">
+              <i class="fas fa-drafting-compass"></i>
+              <span>插图尺寸：<strong>1024 × 1024</strong>（由模板自动决定）</span>
+            </div>
+
+            <div>
+              <label class="form-label label-with-help">
+                <span>提示词前缀</span>
+                <i class="fas fa-circle-question help-icon" title="将追加到每张插图的正向提示词最前面"></i>
+              </label>
+              <textarea class="input-field textarea-field" rows="3">Minimalist black-and-white matchstick figure style illustration, clean lines, simple sketch style</textarea>
+            </div>
+
+            <div class="accordion">
+              <div class="accordion-header">
+                <i class="fas fa-chevron-right acc-arrow"></i>
+                <i class="fas fa-eye text-gray-500"></i>
+                <span>预览风格</span>
+              </div>
+              <div class="accordion-body">
+                <div class="grid grid-cols-4 gap-3">
+                  <div class="template-card selected">
+                    <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Minimalist%20black%20and%20white%20matchstick%20figure%20illustration&image_size=square" alt="风格1" />
+                    <div class="template-card-footer">
+                      <span>火柴人</span>
+                      <button>使用</button>
+                    </div>
+                  </div>
+                  <div class="template-card">
+                    <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Watercolor%20soft%20pastel%20illustration%2C%20hand%20drawn%20style&image_size=square" alt="风格2" />
+                    <div class="template-card-footer">
+                      <span>水彩</span>
+                      <button>使用</button>
+                    </div>
+                  </div>
+                  <div class="template-card">
+                    <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Flat%20design%20vector%20illustration%20colorful%20clean&image_size=square" alt="风格3" />
+                    <div class="template-card-footer">
+                      <span>扁平</span>
+                      <button>使用</button>
+                    </div>
+                  </div>
+                  <div class="template-card">
+                    <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Realistic%20photograph%20cinematic%20lighting&image_size=square" alt="风格4" />
+                    <div class="template-card-footer">
+                      <span>写实</span>
+                      <button>使用</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step-panel" data-panel="3">
+        <div class="panel">
+          <div class="section-title">
+            <i class="fas fa-microphone text-red-500 text-sm"></i>
+            <span>配音合成</span>
+          </div>
+          <div class="section-content space-y-4">
+            <div class="accordion">
+              <div class="accordion-header">
+                <i class="fas fa-chevron-right acc-arrow"></i>
+                <i class="fas fa-lightbulb text-amber-400"></i>
+                <span>功能说明</span>
+              </div>
+              <div class="accordion-body">
+                <p class="text-xs text-gray-500 leading-relaxed">
+                  配音合成模块将脚本内容转换为语音旁白。支持本地 Edge TTS（免配置，开箱即用）或 ComfyUI 自建 TTS 合成方式，可调整音色与语速。
+                </p>
+              </div>
+            </div>
+
+            <div>
+              <label class="form-label">合成方式</label>
+              <div class="radio-group">
+                <label class="radio-option">
+                  <input type="radio" name="tts-method" value="local" checked />
+                  <span>本地合成</span>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="tts-method" value="comfyui" />
+                  <span>ComfyUI 合成</span>
+                </label>
+              </div>
+              <p class="hint-text mt-2 flex items-center gap-1">
+                <i class="fas fa-lightbulb text-amber-400"></i>
+                使用 Edge TTS，无需配置，开箱即用（请确保网络环境可用）
+              </p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="form-label">音色选择</label>
+                <select class="input-field dropdown-field">
+                  <option>男声-专业（云健）</option>
+                  <option>女声-温柔（晓晓）</option>
+                  <option>男声-活力（小刚）</option>
+                  <option>女声-知性（云希）</option>
+                  <option>童声-可爱（小小）</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label">语速</label>
+                <div class="flex items-center gap-3">
+                  <input type="range" class="param-slider flex-1" min="0" max="2" step="0.1" value="1.2" data-suffix="x" />
+                  <span class="text-sm text-gray-600 font-medium slider-value">1.2x</span>
+                </div>
+                <p class="hint-text text-center">1.2x</p>
+              </div>
+            </div>
+
+            <div class="accordion">
+              <div class="accordion-header">
+                <i class="fas fa-chevron-right acc-arrow"></i>
+                <i class="fas fa-volume-up text-gray-500"></i>
+                <span>预览 TTS</span>
+              </div>
+              <div class="accordion-body">
+                <div class="flex items-center gap-3">
+                  <input type="text" class="input-field flex-1" placeholder="请输入试听文本" value="欢迎使用 AI 视频中台，一站式 AI 视频生产平台。" />
+                  <button class="btn-secondary flex items-center gap-2">
+                    <i class="fas fa-play text-green-500"></i>试听
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step-panel" data-panel="4">
+        <div class="panel">
+          <div class="section-title">
+            <i class="fas fa-music text-purple-500 text-sm"></i>
+            <span>背景音乐</span>
+          </div>
+          <div class="section-content space-y-4">
+            <div class="accordion">
+              <div class="accordion-header">
+                <i class="fas fa-chevron-right acc-arrow"></i>
+                <i class="fas fa-lightbulb text-amber-400"></i>
+                <span>功能说明</span>
+              </div>
+              <div class="accordion-body">
+                <p class="text-xs text-gray-500 leading-relaxed">
+                  背景音乐模块为视频添加环境音效，营造氛围。可从预置音乐库中选择音轨，并通过音量滑块调节混音比例。
+                </p>
+              </div>
+            </div>
+
+            <div>
+              <select class="input-field dropdown-field">
+                <option>default.mp3</option>
+                <option>bgm-01.mp3</option>
+                <option>bgm-02.mp3</option>
+                <option>bgm-03.mp3</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="form-label label-with-help">
+                <span>音量</span>
+                <i class="fas fa-circle-question help-icon" title="调整背景音乐与配音的混音比例，范围 0.00 - 1.00"></i>
+              </label>
+              <div class="volume-slider-wrap">
+                <input type="range" class="param-slider" min="0" max="1" step="0.01" value="0.2" data-suffix="" id="bgm-volume" />
+                <span class="volume-bubble" id="bgm-volume-bubble">0.20</span>
+              </div>
+            </div>
+
+            <button class="w-full btn-secondary">
+              <i class="fas fa-play text-gray-500 mr-2"></i>试听音乐
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="step-panel" data-panel="5">
+        <div class="panel">
+          <div class="section-title">
+            <i class="fas fa-drafting-compass text-blue-500 text-sm"></i>
+            <span>分镜模板</span>
+          </div>
+          <div class="section-content space-y-4">
+            <div class="accordion">
+              <div class="accordion-header">
+                <i class="fas fa-chevron-right acc-arrow"></i>
+                <i class="fas fa-lightbulb text-amber-400"></i>
+                <span>功能说明</span>
+              </div>
+              <div class="accordion-body">
+                <p class="text-xs text-gray-500 leading-relaxed">
+                  分镜模板决定每个分镜的呈现方式：可选择静态样式（沿用模板自带背景），或让 AI 自动生成配套的插图、动态视频作为分镜画面。
+                </p>
+              </div>
+            </div>
+
+            <div>
+              <label class="form-label">分镜类型</label>
+              <div class="radio-group" id="storyboard-type">
+                <label class="radio-option">
+                  <input type="radio" name="storyboard-type" value="static" checked />
+                  <i class="fas fa-file-alt text-gray-500"></i>
+                  <span>静态样式</span>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="storyboard-type" value="image" />
+                  <i class="fas fa-image text-pink-500"></i>
+                  <span>生成插图</span>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="storyboard-type" value="video" />
+                  <i class="fas fa-film text-blue-500"></i>
+                  <span>生成视频</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="info-banner" id="storyboard-hint">
+              使用模板自带样式，无需 AI 生成媒体。可在模板中自定义背景图片等参数。
+            </div>
+
+            <div class="accordion">
+              <div class="accordion-header">
+                <i class="fas fa-chevron-right acc-arrow"></i>
+                <i class="fas fa-th text-gray-500"></i>
+                <span>模板库</span>
+              </div>
+              <div class="accordion-body">
+                <div class="grid grid-cols-5 gap-3">
+                  <div class="template-card selected">
+                    <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Minimalist%20black%20and%20white%20matchstick%20figure%20style%20illustration%20with%20mountain%20silhouette%20background%2C%20elegant%20simple%20design%2C%20dark%20theme&image_size=portrait_9_16" alt="模板1" />
+                    <div class="template-card-footer"><span>static_default</span><button>使用</button></div>
+                  </div>
+                  <div class="template-card">
+                    <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Minimalist%20beige%20and%20white%20matchstick%20figure%20style%20illustration%20with%20mountain%20silhouette%2C%20elegant%20simple%20design%2C%20light%20theme&image_size=portrait_9_16" alt="模板2" />
+                    <div class="template-card-footer"><span>模板2</span><button>使用</button></div>
+                  </div>
+                  <div class="template-card">
+                    <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Minimalist%20gray%20matchstick%20figure%20style%20illustration%20with%20mountain%20silhouette%2C%20elegant%20simple%20design%2C%20neutral%20theme&image_size=portrait_9_16" alt="模板3" />
+                    <div class="template-card-footer"><span>模板3</span><button>使用</button></div>
+                  </div>
+                  <div class="template-card">
+                    <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Minimalist%20purple%20matchstick%20figure%20style%20illustration%20with%20mountain%20silhouette%2C%20elegant%20simple%20design%2C%20purple%20theme&image_size=portrait_9_16" alt="模板4" />
+                    <div class="template-card-footer"><span>模板4</span><button>使用</button></div>
+                  </div>
+                  <div class="template-card">
+                    <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Minimalist%20dark%20blue%20matchstick%20figure%20style%20illustration%20with%20mountain%20silhouette%2C%20elegant%20simple%20design%2C%20tech%20theme&image_size=portrait_9_16" alt="模板5" />
+                    <div class="template-card-footer"><span>模板5</span><button>使用</button></div>
+                  </div>
+                  <div class="template-card">
+                    <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=AI%20technology%20theme%20matchstick%20figure%20illustration%20with%20mountain%20silhouette%2C%20dark%20background%2C%20orange%20accent&image_size=portrait_9_16" alt="模板6" />
+                    <div class="template-card-footer"><span>模板6</span><button>使用</button></div>
+                  </div>
+                  <div class="template-card">
+                    <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Luxury%20gold%20theme%20matchstick%20figure%20illustration%20with%20mountain%20silhouette%2C%20dark%20background%2C%20golden%20accent&image_size=portrait_9_16" alt="模板7" />
+                    <div class="template-card-footer"><span>模板7</span><button>使用</button></div>
+                  </div>
+                  <div class="template-card">
+                    <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Clean%20white%20minimalist%20matchstick%20figure%20illustration%20with%20mountain%20silhouette%2C%20pure%20white%20background&image_size=portrait_9_16" alt="模板8" />
+                    <div class="template-card-footer"><span>模板8</span><button>使用</button></div>
+                  </div>
+                  <div class="template-card">
+                    <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Modern%20black%20white%20contrast%20matchstick%20figure%20illustration%20with%20mountain%20silhouette%2C%20bold%20design&image_size=portrait_9_16" alt="模板9" />
+                    <div class="template-card-footer"><span>模板9</span><button>使用</button></div>
+                  </div>
+                  <div class="template-card">
+                    <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Creative%20asymmetric%20matchstick%20figure%20illustration%20with%20mountain%20silhouette%2C%20dark%20theme%2C%20unique%20layout&image_size=portrait_9_16" alt="模板10" />
+                    <div class="template-card-footer"><span>模板10</span><button>使用</button></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="info-banner">
+              <i class="fas fa-file-lines"></i>
+              <span>当前模板：<strong id="current-template-name">static_default.html</strong></span>
+            </div>
+
+            <div class="text-xs text-gray-400">最终视频尺寸：1080 × 1920</div>
+
+            <div>
+              <div class="flex items-center gap-2 mb-3 pb-2 border-b border-gray-100">
+                <i class="fas fa-sliders-h text-green-500 text-sm"></i>
+                <span class="text-sm font-medium text-gray-700">自定义参数</span>
+              </div>
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="form-label">background</label>
+                  <input type="text" class="input-field" value="https://img.alicdn.com/imgextra/i2/O1CN01TngrfY1NTZK1xwuWd_!!.png" />
+                </div>
+                <div>
+                  <label class="form-label">describe</label>
+                  <input type="text" class="input-field" value="Open Source Omnimodal AI Creative Agent" />
+                </div>
+                <div>
+                  <label class="form-label">author</label>
+                  <input type="text" class="input-field" value="@Pixelle.AI" />
+                </div>
+                <div>
+                  <label class="form-label">brand</label>
+                  <input type="text" class="input-field" value="Pixelle-Video" />
+                </div>
+              </div>
+            </div>
+
+            <div class="accordion open">
+              <div class="accordion-header">
+                <i class="fas fa-chevron-right acc-arrow"></i>
+                <i class="fas fa-eye text-gray-500"></i>
+                <span>预览模板</span>
+              </div>
+              <div class="accordion-body space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                  <div>
+                    <label class="form-label">标题</label>
+                    <input type="text" class="input-field" value="AI 改变内容创作" />
+                  </div>
+                  <div class="row-span-2">
+                    <label class="form-label">文本</label>
+                    <textarea class="input-field textarea-field" rows="4">Pixelle.AI 正在用人工智能改变内容创作的方式，让每个人都能轻松制作专业级视频。</textarea>
+                  </div>
+                  <div>
+                    <label class="form-label label-with-help">
+                      <span>图片路径</span>
+                      <i class="fas fa-circle-question help-icon" title="预览用的示例图片路径，相对于 resources 目录"></i>
+                    </label>
+                    <input type="text" class="input-field" value="resources/example.png" />
+                  </div>
+                </div>
+
+                <div class="info-banner">
+                  <i class="fas fa-drafting-compass"></i>
+                  <span>模板尺寸：<strong>1080 × 1920</strong></span>
+                </div>
+
+                <button class="w-full btn-secondary">
+                  <i class="fas fa-image text-gray-500 mr-2"></i>生成预览
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step-panel" data-panel="6">
+        <div class="panel">
+          <div class="section-title">
+            <i class="fas fa-play-circle text-green-500 text-sm"></i>
+            <span>确认并生成</span>
+          </div>
+          <div class="section-content">
+            <div class="grid md:grid-cols-2 gap-6">
+              <div>
+                <button class="btn-primary w-full" id="generate-btn">
+                  <i class="fas fa-play"></i>
+                  生成视频
+                </button>
+
+                <div class="progress-bar mt-4">
+                  <div class="progress-fill" style="width: 100%"></div>
+                </div>
+
+                <div class="space-y-3 mt-4">
+                  <div class="success-tag">
+                    <i class="fas fa-check-circle"></i>
+                    视频生成成功！
+                  </div>
+                  <div class="success-tag">
+                    <i class="fas fa-check-circle"></i>
+                    已保存: /outputs/20251116_145336_0039/final.mp4
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-4 mt-4 pt-4 border-t border-gray-100">
+                  <div class="stat-item flex flex-col items-center">
+                    <i class="fas fa-clock text-gray-400"></i>
+                    <span>生成耗时</span>
+                    <span class="text-gray-700 font-medium">234.1s</span>
+                  </div>
+                  <div class="stat-item flex flex-col items-center">
+                    <i class="fas fa-coins text-yellow-500"></i>
+                    <span>消耗积分</span>
+                    <span class="text-gray-700 font-medium">2,290</span>
+                  </div>
+                  <div class="stat-item flex flex-col items-center">
+                    <i class="fas fa-image text-blue-400"></i>
+                    <span>图片数量</span>
+                    <span class="text-gray-700 font-medium">10</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex justify-center">
+                <div class="video-preview" style="max-height: 600px; max-width: 340px; width: 100%;">
+                  <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Minimalist%20black-and-white%20matchstick%20figure%20style%20illustration%20of%20a%20person%20reading%20a%20book%20with%20question%20mark%20above%20head%20next%20to%20stairs%2C%20clean%20lines%2C%20simple%20sketch%20style&image_size=portrait_9_16" alt="视频预览" />
+                  <div class="video-controls">
+                    <div class="control-bar">
+                      <div class="control-fill" style="width: 22%"></div>
+                    </div>
+                    <div class="control-time">
+                      <span>0:08</span>
+                      <span>0:36</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step-nav">
+        <button class="btn-secondary" id="prev-step" disabled>
+          <i class="fas fa-arrow-left mr-1"></i> 上一步
+        </button>
+        <span class="text-sm text-gray-500">第 <span id="step-current">1</span> / 6 步</span>
+        <button class="btn-primary" id="next-step" style="padding: 8px 20px;">
+          下一步 <i class="fas fa-arrow-right ml-1"></i>
+        </button>
+      </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="view-panel" data-view-panel="short-drama">
+        <div class="panel">
+          <div class="section-title">
+            <i class="fas fa-film text-blue-500 text-sm"></i>
+            <span>AI 短剧</span>
+          </div>
+          <div class="section-content">
+            <div class="flex flex-col items-center justify-center py-16 text-center text-gray-400">
+              <i class="fas fa-clapperboard text-5xl mb-4 text-gray-300"></i>
+              <h3 class="text-base font-medium text-gray-500 mb-1">AI 短剧功能即将上线</h3>
+              <p class="text-xs">支持多角色、分镜脚本、多场景连续叙事的短剧自动化生成。</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div class="modal-overlay" id="global-config-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">
+          <i class="fas fa-cog text-blue-500"></i>
+          <span>系统配置（全局）</span>
+          <span class="text-xs text-red-500 font-medium ml-2">必需</span>
+        </div>
+        <button class="modal-close" id="close-global-config">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-tabs">
+        <div class="modal-tab active" data-tab="llm">
+          <i class="fas fa-brain"></i>
+          <span>大语言模型</span>
+        </div>
+        <div class="modal-tab" data-tab="comfyui">
+          <i class="fas fa-server"></i>
+          <span>ComfyUI 配置</span>
+        </div>
+        <div class="modal-tab" data-tab="providers">
+          <i class="fas fa-cloud"></i>
+          <span>API 载体模型</span>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div class="modal-tab-panel active" data-tab-panel="llm">
+          <div class="config-section">
+            <div class="config-section-title">
+              <i class="fas fa-bolt text-orange-500"></i>
+              <span>快速模型切换</span>
+            </div>
+            <div class="form-row">
+              <label class="form-label">选择预设</label>
+              <select class="input-field dropdown-field">
+                <option>Custom</option>
+                <option>OpenAI</option>
+                <option>Anthropic</option>
+                <option>Google Gemini</option>
+                <option>DeepSeek</option>
+                <option>Moonshot</option>
+                <option>Qwen</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="config-section">
+            <div class="config-section-title">
+              <i class="fas fa-key text-blue-500"></i>
+              <span>接入参数</span>
+            </div>
+            <div class="form-row">
+              <label class="form-label">API Key <span class="text-red-500">*</span></label>
+              <div class="password-field">
+                <input type="password" class="input-field" placeholder="请输入 API Key" value="sk-..." data-password />
+                <button type="button" class="toggle-visibility"><i class="fas fa-eye text-xs"></i></button>
+              </div>
+            </div>
+            <div class="form-row">
+              <label class="form-label">Base URL <span class="text-red-500">*</span></label>
+              <input type="text" class="input-field" placeholder="https://api.example.com/v1" value="https://api.example.com/v1" />
+            </div>
+            <div class="form-row">
+              <label class="form-label">Model 名称 <span class="text-red-500">*</span></label>
+              <div class="flex gap-2">
+                <select class="input-field dropdown-field flex-1">
+                  <option>自定义...</option>
+                  <option>gpt-4o</option>
+                  <option>gpt-4-turbo</option>
+                  <option>claude-3-opus</option>
+                  <option>claude-3-sonnet</option>
+                  <option>deepseek-chat</option>
+                </select>
+                <button class="btn-secondary flex items-center gap-2">
+                  <i class="fas fa-download text-blue-500"></i>加载
+                </button>
+                <button class="btn-secondary flex items-center gap-2">
+                  <i class="fas fa-wrench text-orange-500"></i>测试
+                </button>
+              </div>
+            </div>
+            <div class="form-row">
+              <label class="form-label">自定义模型名称</label>
+              <input type="text" class="input-field" placeholder="请输入自定义模型名称" />
+            </div>
+          </div>
+
+          <div class="config-section">
+            <div class="config-section-title">
+              <i class="fas fa-list text-purple-500"></i>
+              <span>自定义模型库</span>
+              <button class="ml-auto btn-secondary flex items-center gap-1 text-xs" id="add-custom-model">
+                <i class="fas fa-plus"></i>新增模型
+              </button>
+            </div>
+            <div id="custom-model-list" class="space-y-2">
+              <div class="flex items-center gap-2 p-2 border border-gray-100 rounded-lg bg-gray-50">
+                <i class="fas fa-cube text-gray-400"></i>
+                <div class="flex-1">
+                  <div class="text-sm text-gray-700 font-medium">my-private-llm</div>
+                  <div class="text-xs text-gray-400">https://internal.company.com/v1</div>
+                </div>
+                <button class="btn-secondary text-xs">编辑</button>
+                <button class="btn-secondary text-xs">测试</button>
+                <button class="btn-secondary text-xs text-red-500">删除</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-tab-panel" data-tab-panel="comfyui">
+          <div class="config-section">
+            <div class="config-section-title">
+              <i class="fas fa-server text-emerald-500"></i>
+              <span>本地/自建 ComfyUI</span>
+            </div>
+            <div class="form-row">
+              <label class="form-label">ComfyUI 服务器地址</label>
+              <input type="text" class="input-field" value="http://127.0.0.1:8188" placeholder="http://127.0.0.1:8188" />
+            </div>
+            <div class="form-row">
+              <label class="form-label">ComfyUI API 密钥</label>
+              <div class="password-field">
+                <input type="password" class="input-field" placeholder="请输入 API Key" data-password />
+                <button type="button" class="toggle-visibility"><i class="fas fa-eye text-xs"></i></button>
+              </div>
+            </div>
+            <button class="btn-secondary flex items-center gap-2">
+              <i class="fas fa-plug text-green-500"></i>测试连接
+            </button>
+          </div>
+
+          <div class="config-section">
+            <div class="config-section-title">
+              <i class="fas fa-cloud text-sky-500"></i>
+              <span>RunningHub 云端</span>
+            </div>
+            <div class="form-row">
+              <label class="form-label">RunningHub API 密钥</label>
+              <div class="password-field">
+                <input type="password" class="input-field" placeholder="请输入 API Key" data-password />
+                <button type="button" class="toggle-visibility"><i class="fas fa-eye text-xs"></i></button>
+              </div>
+              <p class="hint-text">没有本地 ComfyUI？可用 RunningHub 云端：<a>点此获取 RunningHub API Key</a></p>
+            </div>
+          </div>
+
+          <div class="config-section">
+            <div class="config-section-title">
+              <i class="fas fa-microchip text-orange-500"></i>
+              <span>并发限制 & 机器规格</span>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="form-label">并发限制</label>
+                <div class="number-input" data-range="1-10">
+                  <button type="button"><i class="fas fa-minus text-xs"></i></button>
+                  <input type="number" class="input-field" value="2" min="1" max="10" />
+                  <button type="button"><i class="fas fa-plus text-xs"></i></button>
+                </div>
+                <p class="hint-text">范围 1 - 10</p>
+              </div>
+              <div>
+                <label class="form-label">机器规格</label>
+                <select class="input-field dropdown-field">
+                  <option>24G 显存</option>
+                  <option>48G 显存</option>
+                  <option>80G 显存</option>
+                  <option>96G 显存</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-tab-panel" data-tab-panel="providers">
+          <p class="hint-text mb-3" style="margin-top:0">统一管理图像生成 / 图生视频第三方 AI 接口，可独立启停。</p>
+
+          <div class="config-section">
+            <div class="config-section-title">
+              <i class="fas fa-network-wired text-slate-500"></i>
+              <span>本地代理</span>
+              <label class="toggle-switch">
+                <input type="checkbox" />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <div class="form-row">
+              <label class="form-label label-with-help">
+                <span>代理地址（可选）</span>
+                <i class="fas fa-circle-question help-icon" title="配置本地代理服务地址，所有 API 载体模型的请求将统一通过该代理。留空则不走代理。"></i>
+              </label>
+              <input type="text" class="input-field" placeholder="http://127.0.0.1:9090" />
+              <p class="hint-text">开启开关后生效，所有 API 载体模型的请求将统一走此代理。</p>
+            </div>
+          </div>
+
+          <div class="config-section">
+            <div class="config-section-title">
+              <i class="fab fa-openai text-gray-700"></i>
+              <span>OpenAI / GPT Image</span>
+              <label class="toggle-switch">
+                <input type="checkbox" checked />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <div class="form-row">
+              <label class="form-label">API 密钥</label>
+              <div class="password-field">
+                <input type="password" class="input-field" placeholder="sk-..." data-password />
+                <button type="button" class="toggle-visibility"><i class="fas fa-eye text-xs"></i></button>
+              </div>
+            </div>
+            <div class="form-row">
+              <label class="form-label">接口地址</label>
+              <input type="text" class="input-field" value="https://api.openai.com/v1" />
+            </div>
+          </div>
+
+          <div class="config-section">
+            <div class="config-section-title">
+              <i class="fas fa-fire text-red-500"></i>
+              <span>Volcengine ARK / Seedream / Seedance</span>
+              <label class="toggle-switch">
+                <input type="checkbox" checked />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <div class="form-row">
+              <label class="form-label">API 密钥</label>
+              <div class="password-field">
+                <input type="password" class="input-field" placeholder="请输入 API Key" data-password />
+                <button type="button" class="toggle-visibility"><i class="fas fa-eye text-xs"></i></button>
+              </div>
+            </div>
+            <div class="form-row">
+              <label class="form-label">接口地址</label>
+              <input type="text" class="input-field" value="https://ark.cn-beijing.volces.com/api/v3" />
+            </div>
+          </div>
+
+          <div class="config-section">
+            <div class="config-section-title">
+              <i class="fas fa-horse text-amber-500"></i>
+              <span>DashScope / Wan / HappyHorse</span>
+              <label class="toggle-switch">
+                <input type="checkbox" />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <div class="form-row">
+              <label class="form-label">API 密钥</label>
+              <div class="password-field">
+                <input type="password" class="input-field" placeholder="请输入 API Key" data-password />
+                <button type="button" class="toggle-visibility"><i class="fas fa-eye text-xs"></i></button>
+              </div>
+            </div>
+            <div class="form-row">
+              <label class="form-label">接口地址</label>
+              <input type="text" class="input-field" value="https://dashscope.aliyuncs.com/api/v1" />
+            </div>
+          </div>
+
+          <div class="config-section">
+            <div class="config-section-title">
+              <i class="fas fa-wind text-cyan-500"></i>
+              <span>Kling AI（可灵 AI）</span>
+              <label class="toggle-switch">
+                <input type="checkbox" />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <div class="form-row">
+              <label class="form-label">Base URL</label>
+              <input type="text" class="input-field" value="https://api.klingai.com" />
+            </div>
+            <div class="form-row">
+              <label class="form-label">Access Key</label>
+              <div class="password-field">
+                <input type="password" class="input-field" placeholder="请输入 Access Key" data-password />
+                <button type="button" class="toggle-visibility"><i class="fas fa-eye text-xs"></i></button>
+              </div>
+            </div>
+            <div class="form-row">
+              <label class="form-label">Secret Key</label>
+              <div class="password-field">
+                <input type="password" class="input-field" placeholder="请输入 Secret Key" data-password />
+                <button type="button" class="toggle-visibility"><i class="fas fa-eye text-xs"></i></button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="reset-global-config">
+          <i class="fas fa-rotate-left"></i> 重置默认
+        </button>
+        <div class="flex-1"></div>
+        <button class="btn-secondary" id="cancel-global-config">取消</button>
+        <button class="btn-primary" id="save-global-config" style="padding: 8px 20px;">
+          <i class="fas fa-save"></i> 保存配置
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/main.js"></script>
+</body>
+</html>
