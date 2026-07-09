@@ -9,6 +9,38 @@
   <link rel="stylesheet" href="css/main.css">
 </head>
 <body class="flex flex-col h-screen">
+  <!-- 登录遮罩 -->
+  <div id="login-overlay">
+    <div class="login-card">
+      <div class="login-header">
+        <img src="logo.png" alt="AI Video Hub" class="login-logo" />
+        <h1>AI 视频中台</h1>
+        <p>一站式 AI 视频生产平台</p>
+      </div>
+      <div class="login-form">
+        <div class="form-row">
+          <label class="form-label">用户名</label>
+          <div class="login-input-wrap">
+            <i class="fas fa-user"></i>
+            <input type="text" id="login-username" class="login-input" placeholder="请输入用户名" autocomplete="username" />
+          </div>
+        </div>
+        <div class="form-row">
+          <label class="form-label">密码</label>
+          <div class="login-input-wrap">
+            <i class="fas fa-lock"></i>
+            <input type="password" id="login-password" class="login-input" placeholder="请输入密码" autocomplete="current-password" />
+          </div>
+        </div>
+        <div id="login-error" class="login-error"></div>
+        <button id="login-btn" class="login-btn">登 录</button>
+      </div>
+      <div class="login-footer">
+        <span>可用账号：admin / admin123 &nbsp;|&nbsp; user1 / 123456 &nbsp;|&nbsp; demo / demo</span>
+      </div>
+    </div>
+  </div>
+
   <header class="h-14 flex items-center justify-between px-6 border-b border-gray-200 bg-white">
     <div class="flex items-center gap-4">
       <img src="logo.png" alt="VideoAI Hub" class="h-11 object-contain" />
@@ -36,12 +68,16 @@
         </div>
       </button>
       <div class="h-8 w-px bg-gray-200"></div>
-      <div class="relative">
-        <select class="input-field text-sm py-1.5 appearance-none pr-8">
-          <option>zh_CN - 简体中文</option>
-          <option>en_US - English</option>
-        </select>
-        <i class="fas fa-chevron-down text-gray-400 text-xs absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+      <div id="user-area" class="flex items-center gap-3" style="display:none">
+        <div class="flex items-center gap-2">
+          <div class="w-7 h-7 rounded-full bg-orange-100 flex items-center justify-center">
+            <i class="fas fa-user text-orange-500 text-xs"></i>
+          </div>
+          <span id="current-username" class="text-sm font-medium text-gray-700"></span>
+        </div>
+        <button id="logout-btn" class="text-xs text-gray-400 hover:text-red-500 transition-colors" title="退出登录">
+          <i class="fas fa-sign-out-alt"></i>
+        </button>
       </div>
     </div>
   </header>

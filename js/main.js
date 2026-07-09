@@ -1,3 +1,57 @@
+// ===== 登录模块 =====
+const MOCK_ACCOUNTS = [
+  { username: 'admin', password: 'admin123', role: '管理员' },
+  { username: 'user1', password: '123456',  role: '普通用户' },
+  { username: 'demo',  password: 'demo',    role: '演示账号' }
+];
+
+let currentUser = null;
+
+const loginOverlay   = document.getElementById('login-overlay');
+const loginUsername  = document.getElementById('login-username');
+const loginPassword  = document.getElementById('login-password');
+const loginError     = document.getElementById('login-error');
+const loginBtn       = document.getElementById('login-btn');
+const userArea       = document.getElementById('user-area');
+const currentUsername = document.getElementById('current-username');
+const logoutBtn      = document.getElementById('logout-btn');
+
+function doLogin() {
+  const name = loginUsername.value.trim();
+  const pwd  = loginPassword.value;
+  if (!name || !pwd) {
+    loginError.textContent = '请输入用户名和密码';
+    return;
+  }
+  const account = MOCK_ACCOUNTS.find(a => a.username === name && a.password === pwd);
+  if (!account) {
+    loginError.textContent = '用户名或密码错误';
+    loginPassword.value = '';
+    return;
+  }
+  currentUser = account;
+  loginOverlay.style.display = 'none';
+  userArea.style.display = 'flex';
+  currentUsername.textContent = account.username;
+  loginError.textContent = '';
+  loginPassword.value = '';
+}
+
+function doLogout() {
+  currentUser = null;
+  loginOverlay.style.display = 'flex';
+  userArea.style.display = 'none';
+  loginUsername.value = '';
+  loginPassword.value = '';
+  loginError.textContent = '';
+  loginUsername.focus();
+}
+
+loginBtn.addEventListener('click', doLogin);
+loginPassword.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+loginUsername.addEventListener('keydown', e => { if (e.key === 'Enter') loginPassword.focus(); });
+logoutBtn.addEventListener('click', doLogout);
+
 const TOTAL_STEPS = 6;
 let currentStep = 1;
 
