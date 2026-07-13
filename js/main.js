@@ -102,6 +102,672 @@ document.querySelectorAll('.top-nav-item').forEach(item => {
   });
 });
 
+document.querySelectorAll('.module-nav-item').forEach(item => {
+  item.addEventListener('click', function() {
+    const target = this.dataset.module;
+    document.querySelectorAll('.module-nav-item').forEach(n => n.classList.toggle('active', n === this));
+    document.querySelectorAll('.module-content').forEach(p => {
+      p.classList.toggle('active', p.dataset.moduleContent === target);
+    });
+  });
+});
+
+// ===== 快速创作 - 生成预览风格 =====
+const generatePreviewBtn = document.getElementById('generate-preview-btn');
+const stylePromptInput = document.getElementById('style-prompt');
+const previewResult = document.getElementById('preview-result');
+const previewImage = document.getElementById('preview-image');
+
+if (generatePreviewBtn && stylePromptInput && previewResult && previewImage) {
+  generatePreviewBtn.addEventListener('click', () => {
+    const prompt = stylePromptInput.value.trim();
+    if (!prompt) {
+      alert('请输入风格提示词');
+      return;
+    }
+
+    generatePreviewBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 生成中...';
+    generatePreviewBtn.disabled = true;
+
+    setTimeout(() => {
+      const encodedPrompt = encodeURIComponent(prompt);
+      previewImage.src = `https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=${encodedPrompt}&image_size=square`;
+      previewResult.style.display = 'grid';
+      generatePreviewBtn.innerHTML = '<i class="fas fa-image"></i> 生成预览';
+      generatePreviewBtn.disabled = false;
+    }, 1500);
+  });
+}
+
+// ===== 自定义素材模块交互 =====
+// ===== 自定义素材模块交互 =====
+const CM_TOTAL_STEPS = 7;
+let cmCurrentStep = 1;
+
+function renderCmStep(step) {
+  cmCurrentStep = step;
+  document.querySelectorAll('.cm-step-panel').forEach(p => {
+    p.classList.toggle('active', p.dataset.cmPanel === String(step));
+  });
+
+  const stepItems = document.querySelectorAll('[data-cm-step]');
+  const dividers = document.querySelectorAll('#cm-stepper .step-divider');
+  stepItems.forEach(el => {
+    const idx = Number(el.dataset.cmStep);
+    el.classList.toggle('active', idx === step);
+    el.classList.toggle('done', idx < step);
+  });
+  dividers.forEach((el, i) => {
+    el.classList.toggle('done', i + 1 < step);
+  });
+
+  document.getElementById('cm-step-current').textContent = step;
+  document.getElementById('cm-prev-step').disabled = step === 1;
+
+  const nextBtn = document.getElementById('cm-next-step');
+  if (step === CM_TOTAL_STEPS) {
+    nextBtn.style.display = 'none';
+  } else {
+    nextBtn.style.display = 'flex';
+    nextBtn.innerHTML = step === CM_TOTAL_STEPS - 1
+      ? '前往生成 <i class="fas fa-arrow-right ml-1"></i>'
+      : '下一步 <i class="fas fa-arrow-right ml-1"></i>';
+  }
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+document.getElementById('cm-prev-step')?.addEventListener('click', () => {
+  if (cmCurrentStep > 1) renderCmStep(cmCurrentStep - 1);
+});
+document.getElementById('cm-next-step')?.addEventListener('click', () => {
+  if (cmCurrentStep < CM_TOTAL_STEPS) renderCmStep(cmCurrentStep + 1);
+});
+document.querySelectorAll('[data-cm-step]').forEach(item => {
+  item.addEventListener('click', () => {
+    renderCmStep(Number(item.dataset.cmStep));
+  });
+});
+
+(function initCustomMaterial() {
+  const uploadZone = document.getElementById('cm-upload-zone');
+  const materialList = document.getElementById('cm-material-list');
+  if (uploadZone) {
+    uploadZone.addEventListener('dragover', e => {
+      e.preventDefault();
+      uploadZone.classList.add('dragover');
+    });
+    uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+    uploadZone.addEventListener('drop', e => {
+      e.preventDefault();
+      uploadZone.classList.remove('dragover');
+      const files = Array.from(e.dataTransfer.files || []);
+      files.forEach(addMaterialItem);
+    });
+    uploadZone.addEventListener('click', () => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*,video/*';
+      input.multiple = true;
+      input.addEventListener('change', () => {
+        Array.from(input.files || []).forEach(addMaterialItem);
+      });
+      input.click();
+    });
+  }
+
+  function addMaterialItem(file) {
+    if (!materialList) return;
+    const isVideo = file.type.startsWith('video/');
+    const url = URL.createObjectURL(file);
+    const item = document.createElement('div');
+    item.className = 'cm-material-item';
+    item.innerHTML = `
+      <div class="cm-material-thumb">
+        ${isVideo
+          ? `<video src="${url}" muted></video><span class="cm-material-badge"><i class="fas fa-play"></i></span>`
+          : `<img src="${url}" alt="${file.name}" />`}
+      </div>
+      <div class="cm-material-info">
+        <div class="cm-material-name"><i class="fas fa-${isVideo ? 'video text-blue-500' : 'image text-pink-500'}"></i> ${file.name}</div>
+        <div class="cm-material-meta">${(file.size / 1024).toFixed(1)} KB</div>
+      </div>
+      <button class="cm-material-remove" title="删除"><i class="fas fa-times"></i></button>
+    `;
+    materialList.appendChild(item);
+  }
+
+  if (materialList) {
+    materialList.addEventListener('click', e => {
+      const btn = e.target.closest('.cm-material-remove');
+      if (btn) btn.closest('.cm-material-item').remove();
+    });
+  }
+
+  const durationSlider = document.getElementById('cm-duration-slider');
+  const durationInput = document.getElementById('cm-duration-input');
+  if (durationSlider && durationInput) {
+    durationSlider.addEventListener('input', () => { durationInput.value = durationSlider.value; });
+    durationInput.addEventListener('input', () => {
+      const v = Math.max(5, Math.min(180, Number(durationInput.value) || 5));
+      durationSlider.value = v;
+    });
+    document.querySelectorAll('[data-target="cm-duration-input"]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const delta = Number(btn.dataset.delta) || 0;
+        const v = Math.max(5, Math.min(180, (Number(durationInput.value) || 5) + delta));
+        durationInput.value = v;
+        durationSlider.value = v;
+      });
+    });
+  }
+
+  function positionCmVolumeBubble() {
+    const slider = document.getElementById('cm-bgm-volume');
+    const bubble = document.getElementById('cm-bgm-volume-bubble');
+    if (!slider || !bubble) return;
+    const min = Number(slider.min);
+    const max = Number(slider.max);
+    const value = Number(slider.value);
+    const ratio = (value - min) / (max - min);
+    bubble.style.left = (ratio * slider.offsetWidth) + 'px';
+    bubble.textContent = value.toFixed(2);
+  }
+  const cmVolume = document.getElementById('cm-bgm-volume');
+  if (cmVolume) {
+    cmVolume.addEventListener('input', positionCmVolumeBubble);
+    window.addEventListener('resize', positionCmVolumeBubble);
+    requestAnimationFrame(positionCmVolumeBubble);
+  }
+
+  const cmGenerateBtn = document.getElementById('cm-generate-btn');
+  if (cmGenerateBtn) {
+    cmGenerateBtn.addEventListener('click', () => {
+      const progress = document.getElementById('cm-progress-fill');
+      const messages = document.getElementById('cm-generate-messages');
+      if (messages) messages.style.display = 'none';
+      cmGenerateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在生成...';
+      cmGenerateBtn.disabled = true;
+      progress.style.width = '0%';
+      let p = 0;
+      const interval = setInterval(() => {
+        p += Math.random() * 8;
+        if (p >= 100) {
+          p = 100;
+          clearInterval(interval);
+          cmGenerateBtn.innerHTML = '<i class="fas fa-check"></i> 生成完成';
+          cmGenerateBtn.disabled = false;
+          cmGenerateBtn.style.background = 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)';
+          if (messages) messages.style.display = 'block';
+        }
+        progress.style.width = p + '%';
+      }, 200);
+    });
+  }
+})();
+
+// ===== 数字人口播模块 =====
+const DA_TOTAL_STEPS = 4;
+let daCurrentStep = 1;
+
+function renderDaStep(step) {
+  daCurrentStep = step;
+  document.querySelectorAll('.da-step-panel').forEach(p => {
+    p.classList.toggle('active', p.dataset.daPanel === String(step));
+  });
+
+  const stepItems = document.querySelectorAll('[data-da-step]');
+  const dividers = document.querySelectorAll('#da-stepper .step-divider');
+  stepItems.forEach(el => {
+    const idx = Number(el.dataset.daStep);
+    el.classList.toggle('active', idx === step);
+    el.classList.toggle('done', idx < step);
+  });
+  dividers.forEach((el, i) => {
+    el.classList.toggle('done', i + 1 < step);
+  });
+
+  document.getElementById('da-step-current').textContent = step;
+  document.getElementById('da-prev-step').disabled = step === 1;
+
+  const nextBtn = document.getElementById('da-next-step');
+  if (step === DA_TOTAL_STEPS) {
+    nextBtn.style.display = 'none';
+  } else {
+    nextBtn.style.display = 'flex';
+  }
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+document.getElementById('da-prev-step')?.addEventListener('click', () => {
+  if (daCurrentStep > 1) renderDaStep(daCurrentStep - 1);
+});
+document.getElementById('da-next-step')?.addEventListener('click', () => {
+  if (daCurrentStep < DA_TOTAL_STEPS) renderDaStep(daCurrentStep + 1);
+});
+document.querySelectorAll('[data-da-step]').forEach(item => {
+  item.addEventListener('click', () => {
+    renderDaStep(Number(item.dataset.daStep));
+  });
+});
+
+(function initDigitalAvatar() {
+  const avatarList = document.getElementById('da-avatar-list');
+  const avatarUpload = document.getElementById('da-avatar-upload');
+
+  if (avatarList) {
+    avatarList.addEventListener('click', e => {
+      const card = e.target.closest('.da-avatar-card');
+      if (!card) return;
+      avatarList.querySelectorAll('.da-avatar-card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+    });
+  }
+
+  if (avatarUpload) {
+    avatarUpload.addEventListener('dragover', e => { e.preventDefault(); avatarUpload.classList.add('dragover'); });
+    avatarUpload.addEventListener('dragleave', () => avatarUpload.classList.remove('dragover'));
+    avatarUpload.addEventListener('drop', e => {
+      e.preventDefault();
+      avatarUpload.classList.remove('dragover');
+      Array.from(e.dataTransfer.files || []).forEach(addAvatarCard);
+    });
+    avatarUpload.addEventListener('click', () => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/jpeg,image/png,image/webp';
+      input.multiple = true;
+      input.addEventListener('change', () => {
+        Array.from(input.files || []).forEach(addAvatarCard);
+      });
+      input.click();
+    });
+  }
+
+  function addAvatarCard(file) {
+    if (!avatarList || !file.type.startsWith('image/')) return;
+    const url = URL.createObjectURL(file);
+    const card = document.createElement('div');
+    card.className = 'da-avatar-card';
+    card.innerHTML = `
+      <div class="da-avatar-preview">
+        <img src="${url}" alt="${file.name}" />
+        <div class="da-avatar-check"><i class="fas fa-check"></i></div>
+      </div>
+      <div class="da-avatar-name">${file.name}</div>
+    `;
+    avatarList.appendChild(card);
+  }
+
+  const speedSlider = document.getElementById('da-speed');
+  const speedBubble = document.getElementById('da-speed-bubble');
+  function positionSpeedBubble() {
+    if (!speedSlider || !speedBubble) return;
+    const min = Number(speedSlider.min);
+    const max = Number(speedSlider.max);
+    const value = Number(speedSlider.value);
+    const ratio = (value - min) / (max - min);
+    speedBubble.style.left = (ratio * speedSlider.offsetWidth) + 'px';
+    speedBubble.textContent = value.toFixed(1) + 'x';
+  }
+  if (speedSlider) {
+    speedSlider.addEventListener('input', positionSpeedBubble);
+    window.addEventListener('resize', positionSpeedBubble);
+    requestAnimationFrame(positionSpeedBubble);
+  }
+
+  document.querySelectorAll('.da-mode-card').forEach(card => {
+    card.addEventListener('click', function() {
+      const target = this.dataset.daMode;
+      document.querySelectorAll('.da-mode-card').forEach(c => c.classList.toggle('active', c === this));
+      document.querySelectorAll('.da-mode-content').forEach(p => {
+        p.classList.toggle('active', p.dataset.daModeContent === target);
+      });
+    });
+  });
+
+  const daCustomUpload = document.getElementById('da-custom-upload');
+  const daMaterialList = document.getElementById('da-material-list');
+  if (daCustomUpload) {
+    daCustomUpload.addEventListener('dragover', e => {
+      e.preventDefault();
+      daCustomUpload.classList.add('dragover');
+    });
+    daCustomUpload.addEventListener('dragleave', () => daCustomUpload.classList.remove('dragover'));
+    daCustomUpload.addEventListener('drop', e => {
+      e.preventDefault();
+      daCustomUpload.classList.remove('dragover');
+      Array.from(e.dataTransfer.files || []).forEach(addDaMaterial);
+    });
+    daCustomUpload.addEventListener('click', () => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/jpeg,image/png,image/webp';
+      input.multiple = true;
+      input.addEventListener('change', () => {
+        Array.from(input.files || []).forEach(addDaMaterial);
+      });
+      input.click();
+    });
+  }
+
+  function addDaMaterial(file) {
+    if (!daMaterialList || !file.type.startsWith('image/')) return;
+    const url = URL.createObjectURL(file);
+    const item = document.createElement('div');
+    item.className = 'cm-material-item';
+    item.innerHTML = `
+      <div class="cm-material-thumb"><img src="${url}" alt="${file.name}" /></div>
+      <div class="cm-material-info">
+        <div class="cm-material-name"><i class="fas fa-image text-pink-500"></i> ${file.name}</div>
+        <div class="cm-material-meta">${(file.size / 1024).toFixed(1)} KB</div>
+      </div>
+      <button class="cm-material-remove" title="删除"><i class="fas fa-times"></i></button>
+    `;
+    daMaterialList.appendChild(item);
+  }
+
+  if (daMaterialList) {
+    daMaterialList.addEventListener('click', e => {
+      const btn = e.target.closest('.cm-material-remove');
+      if (btn) btn.closest('.cm-material-item').remove();
+    });
+  }
+
+  const aiNarrateBtn = document.getElementById('da-ai-narrate');
+  const narrationTextarea = document.getElementById('da-narration');
+  if (aiNarrateBtn && narrationTextarea) {
+    aiNarrateBtn.addEventListener('click', () => {
+      aiNarrateBtn.innerHTML = '<i class="fas fa-spinner fa-spin text-orange-500 mr-1"></i> 生成中...';
+      aiNarrateBtn.disabled = true;
+      setTimeout(() => {
+        narrationTextarea.value = '大家好，欢迎来到我的直播间！今天为大家介绍一款超值好物，它不仅品质出众，更有独特的设计理念，让您在使用过程中感受到与众不同的体验。现在下单还有专属优惠，机会难得，赶紧行动吧！';
+        aiNarrateBtn.innerHTML = '<i class="fas fa-wand-magic-sparkles text-orange-500 mr-1"></i> AI 创作旁白';
+        aiNarrateBtn.disabled = false;
+      }, 1500);
+    });
+  }
+
+  const daGenerateBtn = document.getElementById('da-generate-btn');
+  if (daGenerateBtn) {
+    daGenerateBtn.addEventListener('click', () => {
+      const progress = document.getElementById('da-progress-fill');
+      const messages = document.getElementById('da-generate-messages');
+      if (messages) messages.style.display = 'none';
+      daGenerateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在生成...';
+      daGenerateBtn.disabled = true;
+      progress.style.width = '0%';
+      let p = 0;
+      const interval = setInterval(() => {
+        p += Math.random() * 6;
+        if (p >= 100) {
+          p = 100;
+          clearInterval(interval);
+          daGenerateBtn.innerHTML = '<i class="fas fa-check"></i> 生成完成';
+          daGenerateBtn.disabled = false;
+          daGenerateBtn.style.background = 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)';
+          if (messages) messages.style.display = 'block';
+        }
+        progress.style.width = p + '%';
+      }, 220);
+    });
+  }
+})();
+
+// ===== 图生视频模块 =====
+const I2V_TOTAL_STEPS = 2;
+let i2vCurrentStep = 1;
+
+function renderI2vStep(step) {
+  i2vCurrentStep = step;
+  document.querySelectorAll('.i2v-step-panel').forEach(p => {
+    p.classList.toggle('active', p.dataset.i2vPanel === String(step));
+  });
+
+  const stepItems = document.querySelectorAll('[data-i2v-step]');
+  const dividers = document.querySelectorAll('#i2v-stepper .step-divider');
+  stepItems.forEach(el => {
+    const idx = Number(el.dataset.i2vStep);
+    el.classList.toggle('active', idx === step);
+    el.classList.toggle('done', idx < step);
+  });
+  dividers.forEach((el, i) => {
+    el.classList.toggle('done', i + 1 < step);
+  });
+
+  document.getElementById('i2v-step-current').textContent = step;
+  document.getElementById('i2v-prev-step').disabled = step === 1;
+
+  const nextBtn = document.getElementById('i2v-next-step');
+  if (step === I2V_TOTAL_STEPS) {
+    nextBtn.style.display = 'none';
+  } else {
+    nextBtn.style.display = 'flex';
+  }
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+document.getElementById('i2v-prev-step')?.addEventListener('click', () => {
+  if (i2vCurrentStep > 1) renderI2vStep(i2vCurrentStep - 1);
+});
+document.getElementById('i2v-next-step')?.addEventListener('click', () => {
+  if (i2vCurrentStep < I2V_TOTAL_STEPS) renderI2vStep(i2vCurrentStep + 1);
+});
+document.querySelectorAll('[data-i2v-step]').forEach(item => {
+  item.addEventListener('click', () => {
+    renderI2vStep(Number(item.dataset.i2vStep));
+  });
+});
+
+(function initImageToVideo() {
+  const imageUpload = document.getElementById('i2v-image-upload');
+  const imageList = document.getElementById('i2v-image-list');
+
+  if (imageUpload) {
+    imageUpload.addEventListener('dragover', e => {
+      e.preventDefault();
+      imageUpload.classList.add('dragover');
+    });
+    imageUpload.addEventListener('dragleave', () => imageUpload.classList.remove('dragover'));
+    imageUpload.addEventListener('drop', e => {
+      e.preventDefault();
+      imageUpload.classList.remove('dragover');
+      Array.from(e.dataTransfer.files || []).forEach(addI2vImage);
+    });
+    imageUpload.addEventListener('click', () => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/jpeg,image/png,image/webp';
+      input.multiple = true;
+      input.addEventListener('change', () => {
+        Array.from(input.files || []).forEach(addI2vImage);
+      });
+      input.click();
+    });
+  }
+
+  function addI2vImage(file) {
+    if (!imageList || !file.type.startsWith('image/')) return;
+    const url = URL.createObjectURL(file);
+    const item = document.createElement('div');
+    item.className = 'cm-material-item';
+    item.innerHTML = `
+      <div class="cm-material-thumb"><img src="${url}" alt="${file.name}" /></div>
+      <div class="cm-material-info">
+        <div class="cm-material-name"><i class="fas fa-image text-pink-500"></i> ${file.name}</div>
+        <div class="cm-material-meta">${(file.size / 1024).toFixed(1)} KB</div>
+      </div>
+      <button class="cm-material-remove" title="删除"><i class="fas fa-times"></i></button>
+    `;
+    imageList.appendChild(item);
+  }
+
+  if (imageList) {
+    imageList.addEventListener('click', e => {
+      const btn = e.target.closest('.cm-material-remove');
+      if (btn) btn.closest('.cm-material-item').remove();
+    });
+  }
+
+  const i2vGenerateBtn = document.getElementById('i2v-generate-btn');
+  if (i2vGenerateBtn) {
+    i2vGenerateBtn.addEventListener('click', () => {
+      const progress = document.getElementById('i2v-progress-fill');
+      const messages = document.getElementById('i2v-generate-messages');
+      if (messages) messages.style.display = 'none';
+      i2vGenerateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在生成...';
+      i2vGenerateBtn.disabled = true;
+      progress.style.width = '0%';
+      let p = 0;
+      const interval = setInterval(() => {
+        p += Math.random() * 5;
+        if (p >= 100) {
+          p = 100;
+          clearInterval(interval);
+          i2vGenerateBtn.innerHTML = '<i class="fas fa-check"></i> 生成完成';
+          i2vGenerateBtn.disabled = false;
+          i2vGenerateBtn.style.background = 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)';
+          if (messages) messages.style.display = 'block';
+        }
+        progress.style.width = p + '%';
+      }, 250);
+    });
+  }
+})();
+
+// ===== 动作迁移模块 =====
+const MT_TOTAL_STEPS = 3;
+let mtCurrentStep = 1;
+
+function renderMtStep(step) {
+  mtCurrentStep = step;
+  document.querySelectorAll('.mt-step-panel').forEach(p => {
+    p.classList.toggle('active', p.dataset.mtPanel === String(step));
+  });
+
+  const stepItems = document.querySelectorAll('[data-mt-step]');
+  const dividers = document.querySelectorAll('#mt-stepper .step-divider');
+  stepItems.forEach(el => {
+    const idx = Number(el.dataset.mtStep);
+    el.classList.toggle('active', idx === step);
+    el.classList.toggle('done', idx < step);
+  });
+  dividers.forEach((el, i) => {
+    el.classList.toggle('done', i + 1 < step);
+  });
+
+  document.getElementById('mt-step-current').textContent = step;
+  document.getElementById('mt-prev-step').disabled = step === 1;
+
+  const nextBtn = document.getElementById('mt-next-step');
+  if (step === MT_TOTAL_STEPS) {
+    nextBtn.style.display = 'none';
+  } else {
+    nextBtn.style.display = 'flex';
+  }
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+document.getElementById('mt-prev-step')?.addEventListener('click', () => {
+  if (mtCurrentStep > 1) renderMtStep(mtCurrentStep - 1);
+});
+document.getElementById('mt-next-step')?.addEventListener('click', () => {
+  if (mtCurrentStep < MT_TOTAL_STEPS) renderMtStep(mtCurrentStep + 1);
+});
+document.querySelectorAll('[data-mt-step]').forEach(item => {
+  item.addEventListener('click', () => {
+    renderMtStep(Number(item.dataset.mtStep));
+  });
+});
+
+(function initMotionTransfer() {
+  function bindUploader(zoneId, listId, accept, isVideo) {
+    const zone = document.getElementById(zoneId);
+    const list = document.getElementById(listId);
+    if (!zone) return;
+
+    zone.addEventListener('dragover', e => {
+      e.preventDefault();
+      zone.classList.add('dragover');
+    });
+    zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+    zone.addEventListener('drop', e => {
+      e.preventDefault();
+      zone.classList.remove('dragover');
+      Array.from(e.dataTransfer.files || []).forEach(addItem);
+    });
+    zone.addEventListener('click', () => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = accept;
+      input.multiple = false;
+      input.addEventListener('change', () => {
+        Array.from(input.files || []).forEach(addItem);
+      });
+      input.click();
+    });
+
+    function addItem(file) {
+      if (!list) return;
+      const url = URL.createObjectURL(file);
+      const item = document.createElement('div');
+      item.className = 'cm-material-item';
+      const iconClass = isVideo ? 'video text-blue-500' : 'image text-pink-500';
+      item.innerHTML = `
+        <div class="cm-material-thumb">
+          ${isVideo
+            ? `<video src="${url}" muted></video><span class="cm-material-badge"><i class="fas fa-play"></i></span>`
+            : `<img src="${url}" alt="${file.name}" />`}
+        </div>
+        <div class="cm-material-info">
+          <div class="cm-material-name"><i class="fas fa-${iconClass}"></i> ${file.name}</div>
+          <div class="cm-material-meta">${(file.size / 1024).toFixed(1)} KB</div>
+        </div>
+        <button class="cm-material-remove" title="删除"><i class="fas fa-times"></i></button>
+      `;
+      list.appendChild(item);
+    }
+
+    if (list) {
+      list.addEventListener('click', e => {
+        const btn = e.target.closest('.cm-material-remove');
+        if (btn) btn.closest('.cm-material-item').remove();
+      });
+    }
+  }
+
+  bindUploader('mt-video-upload', 'mt-video-list', 'video/mp4,video/quicktime,video/x-msvideo', true);
+  bindUploader('mt-image-upload', 'mt-image-list', 'image/jpeg,image/png,image/webp', false);
+
+  const mtGenerateBtn = document.getElementById('mt-generate-btn');
+  if (mtGenerateBtn) {
+    mtGenerateBtn.addEventListener('click', () => {
+      const progress = document.getElementById('mt-progress-fill');
+      const messages = document.getElementById('mt-generate-messages');
+      if (messages) messages.style.display = 'none';
+      mtGenerateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在生成...';
+      mtGenerateBtn.disabled = true;
+      progress.style.width = '0%';
+      let p = 0;
+      const interval = setInterval(() => {
+        p += Math.random() * 4;
+        if (p >= 100) {
+          p = 100;
+          clearInterval(interval);
+          mtGenerateBtn.innerHTML = '<i class="fas fa-check"></i> 生成完成';
+          mtGenerateBtn.disabled = false;
+          mtGenerateBtn.style.background = 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)';
+          if (messages) messages.style.display = 'block';
+        }
+        progress.style.width = p + '%';
+      }, 260);
+    });
+  }
+})();
+
 const projectData = {
   'p-001': { text: '如何增加被动收入', title: '', frames: 10, workflow: 'image_flux.json - Runninghub', voice: '男声-专业（云健）', bgm: 'default.mp3', template: 'static_default' },
   'p-002': { text: 'AI 正在改变内容创作的方式', title: 'AI 改变内容创作', frames: 12, workflow: 'image_flux.json - Runninghub', voice: '女声-温柔（晓晓）', bgm: 'bgm-01.mp3', template: '模板2' },
@@ -391,4 +1057,392 @@ document.querySelectorAll('input[name="storyboard-type"]').forEach(radio => {
   radio.addEventListener('change', function() {
     if (storyboardHint) storyboardHint.textContent = storyboardHints[this.value];
   });
+});
+
+// ===== 设计规范配置模块 =====
+const DesignSpec = {
+  data: {
+    colors: {
+      primary: '#f97316',
+      secondary: '#3b82f6',
+      accent: '#ef4444',
+      background: '#f8fafc',
+      exclude: '#94a3b8'
+    },
+    fonts: {
+      title: 'Noto Sans SC',
+      body: 'Noto Sans SC',
+      style: '简洁现代',
+      size: '14px'
+    },
+    spacing: {
+      base: '16px',
+      radius: '中等圆角 (8-12px)',
+      shadow: '柔和阴影',
+      border: '无边框'
+    },
+    visual: {
+      style: '极简主义',
+      colorTendency: '中性色调',
+      layout: '居中对称',
+      icon: '线性图标'
+    },
+    prompts: {
+      positivePrefix: 'Professional UI design, clean composition, high quality, detailed, modern aesthetic',
+      negative: 'blurry, low quality, cluttered, text, watermark, distorted, ugly'
+    }
+  },
+
+  styleMap: {
+    '极简主义': 'minimalist, clean, simple, uncluttered',
+    '现代扁平': 'modern flat design, 2D, flat illustration style',
+    '拟物化': 'skeuomorphic, realistic, 3D rendered',
+    '玻璃拟态': 'glass morphism, frosted glass effect, translucent',
+    '暗黑模式': 'dark mode, dark theme, dark background',
+    '渐变多彩': 'gradient colors, colorful, vibrant',
+    '科技感': 'futuristic, tech style, cyberpunk',
+    '手绘插画': 'hand drawn, sketch style, illustration'
+  },
+
+  fontStyleMap: {
+    '简洁现代': 'clean modern typography, sans-serif',
+    '圆润亲和': 'rounded friendly typography, soft edges',
+    '专业商务': 'professional business typography, corporate style',
+    '活泼创意': 'playful creative typography, fun',
+    '复古优雅': 'vintage elegant typography, classic',
+    '科技未来': 'futuristic tech typography, modern'
+  },
+
+  layoutMap: {
+    '居中对称': 'centered symmetrical layout, balanced',
+    '左对齐': 'left-aligned layout, clean reading',
+    '右对齐': 'right-aligned layout',
+    '卡片式': 'card-based layout, modern cards',
+    '网格布局': 'grid layout, structured',
+    '自由布局': 'freeform layout, creative'
+  },
+
+  iconStyleMap: {
+    '线性图标': 'line icons, outline icons',
+    '面性图标': 'solid icons, filled icons',
+    '双色图标': 'two-color icons',
+    '手绘图标': 'hand-drawn icons, sketch icons'
+  },
+
+  colorTendencyMap: {
+    '暖色为主': 'warm color palette, warm tones',
+    '冷色为主': 'cool color palette, cool tones',
+    '中性色调': 'neutral color palette, muted tones',
+    '高饱和度': 'high saturation, vibrant colors',
+    '低饱和度': 'low saturation, desaturated colors'
+  },
+
+  shadowStyleMap: {
+    '柔和阴影': 'soft subtle shadows, gentle depth',
+    '清晰阴影': 'clear defined shadows, crisp',
+    '无阴影': 'no shadows, flat design',
+    '强烈阴影': 'strong dramatic shadows, deep depth'
+  },
+
+  radiusStyleMap: {
+    '小圆角 (4-6px)': 'small rounded corners, sharp look',
+    '中等圆角 (8-12px)': 'medium rounded corners, modern',
+    '大圆角 (16-24px)': 'large rounded corners, friendly',
+    '无圆角 (0px)': 'no rounded corners, sharp edges'
+  },
+
+  init: function() {
+    this.bindColorPickers();
+    this.bindPromptGenerator();
+    this.bindImportExport();
+    this.bindCopyButtons();
+    this.generatePromptPreview();
+  },
+
+  bindColorPickers: function() {
+    const colorPairs = [
+      ['design-primary-color', 'design-primary-hex'],
+      ['design-secondary-color', 'design-secondary-hex'],
+      ['design-accent-color', 'design-accent-hex'],
+      ['design-bg-color', 'design-bg-hex'],
+      ['design-exclude-color', 'design-exclude-hex']
+    ];
+
+    colorPairs.forEach(([colorId, hexId]) => {
+      const colorInput = document.getElementById(colorId);
+      const hexInput = document.getElementById(hexId);
+      if (!colorInput || !hexInput) return;
+
+      colorInput.addEventListener('input', () => {
+        hexInput.value = colorInput.value;
+        this.updateColorData(colorId.replace('design-', '').replace('-color', ''), colorInput.value);
+        this.generatePromptPreview();
+      });
+
+      hexInput.addEventListener('input', () => {
+        const val = hexInput.value;
+        if (/^#[0-9A-Fa-f]{6}$/.test(val) || /^#[0-9A-Fa-f]{3}$/.test(val)) {
+          colorInput.value = val;
+          this.updateColorData(colorId.replace('design-', '').replace('-color', ''), val);
+          this.generatePromptPreview();
+        }
+      });
+    });
+  },
+
+  updateColorData: function(key, value) {
+    if (key === 'primary') this.data.colors.primary = value;
+    else if (key === 'secondary') this.data.colors.secondary = value;
+    else if (key === 'accent') this.data.colors.accent = value;
+    else if (key === 'bg') this.data.colors.background = value;
+    else if (key === 'exclude') this.data.colors.exclude = value;
+  },
+
+  bindPromptGenerator: function() {
+    const fields = [
+      'design-title-font', 'design-body-font', 'design-font-style', 'design-font-size',
+      'design-spacing', 'design-radius', 'design-shadow', 'design-border',
+      'design-style', 'design-color-tendency', 'design-layout', 'design-icon',
+      'design-positive-prefix', 'design-negative-prompt'
+    ];
+
+    fields.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.addEventListener('change', () => this.generatePromptPreview());
+        if (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT') {
+          el.addEventListener('input', () => this.generatePromptPreview());
+        }
+      }
+    });
+
+    const btn = document.getElementById('generate-prompt-preview');
+    if (btn) {
+      btn.addEventListener('click', () => this.generatePromptPreview());
+    }
+  },
+
+  hexToColorName: function(hex) {
+    const colorNames = {
+      '#f97316': 'orange', '#ef4444': 'red', '#3b82f6': 'blue',
+      '#22c55e': 'green', '#eab308': 'yellow', '#a855f7': 'purple',
+      '#ec4899': 'pink', '#06b6d4': 'cyan', '#f8fafc': 'light',
+      '#1e293b': 'dark', '#94a3b8': 'gray'
+    };
+    return colorNames[hex.toLowerCase()] || 'custom color';
+  },
+
+  generatePromptPreview: function() {
+    const colors = this.data.colors;
+    const fonts = {
+      title: document.getElementById('design-title-font')?.value || 'Noto Sans SC',
+      body: document.getElementById('design-body-font')?.value || 'Noto Sans SC',
+      style: document.getElementById('design-font-style')?.value || '简洁现代',
+      size: document.getElementById('design-font-size')?.value || '14px'
+    };
+    const spacing = {
+      base: document.getElementById('design-spacing')?.value || '16px',
+      radius: document.getElementById('design-radius')?.value || '中等圆角 (8-12px)',
+      shadow: document.getElementById('design-shadow')?.value || '柔和阴影',
+      border: document.getElementById('design-border')?.value || '无边框'
+    };
+    const visual = {
+      style: document.getElementById('design-style')?.value || '极简主义',
+      colorTendency: document.getElementById('design-color-tendency')?.value || '中性色调',
+      layout: document.getElementById('design-layout')?.value || '居中对称',
+      icon: document.getElementById('design-icon')?.value || '线性图标'
+    };
+    const positivePrefix = document.getElementById('design-positive-prefix')?.value || '';
+    const negative = document.getElementById('design-negative-prompt')?.value || '';
+
+    let positiveParts = [];
+    if (positivePrefix) positiveParts.push(positivePrefix);
+
+    positiveParts.push(`color scheme: primary ${this.hexToColorName(colors.primary)} (${colors.primary}), secondary ${this.hexToColorName(colors.secondary)} (${colors.secondary}), accent ${this.hexToColorName(colors.accent)} (${colors.accent})`);
+    positiveParts.push(`background: ${this.hexToColorName(colors.background)} (${colors.background})`);
+    positiveParts.push(`typography: ${fonts.title} for titles, ${fonts.body} for body text, ${this.fontStyleMap[fonts.style] || fonts.style}, base size ${fonts.size}`);
+    positiveParts.push(`layout: ${this.layoutMap[visual.layout] || visual.layout}`);
+    positiveParts.push(`style: ${this.styleMap[visual.style] || visual.style}`);
+    positiveParts.push(`icons: ${this.iconStyleMap[visual.icon] || visual.icon}`);
+    positiveParts.push(`shadows: ${this.shadowStyleMap[spacing.shadow] || spacing.shadow}`);
+    positiveParts.push(`rounded corners: ${this.radiusStyleMap[spacing.radius] || spacing.radius}`);
+    positiveParts.push(`color tendency: ${this.colorTendencyMap[visual.colorTendency] || visual.colorTendency}`);
+    positiveParts.push(`spacing: ${spacing.base} base unit`);
+
+    if (spacing.border !== '无边框') {
+      positiveParts.push(`borders: ${spacing.border}`);
+    }
+
+    let negativeParts = [];
+    if (negative) negativeParts.push(negative);
+    negativeParts.push(`avoid ${this.hexToColorName(colors.exclude)} color, ${colors.exclude}`);
+
+    const positiveText = positiveParts.join(', ');
+    const negativeText = negativeParts.join(', ');
+
+    const positiveEl = document.getElementById('design-prompt-preview-positive');
+    const negativeEl = document.getElementById('design-prompt-preview-negative');
+
+    if (positiveEl) positiveEl.textContent = positiveText;
+    if (negativeEl) negativeEl.textContent = negativeText;
+
+    return { positive: positiveText, negative: negativeText };
+  },
+
+  bindImportExport: function() {
+    const exportBtn = document.getElementById('export-design-spec');
+    const importBtn = document.getElementById('import-design-spec');
+    const importFile = document.getElementById('design-spec-import-file');
+
+    if (exportBtn) {
+      exportBtn.addEventListener('click', () => {
+        const specData = this.collectSpecData();
+        const blob = new Blob([JSON.stringify(specData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `design-spec-${Date.now()}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      });
+    }
+
+    if (importBtn) {
+      importBtn.addEventListener('click', () => importFile.click());
+    }
+
+    if (importFile) {
+      importFile.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          try {
+            const data = JSON.parse(event.target.result);
+            this.applySpecData(data);
+            this.generatePromptPreview();
+            alert('设计规范导入成功！');
+          } catch (err) {
+            alert('导入失败：JSON格式错误');
+          }
+        };
+        reader.readAsText(file);
+        importFile.value = '';
+      });
+    }
+  },
+
+  collectSpecData: function() {
+    return {
+      version: '1.0',
+      colors: {
+        primary: document.getElementById('design-primary-color')?.value || '#f97316',
+        secondary: document.getElementById('design-secondary-color')?.value || '#3b82f6',
+        accent: document.getElementById('design-accent-color')?.value || '#ef4444',
+        background: document.getElementById('design-bg-color')?.value || '#f8fafc',
+        exclude: document.getElementById('design-exclude-color')?.value || '#94a3b8'
+      },
+      fonts: {
+        title: document.getElementById('design-title-font')?.value || 'Noto Sans SC',
+        body: document.getElementById('design-body-font')?.value || 'Noto Sans SC',
+        style: document.getElementById('design-font-style')?.value || '简洁现代',
+        size: document.getElementById('design-font-size')?.value || '14px'
+      },
+      spacing: {
+        base: document.getElementById('design-spacing')?.value || '16px',
+        radius: document.getElementById('design-radius')?.value || '中等圆角 (8-12px)',
+        shadow: document.getElementById('design-shadow')?.value || '柔和阴影',
+        border: document.getElementById('design-border')?.value || '无边框'
+      },
+      visual: {
+        style: document.getElementById('design-style')?.value || '极简主义',
+        colorTendency: document.getElementById('design-color-tendency')?.value || '中性色调',
+        layout: document.getElementById('design-layout')?.value || '居中对称',
+        icon: document.getElementById('design-icon')?.value || '线性图标'
+      },
+      prompts: {
+        positivePrefix: document.getElementById('design-positive-prefix')?.value || '',
+        negative: document.getElementById('design-negative-prompt')?.value || ''
+      }
+    };
+  },
+
+  applySpecData: function(data) {
+    if (!data) return;
+
+    if (data.colors) {
+      var el;
+      el = document.getElementById('design-primary-color'); if (el) el.setAttribute('value', data.colors.primary || '#f97316');
+      el = document.getElementById('design-primary-hex'); if (el) el.setAttribute('value', data.colors.primary || '#f97316');
+      el = document.getElementById('design-secondary-color'); if (el) el.setAttribute('value', data.colors.secondary || '#3b82f6');
+      el = document.getElementById('design-secondary-hex'); if (el) el.setAttribute('value', data.colors.secondary || '#3b82f6');
+      el = document.getElementById('design-accent-color'); if (el) el.setAttribute('value', data.colors.accent || '#ef4444');
+      el = document.getElementById('design-accent-hex'); if (el) el.setAttribute('value', data.colors.accent || '#ef4444');
+      el = document.getElementById('design-bg-color'); if (el) el.setAttribute('value', data.colors.background || '#f8fafc');
+      el = document.getElementById('design-bg-hex'); if (el) el.setAttribute('value', data.colors.background || '#f8fafc');
+      el = document.getElementById('design-exclude-color'); if (el) el.setAttribute('value', data.colors.exclude || '#94a3b8');
+      el = document.getElementById('design-exclude-hex'); if (el) el.setAttribute('value', data.colors.exclude || '#94a3b8');
+    }
+
+    if (data.fonts) {
+      var el;
+      el = document.getElementById('design-title-font'); if (el) el.value = data.fonts.title || 'Noto Sans SC';
+      el = document.getElementById('design-body-font'); if (el) el.value = data.fonts.body || 'Noto Sans SC';
+      el = document.getElementById('design-font-style'); if (el) el.value = data.fonts.style || '简洁现代';
+      el = document.getElementById('design-font-size'); if (el) el.value = data.fonts.size || '14px';
+    }
+
+    if (data.spacing) {
+      var el;
+      el = document.getElementById('design-spacing'); if (el) el.value = data.spacing.base || '16px';
+      el = document.getElementById('design-radius'); if (el) el.value = data.spacing.radius || '中等圆角 (8-12px)';
+      el = document.getElementById('design-shadow'); if (el) el.value = data.spacing.shadow || '柔和阴影';
+      el = document.getElementById('design-border'); if (el) el.value = data.spacing.border || '无边框';
+    }
+
+    if (data.visual) {
+      var el;
+      el = document.getElementById('design-style'); if (el) el.value = data.visual.style || '极简主义';
+      el = document.getElementById('design-color-tendency'); if (el) el.value = data.visual.colorTendency || '中性色调';
+      el = document.getElementById('design-layout'); if (el) el.value = data.visual.layout || '居中对称';
+      el = document.getElementById('design-icon'); if (el) el.value = data.visual.icon || '线性图标';
+    }
+
+    if (data.prompts) {
+      var el;
+      el = document.getElementById('design-positive-prefix'); if (el) el.value = data.prompts.positivePrefix || '';
+      el = document.getElementById('design-negative-prompt'); if (el) el.value = data.prompts.negative || '';
+    }
+  },
+
+  bindCopyButtons: function() {
+    document.querySelectorAll('.copy-prompt-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const targetId = this.dataset.target;
+        const target = document.getElementById(targetId);
+        if (!target) return;
+
+        navigator.clipboard.writeText(target.textContent).then(() => {
+          const originalHTML = this.innerHTML;
+          this.innerHTML = '<i class="fas fa-check"></i>已复制';
+          setTimeout(() => {
+            this.innerHTML = originalHTML;
+          }, 2000);
+        }).catch(() => {
+          alert('复制失败，请手动复制');
+        });
+      });
+    });
+  },
+
+  getPrompts: function() {
+    return this.generatePromptPreview();
+  }
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+  DesignSpec.init();
 });
