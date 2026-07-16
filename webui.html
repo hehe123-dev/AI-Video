@@ -4,6 +4,53 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AI 视频中台</title>
+  <script>
+    window.tailwind = { config: {
+      theme: {
+        extend: {
+          colors: {
+            gray: {
+              50: '#0B1020', 100: '#111827', 200: '#1E293B',
+              300: '#334155', 400: '#64748b', 500: '#94a3b8',
+              600: '#94a3b8', 700: '#e2e8f0', 800: '#e2e8f0',
+              900: '#e2e8f0'
+            },
+            orange: {
+              50: '#070A14', 100: '#0B1020', 400: '#45E6D5',
+              500: '#5B8CFF', 600: '#8B5CFF'
+            },
+            blue: {
+              50: '#0D1F3C', 100: '#1A2D4A', 400: '#5B8CFF',
+              500: '#5B8CFF'
+            },
+            green: {
+              50: '#0a1a12', 100: '#0a2018', 400: '#4ade80',
+              500: '#22c55e'
+            },
+            red: {
+              50: '#2a0a0a', 100: '#1a0a0a', 500: '#ef4444'
+            },
+            amber: {
+              400: '#f59e0b', 500: '#f59e0b'
+            },
+            purple: {
+              50: '#0D1F3C', 100: '#1A2D4A', 400: '#8B5CFF',
+              500: '#8B5CFF'
+            },
+            pink: { 500: '#ec4899' },
+            teal: { 500: '#45E6D5' },
+            cyan: { 500: '#45E6D5' },
+            rose: { 500: '#f43f5e' },
+            emerald: { 500: '#10b981' },
+            slate: { 500: '#94a3b8' },
+            sky: { 500: '#5B8CFF' },
+            indigo: { 500: '#5B8CFF' },
+            white: '#e2e8f0'
+          }
+        }
+      }
+    }}
+  </script>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <link rel="stylesheet" href="css/main.css">
@@ -41,14 +88,18 @@
     </div>
   </div>
 
-  <header class="h-14 flex items-center justify-between px-6 border-b border-gray-200 bg-white">
+  <header class="h-14 flex items-center justify-between px-6 border-b border-gray-200 bg-[#0B1020]">
     <div class="flex items-center gap-4">
       <img src="logo.png" alt="VideoAI Hub" class="h-11 object-contain" />
-      <span class="text-sm text-gray-600">- 一站式 AI 视频生产平台</span>
+      <span class="text-sm text-gray-500">- 一站式 AI 视频生产平台</span>
     </div>
 
     <nav class="top-nav">
-      <div class="top-nav-item active" data-view="short-video">
+      <div class="top-nav-item active" data-view="project">
+        <i class="fas fa-folder-tree"></i>
+        <span>项目管理</span>
+      </div>
+      <div class="top-nav-item" data-view="short-video">
         <i class="fas fa-video"></i>
         <span>AI 短视频</span>
       </div>
@@ -56,14 +107,36 @@
         <i class="fas fa-film"></i>
         <span>AI 短剧</span>
       </div>
+      <div class="top-nav-item" data-view="digital-human">
+        <i class="fas fa-user-tie"></i>
+        <span>数字人</span>
+      </div>
+      <div class="top-nav-item" data-view="image-to-video">
+        <i class="fas fa-image"></i>
+        <span>图生视频</span>
+      </div>
     </nav>
     <div class="flex items-center gap-4">
+      <div class="global-model-selector" id="header-model-selector">
+        <div class="w-7 h-7 rounded-lg bg-purple-50 flex items-center justify-center">
+          <i class="fas fa-brain text-purple-500 text-sm"></i>
+        </div>
+        <select class="global-model-select" id="sd-model-select">
+          <option value="gpt-4o">GPT-4o</option>
+          <option value="gpt-4-turbo">GPT-4 Turbo</option>
+          <option value="claude-3-opus">Claude 3 Opus</option>
+          <option value="claude-3-sonnet">Claude 3 Sonnet</option>
+          <option value="deepseek-chat">DeepSeek Chat</option>
+          <option value="qwen-max">Qwen Max</option>
+          <option value="moonshot-v1">Moonshot v1</option>
+        </select>
+      </div>
       <button class="global-config-btn" id="open-global-config">
         <div class="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center">
           <i class="fas fa-cog text-blue-500 text-sm"></i>
         </div>
         <div class="flex flex-col text-left">
-          <span class="text-sm font-medium text-gray-700">系统配置</span>
+          <span class="text-sm font-medium text-gray-800">系统配置</span>
           <span class="text-xs text-red-500">全局 · 必需</span>
         </div>
       </button>
@@ -73,7 +146,7 @@
           <div class="w-7 h-7 rounded-full bg-orange-100 flex items-center justify-center">
             <i class="fas fa-user text-orange-500 text-xs"></i>
           </div>
-          <span id="current-username" class="text-sm font-medium text-gray-700"></span>
+          <span id="current-username" class="text-sm font-medium text-gray-800"></span>
         </div>
         <button id="logout-btn" class="text-xs text-gray-400 hover:text-red-500 transition-colors" title="退出登录">
           <i class="fas fa-sign-out-alt"></i>
@@ -85,82 +158,209 @@
   <main class="flex-1 overflow-y-auto p-4">
     <div class="max-w-7xl mx-auto">
 
-      <div class="view-panel active" data-view-panel="short-video">
-        <div class="workspace">
-          <aside class="project-sidebar">
-            <div class="project-sidebar-header">
-              <div class="project-sidebar-header-title">
-                <i class="fas fa-folder-open text-orange-500"></i>
-                <span>我的项目</span>
+      <div class="view-panel active" data-view-panel="project">
+        <div class="pm-container">
+          <div class="pm-header">
+            <div class="pm-header-title">
+              <i class="fas fa-folder-tree text-orange-500"></i>
+              <span>项目管理</span>
+            </div>
+            <div class="pm-header-actions">
+              <div class="pm-search">
+                <i class="fas fa-search"></i>
+                <input type="text" placeholder="搜索项目..." id="pm-search-input" />
               </div>
-              <button class="new-project-btn" id="new-project-btn">
+              <button class="btn-primary" id="pm-new-project-btn">
                 <i class="fas fa-plus"></i>
-                <span>新建</span>
+                <span>新建项目</span>
               </button>
             </div>
-            <div class="project-search">
-              <input type="text" placeholder="搜索项目..." id="project-search-input" />
+          </div>
+
+          <div class="pm-toolbar">
+            <div class="pm-filter-group">
+              <button class="pm-filter-chip active" data-pm-filter="all">全部</button>
+              <button class="pm-filter-chip" data-pm-filter="short-video">AI 短视频</button>
+              <button class="pm-filter-chip" data-pm-filter="short-drama">AI 短剧</button>
+              <button class="pm-filter-chip" data-pm-filter="digital-human">数字人</button>
+              <button class="pm-filter-chip" data-pm-filter="image-to-video">图生视频</button>
             </div>
-            <div class="project-list" id="project-list">
-              <div class="project-item active" data-project-id="p-001">
-                <div class="project-item-actions">
-                  <button title="重命名"><i class="fas fa-pen"></i></button>
-                  <button class="delete" title="删除"><i class="fas fa-trash"></i></button>
-                </div>
-                <div class="project-item-title">如何增加被动收入</div>
-                <div class="project-item-meta">
+            <div class="pm-status-group">
+              <button class="pm-status-chip active" data-pm-status="all">全部状态</button>
+              <button class="pm-status-chip" data-pm-status="done">已完成</button>
+              <button class="pm-status-chip" data-pm-status="processing">生成中</button>
+              <button class="pm-status-chip" data-pm-status="draft">草稿</button>
+            </div>
+          </div>
+
+          <div class="pm-stat-row">
+            <div class="pm-stat-card">
+              <div class="pm-stat-icon bg-orange-50 text-orange-500">
+                <i class="fas fa-video"></i>
+              </div>
+              <div class="pm-stat-body">
+                <div class="pm-stat-value">12</div>
+                <div class="pm-stat-label">AI 短视频</div>
+              </div>
+            </div>
+            <div class="pm-stat-card">
+              <div class="pm-stat-icon bg-blue-50 text-blue-500">
+                <i class="fas fa-film"></i>
+              </div>
+              <div class="pm-stat-body">
+                <div class="pm-stat-value">5</div>
+                <div class="pm-stat-label">AI 短剧</div>
+              </div>
+            </div>
+            <div class="pm-stat-card">
+              <div class="pm-stat-icon bg-purple-50 text-purple-500">
+                <i class="fas fa-user-tie"></i>
+              </div>
+              <div class="pm-stat-body">
+                <div class="pm-stat-value">7</div>
+                <div class="pm-stat-label">数字人</div>
+              </div>
+            </div>
+            <div class="pm-stat-card">
+              <div class="pm-stat-icon bg-green-50 text-green-500">
+                <i class="fas fa-image"></i>
+              </div>
+              <div class="pm-stat-body">
+                <div class="pm-stat-value">3</div>
+                <div class="pm-stat-label">图生视频</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="pm-project-grid" id="pm-project-grid">
+            <div class="pm-project-card" data-pm-type="short-video" data-pm-status="done">
+              <div class="pm-project-thumb">
+                <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Financial%20passive%20income%20video%20thumbnail%20modern%20design&image_size=landscape_16_9" alt="项目缩略图" />
+                <span class="pm-project-badge type-short-video"><i class="fas fa-video"></i>AI 短视频</span>
+                <span class="pm-project-duration">01:12</span>
+              </div>
+              <div class="pm-project-body">
+                <div class="pm-project-title">如何增加被动收入</div>
+                <div class="pm-project-meta">
                   <span class="project-status done"><i class="fas fa-check-circle"></i>已完成</span>
-                  <span>11-16 14:53</span>
+                  <span>11-15 14:20</span>
+                </div>
+                <div class="pm-project-actions">
+                  <button class="pm-action-btn" title="打开"><i class="fas fa-folder-open"></i></button>
+                  <button class="pm-action-btn" title="下载"><i class="fas fa-download"></i></button>
+                  <button class="pm-action-btn" title="重命名"><i class="fas fa-pen"></i></button>
+                  <button class="pm-action-btn danger" title="删除"><i class="fas fa-trash"></i></button>
                 </div>
               </div>
-              <div class="project-item" data-project-id="p-002">
-                <div class="project-item-actions">
-                  <button title="重命名"><i class="fas fa-pen"></i></button>
-                  <button class="delete" title="删除"><i class="fas fa-trash"></i></button>
-                </div>
-                <div class="project-item-title">AI 改变内容创作</div>
-                <div class="project-item-meta">
+            </div>
+
+            <div class="pm-project-card" data-pm-type="short-video" data-pm-status="processing">
+              <div class="pm-project-thumb">
+                <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Vintage%20cinematic%20movie%20scene%20warm%20tones&image_size=landscape_16_9" alt="项目缩略图" />
+                <span class="pm-project-badge type-short-video"><i class="fas fa-video"></i>AI 短视频</span>
+                <span class="pm-project-duration">进行中</span>
+              </div>
+              <div class="pm-project-body">
+                <div class="pm-project-title">复古电影风格测试</div>
+                <div class="pm-project-meta">
                   <span class="project-status processing"><i class="fas fa-spinner fa-spin"></i>生成中</span>
-                  <span>11-15 21:07</span>
+                  <span>11-15 10:30</span>
+                </div>
+                <div class="pm-project-actions">
+                  <button class="pm-action-btn" title="查看进度"><i class="fas fa-eye"></i></button>
+                  <button class="pm-action-btn" title="重命名"><i class="fas fa-pen"></i></button>
+                  <button class="pm-action-btn danger" title="删除"><i class="fas fa-trash"></i></button>
                 </div>
               </div>
-              <div class="project-item" data-project-id="p-003">
-                <div class="project-item-actions">
-                  <button title="重命名"><i class="fas fa-pen"></i></button>
-                  <button class="delete" title="删除"><i class="fas fa-trash"></i></button>
+            </div>
+
+            <div class="pm-project-card" data-pm-type="short-drama" data-pm-status="done">
+              <div class="pm-project-thumb">
+                <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Ancient%20Chinese%20drama%20scene%20traditional%20costume&image_size=landscape_16_9" alt="项目缩略图" />
+                <span class="pm-project-badge type-short-drama"><i class="fas fa-film"></i>AI 短剧</span>
+                <span class="pm-project-duration">15 集</span>
+              </div>
+              <div class="pm-project-body">
+                <div class="pm-project-title">穿越之程序员在古代</div>
+                <div class="pm-project-meta">
+                  <span class="project-status done"><i class="fas fa-check-circle"></i>已完成</span>
+                  <span>07-10 15:30</span>
                 </div>
-                <div class="project-item-title">未命名项目 · 草稿</div>
-                <div class="project-item-meta">
+                <div class="pm-project-actions">
+                  <button class="pm-action-btn" title="打开"><i class="fas fa-folder-open"></i></button>
+                  <button class="pm-action-btn" title="下载"><i class="fas fa-download"></i></button>
+                  <button class="pm-action-btn" title="重命名"><i class="fas fa-pen"></i></button>
+                  <button class="pm-action-btn danger" title="删除"><i class="fas fa-trash"></i></button>
+                </div>
+              </div>
+            </div>
+
+            <div class="pm-project-card" data-pm-type="short-drama" data-pm-status="processing">
+              <div class="pm-project-thumb">
+                <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Modern%20office%20boss%20female%20employee%20romance&image_size=landscape_16_9" alt="项目缩略图" />
+                <span class="pm-project-badge type-short-drama"><i class="fas fa-film"></i>AI 短剧</span>
+                <span class="pm-project-duration">10 集</span>
+              </div>
+              <div class="pm-project-body">
+                <div class="pm-project-title">霸总的白月光</div>
+                <div class="pm-project-meta">
+                  <span class="project-status processing"><i class="fas fa-spinner fa-spin"></i>生成中</span>
+                  <span>07-09 20:15</span>
+                </div>
+                <div class="pm-project-actions">
+                  <button class="pm-action-btn" title="查看进度"><i class="fas fa-eye"></i></button>
+                  <button class="pm-action-btn" title="重命名"><i class="fas fa-pen"></i></button>
+                  <button class="pm-action-btn danger" title="删除"><i class="fas fa-trash"></i></button>
+                </div>
+              </div>
+            </div>
+
+            <div class="pm-project-card" data-pm-type="digital-human" data-pm-status="done">
+              <div class="pm-project-thumb">
+                <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Digital%20avatar%20presenter%20studio%20lighting&image_size=landscape_16_9" alt="项目缩略图" />
+                <span class="pm-project-badge type-digital-human"><i class="fas fa-user-tie"></i>数字人</span>
+                <span class="pm-project-duration">00:45</span>
+              </div>
+              <div class="pm-project-body">
+                <div class="pm-project-title">数字人产品介绍口播</div>
+                <div class="pm-project-meta">
+                  <span class="project-status done"><i class="fas fa-check-circle"></i>已完成</span>
+                  <span>11-14 09:12</span>
+                </div>
+                <div class="pm-project-actions">
+                  <button class="pm-action-btn" title="打开"><i class="fas fa-folder-open"></i></button>
+                  <button class="pm-action-btn" title="下载"><i class="fas fa-download"></i></button>
+                  <button class="pm-action-btn" title="重命名"><i class="fas fa-pen"></i></button>
+                  <button class="pm-action-btn danger" title="删除"><i class="fas fa-trash"></i></button>
+                </div>
+              </div>
+            </div>
+
+            <div class="pm-project-card" data-pm-type="image-to-video" data-pm-status="draft">
+              <div class="pm-project-thumb">
+                <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Motion%20blur%20cinematic%20scene%20transition&image_size=landscape_16_9" alt="项目缩略图" />
+                <span class="pm-project-badge type-image-to-video"><i class="fas fa-image"></i>图生视频</span>
+                <span class="pm-project-duration">草稿</span>
+              </div>
+              <div class="pm-project-body">
+                <div class="pm-project-title">城市延时摄影动画</div>
+                <div class="pm-project-meta">
                   <span class="project-status draft"><i class="fas fa-file"></i>草稿</span>
                   <span>11-15 09:42</span>
                 </div>
-              </div>
-              <div class="project-item" data-project-id="p-004">
-                <div class="project-item-actions">
-                  <button title="重命名"><i class="fas fa-pen"></i></button>
-                  <button class="delete" title="删除"><i class="fas fa-trash"></i></button>
-                </div>
-                <div class="project-item-title">程序员的一天</div>
-                <div class="project-item-meta">
-                  <span class="project-status done"><i class="fas fa-check-circle"></i>已完成</span>
-                  <span>11-14 18:20</span>
-                </div>
-              </div>
-              <div class="project-item" data-project-id="p-005">
-                <div class="project-item-actions">
-                  <button title="重命名"><i class="fas fa-pen"></i></button>
-                  <button class="delete" title="删除"><i class="fas fa-trash"></i></button>
-                </div>
-                <div class="project-item-title">3 分钟看懂通货膨胀</div>
-                <div class="project-item-meta">
-                  <span class="project-status done"><i class="fas fa-check-circle"></i>已完成</span>
-                  <span>11-12 10:03</span>
+                <div class="pm-project-actions">
+                  <button class="pm-action-btn" title="继续编辑"><i class="fas fa-play"></i></button>
+                  <button class="pm-action-btn" title="重命名"><i class="fas fa-pen"></i></button>
+                  <button class="pm-action-btn danger" title="删除"><i class="fas fa-trash"></i></button>
                 </div>
               </div>
             </div>
-          </aside>
+          </div>
+        </div>
+      </div>
 
-          <div class="workspace-main">
+      <div class="view-panel" data-view-panel="short-video">
+        <div class="workspace-main">
             <div class="module-nav" id="module-nav">
         <div class="module-nav-item active" data-module="quick-create">
           <i class="fas fa-bolt"></i>
@@ -169,18 +369,6 @@
         <div class="module-nav-item" data-module="custom-material">
           <i class="fas fa-folder-open"></i>
           <span>自定义素材</span>
-        </div>
-        <div class="module-nav-item" data-module="digital-avatar">
-          <i class="fas fa-user-tie"></i>
-          <span>数字人口播</span>
-        </div>
-        <div class="module-nav-item" data-module="image-to-video">
-          <i class="fas fa-image"></i>
-          <span>图生视频</span>
-        </div>
-        <div class="module-nav-item" data-module="motion-transfer">
-          <i class="fas fa-running"></i>
-          <span>动作迁移</span>
         </div>
       </div>
 
@@ -247,7 +435,7 @@
               </div>
               <input type="text" class="input-field" placeholder="" />
               <div class="flex items-center justify-between mt-2 gap-4">
-                <span class="text-xs text-gray-400 whitespace-nowrap">分镜数: <span class="text-gray-600">10</span></span>
+                <span class="text-xs text-gray-400 whitespace-nowrap">分镜数: <span class="text-gray-500">10</span></span>
                 <input type="range" class="param-slider" min="0" max="20" value="10" />
               </div>
             </div>
@@ -405,7 +593,7 @@
                 <label class="form-label">语速</label>
                 <div class="flex items-center gap-3">
                   <input type="range" class="param-slider flex-1" min="0" max="2" step="0.1" value="1.2" data-suffix="x" />
-                  <span class="text-sm text-gray-600 font-medium slider-value">1.2x</span>
+                  <span class="text-sm text-gray-500 font-medium slider-value">1.2x</span>
                 </div>
                 <p class="hint-text text-center">1.2x</p>
               </div>
@@ -584,7 +772,7 @@
             <div>
               <div class="flex items-center gap-2 mb-3 pb-2 border-b border-gray-100">
                 <i class="fas fa-sliders-h text-green-500 text-sm"></i>
-                <span class="text-sm font-medium text-gray-700">自定义参数</span>
+                <span class="text-sm font-medium text-gray-800">自定义参数</span>
               </div>
               <div class="grid grid-cols-2 gap-4">
                 <div>
@@ -674,12 +862,12 @@
                   <div class="stat-item flex flex-col items-center">
                     <i class="fas fa-clock text-gray-400"></i>
                     <span>生成耗时</span>
-                    <span class="text-gray-700 font-medium">234.1s</span>
+                    <span class="text-gray-800 font-medium">234.1s</span>
                   </div>
                   <div class="stat-item flex flex-col items-center">
                     <i class="fas fa-image text-blue-400"></i>
                     <span>图片数量</span>
-                    <span class="text-gray-700 font-medium">10</span>
+                    <span class="text-gray-800 font-medium">10</span>
                   </div>
                 </div>
               </div>
@@ -870,7 +1058,7 @@
                     <input type="number" class="input-field" value="30" min="5" max="180" id="cm-duration-input" />
                     <button type="button" data-target="cm-duration-input" data-delta="1"><i class="fas fa-plus text-xs"></i></button>
                   </div>
-                  <span class="text-sm text-gray-600 font-medium">秒</span>
+                  <span class="text-sm text-gray-500 font-medium">秒</span>
                 </div>
                 <p class="hint-text">范围 5 - 180 秒</p>
               </div>
@@ -954,7 +1142,7 @@
                   <label class="form-label">语速</label>
                   <div class="flex items-center gap-3">
                     <input type="range" class="param-slider flex-1" min="0" max="2" step="0.1" value="1.0" data-suffix="x" id="cm-voice-speed" />
-                    <span class="text-sm text-gray-600 font-medium slider-value">1.0x</span>
+                    <span class="text-sm text-gray-500 font-medium slider-value">1.0x</span>
                   </div>
                   <p class="hint-text text-center">1.0x</p>
                 </div>
@@ -1004,12 +1192,12 @@
                     <div class="stat-item flex flex-col items-center">
                       <i class="fas fa-clock text-gray-400"></i>
                       <span>生成耗时</span>
-                      <span class="text-gray-700 font-medium">156.8s</span>
+                      <span class="text-gray-800 font-medium">156.8s</span>
                     </div>
                     <div class="stat-item flex flex-col items-center">
                       <i class="fas fa-file-video text-blue-400"></i>
                       <span>素材数量</span>
-                      <span class="text-gray-700 font-medium">2</span>
+                      <span class="text-gray-800 font-medium">2</span>
                     </div>
                   </div>
                 </div>
@@ -1043,8 +1231,23 @@
           </button>
         </div>
       </div>
+        </div>
+      </div>
 
-      <div class="module-content" data-module-content="digital-avatar">
+      <div class="view-panel" data-view-panel="digital-human">
+        <div class="workspace-main dh-workspace">
+          <div class="module-nav" id="dh-module-nav">
+            <div class="module-nav-item active" data-dh-module="digital-avatar">
+              <i class="fas fa-user-tie"></i>
+              <span>数字人口播</span>
+            </div>
+            <div class="module-nav-item" data-dh-module="motion-transfer">
+              <i class="fas fa-running"></i>
+              <span>动作迁移</span>
+            </div>
+          </div>
+
+      <div class="module-content active" data-module-content="digital-avatar">
         <div class="stepper" id="da-stepper">
           <div class="step-item active" data-da-step="1">
             <div class="step-index">1</div>
@@ -1332,17 +1535,17 @@
                     <div class="stat-item flex flex-col items-center">
                       <i class="fas fa-clock text-gray-400"></i>
                       <span>预计时长</span>
-                      <span class="text-gray-700 font-medium">50s</span>
+                      <span class="text-gray-800 font-medium">50s</span>
                     </div>
                     <div class="stat-item flex flex-col items-center">
                       <i class="fas fa-crop text-blue-400"></i>
                       <span>画面比例</span>
-                      <span class="text-gray-700 font-medium">9:16</span>
+                      <span class="text-gray-800 font-medium">9:16</span>
                     </div>
                     <div class="stat-item flex flex-col items-center">
                       <i class="fas fa-user text-purple-500"></i>
                       <span>数字人</span>
-                      <span class="text-gray-700 font-medium">商务女士</span>
+                      <span class="text-gray-800 font-medium">商务女士</span>
                     </div>
                   </div>
                 </div>
@@ -1357,171 +1560,6 @@
           </button>
           <span class="text-sm text-gray-500">第 <span id="da-step-current">1</span> / 4 步</span>
           <button class="btn-primary" id="da-next-step" style="padding: 8px 20px;">
-            下一步 <i class="fas fa-arrow-right ml-1"></i>
-          </button>
-        </div>
-      </div>
-
-      <div class="module-content" data-module-content="image-to-video">
-        <div class="stepper" id="i2v-stepper">
-          <div class="step-item active" data-i2v-step="1">
-            <div class="step-index">1</div>
-            <span class="step-label">配置参数</span>
-          </div>
-          <div class="step-divider"></div>
-          <div class="step-item" data-i2v-step="2">
-            <div class="step-index">2</div>
-            <span class="step-label">生成视频</span>
-          </div>
-        </div>
-
-        <div class="i2v-step-panel active" data-i2v-panel="1">
-          <div class="panel">
-            <div class="section-title">
-              <i class="fas fa-cog text-blue-500 text-sm"></i>
-              <span>配置参数</span>
-            </div>
-            <div class="section-content space-y-4">
-              <div>
-                <label class="form-label">上传视频首帧图像</label>
-                <p class="hint-text" style="margin-top:0; margin-bottom:8px;">上传作为视频起始画面的图片</p>
-                <div class="cm-upload-zone" id="i2v-image-upload">
-                  <i class="fas fa-image"></i>
-                  <div class="cm-upload-title">点击或拖拽首帧图像到此处</div>
-                  <div class="cm-upload-hint">200MB per file · JPG, PNG, WEBP 格式</div>
-                  <button class="btn-primary" style="padding: 8px 20px; margin-top: 12px;">
-                    <i class="fas fa-plus"></i> 选择图片
-                  </button>
-                </div>
-                <div class="cm-material-list" id="i2v-image-list"></div>
-              </div>
-
-              <div>
-                <label class="form-label label-with-help">
-                  <span>视频提示词</span>
-                  <i class="fas fa-circle-question help-icon" title="描述视频中的动作、场景变化等内容"></i>
-                </label>
-                <textarea class="input-field textarea-field" rows="4" id="i2v-prompt" placeholder="例如：镜头缓慢推进，人物微笑点头，背景逐渐虚化">A camera slowly zooms in, the character smiles and nods, and the background gradually blurs</textarea>
-              </div>
-
-              <div>
-                <label class="form-label label-with-help">
-                  <span>生成来源</span>
-                  <i class="fas fa-circle-question help-icon" title="选择图生视频服务的运行位置"></i>
-                </label>
-                <div class="radio-group">
-                  <label class="radio-option">
-                    <input type="radio" name="i2v-source" value="runninghub" checked />
-                    <span class="radio-label"><i class="fas fa-cloud text-blue-500 mr-1"></i>RunningHub（云端）</span>
-                  </label>
-                  <label class="radio-option">
-                    <input type="radio" name="i2v-source" value="api" />
-                    <span class="radio-label"><i class="fas fa-plug text-purple-500 mr-1"></i>API 模型</span>
-                  </label>
-                </div>
-              </div>
-
-              <div>
-                <label class="form-label">图生视频工作流选择</label>
-                <select class="input-field dropdown-field" id="i2v-workflow">
-                  <optgroup label="RunningHub 云端">
-                    <option>svd-xt-1.1.workflow - RunningHub</option>
-                    <option>animatediff-v3.workflow - RunningHub</option>
-                    <option>cogvideox-i2v.workflow - RunningHub</option>
-                  </optgroup>
-                  <optgroup label="本地 ComfyUI">
-                    <option>svd-local.workflow - ComfyUI</option>
-                    <option>animatediff-local.workflow - ComfyUI</option>
-                  </optgroup>
-                  <optgroup label="API 模型">
-                    <option>runway-gen3-turbo.api</option>
-                    <option>pika-v1.5.api</option>
-                    <option>kling-v1.api</option>
-                  </optgroup>
-                </select>
-              </div>
-
-            </div>
-          </div>
-        </div>
-
-        <div class="i2v-step-panel" data-i2v-panel="2">
-          <div class="panel">
-            <div class="section-title">
-              <i class="fas fa-play-circle text-green-500 text-sm"></i>
-              <span>生成视频</span>
-            </div>
-            <div class="section-content">
-              <div class="grid md:grid-cols-2 gap-6">
-                <div>
-                  <button class="btn-primary w-full" id="i2v-generate-btn">
-                    <i class="fas fa-play"></i>
-                    生成视频
-                  </button>
-
-                  <div class="progress-bar mt-4">
-                    <div class="progress-fill" id="i2v-progress-fill" style="width: 0%"></div>
-                  </div>
-
-                  <div id="i2v-generate-messages" class="space-y-3 mt-4" style="display:none;">
-                    <div class="success-tag">
-                      <i class="fas fa-check-circle"></i>
-                      图像分析完成
-                    </div>
-                    <div class="success-tag">
-                      <i class="fas fa-check-circle"></i>
-                      视频生成完成
-                    </div>
-                    <div class="success-tag">
-                      <i class="fas fa-check-circle"></i>
-                      已保存: /outputs/i2v_20260713_135530/output.mp4
-                    </div>
-                  </div>
-
-                  <div class="grid grid-cols-3 gap-4 mt-4 pt-4 border-t border-gray-100">
-                    <div class="stat-item flex flex-col items-center">
-                      <i class="fas fa-clock text-gray-400"></i>
-                      <span>生成耗时</span>
-                      <span class="text-gray-700 font-medium">89.3s</span>
-                    </div>
-                    <div class="stat-item flex flex-col items-center">
-                      <i class="fas fa-film text-blue-400"></i>
-                      <span>视频帧数</span>
-                      <span class="text-gray-700 font-medium">24</span>
-                    </div>
-                    <div class="stat-item flex flex-col items-center">
-                      <i class="fas fa-gauge text-purple-500"></i>
-                      <span>运动强度</span>
-                      <span class="text-gray-700 font-medium">7</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="flex justify-center">
-                  <div class="video-preview" style="max-height: 600px; max-width: 400px; width: 100%;">
-                    <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Cinematic%20scene%20transition%20motion%20blur%20dynamic%20movement&image_size=landscape_16_9" alt="视频预览" />
-                    <div class="video-controls">
-                      <div class="control-bar">
-                        <div class="control-fill" style="width: 42%"></div>
-                      </div>
-                      <div class="control-time">
-                        <span>0:03</span>
-                        <span>0:08</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="step-nav">
-          <button class="btn-secondary" id="i2v-prev-step" disabled>
-            <i class="fas fa-arrow-left mr-1"></i> 上一步
-          </button>
-          <span class="text-sm text-gray-500">第 <span id="i2v-step-current">1</span> / 2 步</span>
-          <button class="btn-primary" id="i2v-next-step" style="padding: 8px 20px;">
             下一步 <i class="fas fa-arrow-right ml-1"></i>
           </button>
         </div>
@@ -1687,12 +1725,12 @@
                     <div class="stat-item flex flex-col items-center">
                       <i class="fas fa-clock text-gray-400"></i>
                       <span>生成耗时</span>
-                      <span class="text-gray-700 font-medium">142.5s</span>
+                      <span class="text-gray-800 font-medium">142.5s</span>
                     </div>
                     <div class="stat-item flex flex-col items-center">
                       <i class="fas fa-person-running text-blue-400"></i>
                       <span>动作时长</span>
-                      <span class="text-gray-700 font-medium">8s</span>
+                      <span class="text-gray-800 font-medium">8s</span>
                     </div>
                   </div>
                 </div>
@@ -1726,22 +1764,853 @@
           </button>
         </div>
       </div>
+
           </div>
+        </div>
+
+      <div class="view-panel" data-view-panel="image-to-video">
+        <div class="workspace-main i2v-workspace">
+      <div class="module-content active" data-module-content="image-to-video">
+        <div class="stepper" id="i2v-stepper">
+          <div class="step-item active" data-i2v-step="1">
+            <div class="step-index">1</div>
+            <span class="step-label">配置参数</span>
+          </div>
+          <div class="step-divider"></div>
+          <div class="step-item" data-i2v-step="2">
+            <div class="step-index">2</div>
+            <span class="step-label">生成视频</span>
+          </div>
+        </div>
+
+        <div class="i2v-step-panel active" data-i2v-panel="1">
+          <div class="panel">
+            <div class="section-title">
+              <i class="fas fa-cog text-blue-500 text-sm"></i>
+              <span>配置参数</span>
+            </div>
+            <div class="section-content space-y-4">
+              <div>
+                <label class="form-label">上传视频首帧图像</label>
+                <p class="hint-text" style="margin-top:0; margin-bottom:8px;">上传作为视频起始画面的图片</p>
+                <div class="cm-upload-zone" id="i2v-image-upload">
+                  <i class="fas fa-image"></i>
+                  <div class="cm-upload-title">点击或拖拽首帧图像到此处</div>
+                  <div class="cm-upload-hint">200MB per file · JPG, PNG, WEBP 格式</div>
+                  <button class="btn-primary" style="padding: 8px 20px; margin-top: 12px;">
+                    <i class="fas fa-plus"></i> 选择图片
+                  </button>
+                </div>
+                <div class="cm-material-list" id="i2v-image-list"></div>
+              </div>
+
+              <div>
+                <label class="form-label label-with-help">
+                  <span>视频提示词</span>
+                  <i class="fas fa-circle-question help-icon" title="描述视频中的动作、场景变化等内容"></i>
+                </label>
+                <textarea class="input-field textarea-field" rows="4" id="i2v-prompt" placeholder="例如：镜头缓慢推进，人物微笑点头，背景逐渐虚化">A camera slowly zooms in, the character smiles and nods, and the background gradually blurs</textarea>
+              </div>
+
+              <div>
+                <label class="form-label label-with-help">
+                  <span>生成来源</span>
+                  <i class="fas fa-circle-question help-icon" title="选择图生视频服务的运行位置"></i>
+                </label>
+                <div class="radio-group">
+                  <label class="radio-option">
+                    <input type="radio" name="i2v-source" value="runninghub" checked />
+                    <span class="radio-label"><i class="fas fa-cloud text-blue-500 mr-1"></i>RunningHub（云端）</span>
+                  </label>
+                  <label class="radio-option">
+                    <input type="radio" name="i2v-source" value="api" />
+                    <span class="radio-label"><i class="fas fa-plug text-purple-500 mr-1"></i>API 模型</span>
+                  </label>
+                </div>
+              </div>
+
+              <div>
+                <label class="form-label">图生视频工作流选择</label>
+                <select class="input-field dropdown-field" id="i2v-workflow">
+                  <optgroup label="RunningHub 云端">
+                    <option>svd-xt-1.1.workflow - RunningHub</option>
+                    <option>animatediff-v3.workflow - RunningHub</option>
+                    <option>cogvideox-i2v.workflow - RunningHub</option>
+                  </optgroup>
+                  <optgroup label="本地 ComfyUI">
+                    <option>svd-local.workflow - ComfyUI</option>
+                    <option>animatediff-local.workflow - ComfyUI</option>
+                  </optgroup>
+                  <optgroup label="API 模型">
+                    <option>runway-gen3-turbo.api</option>
+                    <option>pika-v1.5.api</option>
+                    <option>kling-v1.api</option>
+                  </optgroup>
+                </select>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <div class="i2v-step-panel" data-i2v-panel="2">
+          <div class="panel">
+            <div class="section-title">
+              <i class="fas fa-play-circle text-green-500 text-sm"></i>
+              <span>生成视频</span>
+            </div>
+            <div class="section-content">
+              <div class="grid md:grid-cols-2 gap-6">
+                <div>
+                  <button class="btn-primary w-full" id="i2v-generate-btn">
+                    <i class="fas fa-play"></i>
+                    生成视频
+                  </button>
+
+                  <div class="progress-bar mt-4">
+                    <div class="progress-fill" id="i2v-progress-fill" style="width: 0%"></div>
+                  </div>
+
+                  <div id="i2v-generate-messages" class="space-y-3 mt-4" style="display:none;">
+                    <div class="success-tag">
+                      <i class="fas fa-check-circle"></i>
+                      图像分析完成
+                    </div>
+                    <div class="success-tag">
+                      <i class="fas fa-check-circle"></i>
+                      视频生成完成
+                    </div>
+                    <div class="success-tag">
+                      <i class="fas fa-check-circle"></i>
+                      已保存: /outputs/i2v_20260713_135530/output.mp4
+                    </div>
+                  </div>
+
+                  <div class="grid grid-cols-3 gap-4 mt-4 pt-4 border-t border-gray-100">
+                    <div class="stat-item flex flex-col items-center">
+                      <i class="fas fa-clock text-gray-400"></i>
+                      <span>生成耗时</span>
+                      <span class="text-gray-800 font-medium">89.3s</span>
+                    </div>
+                    <div class="stat-item flex flex-col items-center">
+                      <i class="fas fa-film text-blue-400"></i>
+                      <span>视频帧数</span>
+                      <span class="text-gray-800 font-medium">24</span>
+                    </div>
+                    <div class="stat-item flex flex-col items-center">
+                      <i class="fas fa-gauge text-purple-500"></i>
+                      <span>运动强度</span>
+                      <span class="text-gray-800 font-medium">7</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="flex justify-center">
+                  <div class="video-preview" style="max-height: 600px; max-width: 400px; width: 100%;">
+                    <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Cinematic%20scene%20transition%20motion%20blur%20dynamic%20movement&image_size=landscape_16_9" alt="视频预览" />
+                    <div class="video-controls">
+                      <div class="control-bar">
+                        <div class="control-fill" style="width: 42%"></div>
+                      </div>
+                      <div class="control-time">
+                        <span>0:03</span>
+                        <span>0:08</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="step-nav">
+          <button class="btn-secondary" id="i2v-prev-step" disabled>
+            <i class="fas fa-arrow-left mr-1"></i> 上一步
+          </button>
+          <span class="text-sm text-gray-500">第 <span id="i2v-step-current">1</span> / 2 步</span>
+          <button class="btn-primary" id="i2v-next-step" style="padding: 8px 20px;">
+            下一步 <i class="fas fa-arrow-right ml-1"></i>
+          </button>
         </div>
       </div>
 
-      <div class="view-panel" data-view-panel="short-drama">
-        <div class="panel">
-          <div class="section-title">
-            <i class="fas fa-film text-blue-500 text-sm"></i>
-            <span>AI 短剧</span>
+
           </div>
-          <div class="section-content">
-            <div class="flex flex-col items-center justify-center py-16 text-center text-gray-400">
-              <i class="fas fa-clapperboard text-5xl mb-4 text-gray-300"></i>
-              <h3 class="text-base font-medium text-gray-500 mb-1">AI 短剧功能即将上线</h3>
-              <p class="text-xs">支持多角色、分镜脚本、多场景连续叙事的短剧自动化生成。</p>
+        </div>
+
+
+    </div>
+
+    <div class="w-full">
+      <div class="view-panel" data-view-panel="short-drama">
+        <div class="workspace-main">
+            <!-- 统一的智能体对话框 -->
+            <div class="sd-unified-chat-wrapper">
+              <div class="sd-unified-chat-container">
+                <!-- 内容预览抽屉 -->
+                <div class="sd-preview-drawer" id="sd-preview-drawer">
+                  <div class="sd-preview-drawer-header">
+                    <div class="sd-preview-drawer-title">
+                      <i class="fas fa-file-lines"></i>
+                      <span id="sd-preview-drawer-title-text">内容预览</span>
+                    </div>
+                    <button class="sd-preview-drawer-close" onclick="SDChatAgent.closePreviewDrawer()">
+                      <i class="fas fa-times"></i>
+                    </button>
+                  </div>
+                  <div class="sd-preview-drawer-body" id="sd-preview-drawer-body">
+                    <!-- 预览内容动态填充 -->
+                  </div>
+                  <div class="sd-preview-drawer-footer" id="sd-preview-drawer-footer" style="display:none;">
+                    <!-- 审阅操作按钮动态填充 -->
+                  </div>
+                </div>
+                <div class="sd-preview-drawer-mask" id="sd-preview-drawer-mask" onclick="SDChatAgent.closePreviewDrawer()"></div>
+                <div class="sd-chat-header">
+                  <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-blue-500 flex items-center justify-center">
+                      <i class="fas fa-robot text-white text-sm"></i>
+                    </div>
+                    <div>
+                      <div class="text-sm font-medium text-gray-800">AI 短剧制作助手</div>
+                      <div class="text-xs text-gray-400" id="sd-current-phase">当前阶段：剧本创作</div>
+                    </div>
+                  </div>
+                  <button class="btn-secondary text-xs" id="sd-unified-clear-chat">
+                    <i class="fas fa-trash-alt mr-1"></i>清空对话
+                  </button>
+                </div>
+
+                <div class="sd-chat-messages" id="sd-unified-messages">
+                  <div class="sd-message sd-message-assistant">
+                    <div class="sd-message-avatar">
+                      <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="sd-message-content">
+                      <div class="sd-message-text">
+                        您好！我是 AI 短剧制作助手，很高兴为您服务。
+
+我将引导您完成短剧制作的全流程：
+<ul class="sd-suggestion-list">
+<li><strong>步骤1：剧本创作</strong> - 构思故事、角色和剧情</li>
+<li><strong>步骤2：镜头脚本</strong> - 将剧本转化为分镜头脚本，规划每个镜头的内容</li>
+<li><strong>步骤3：素材生成</strong> - 根据镜头脚本生成场景和角色的视觉素材</li>
+<li><strong>步骤4：镜头生成</strong> - 将素材转化为动态视频</li>
+<li><strong>步骤5：配音合成</strong> - 为角色添加语音配音</li>
+<li><strong>步骤6：后期合成</strong> - 添加BGM、字幕，输出成片</li>
+</ul>
+
+现在让我们从<strong>剧本创作</strong>开始。请告诉我您想创作什么样的短剧？
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="sd-chat-suggestions" id="sd-unified-suggestions">
+                  <div class="text-xs text-gray-500 mb-2">快速开始：</div>
+                  <div class="flex flex-wrap gap-2" id="sd-suggestion-chips">
+                    <button class="sd-suggestion-chip" data-suggestion="我想创作一部现代都市霸道总裁题材的短剧，女主是一名普通职员，机缘巧合下救了男主，男主对她一见钟情。共10集，每集3分钟。">霸道总裁爱上我</button>
+                    <button class="sd-suggestion-chip" data-suggestion="我想创作一部古装穿越短剧，现代程序员穿越到古代，用现代知识改变命运。共15集，每集2分钟。">穿越之程序员在古代</button>
+                    <button class="sd-suggestion-chip" data-suggestion="我想创作一部悬疑推理短剧，一名侦探调查一起离奇失踪案，层层剥茧发现惊人真相。共8集，每集4分钟。">悬疑侦探</button>
+                    <button class="sd-suggestion-chip" data-suggestion="我想创作一部青春校园短剧，讲述一群高中生追逐梦想、友情与爱情的故事。共12集，每集3分钟。">青春校园</button>
+                  </div>
+                </div>
+
+                <div class="sd-chat-input-container">
+                  <textarea
+                    class="sd-chat-input"
+                    id="sd-unified-input"
+                    placeholder="描述您的短剧创意或回答当前阶段的问题..."
+                    rows="3"
+                  ></textarea>
+                  <div class="sd-chat-actions">
+                    <div class="flex items-center gap-2 text-xs text-gray-400">
+                      <i class="fas fa-lightbulb text-amber-400"></i>
+                      <span>提示：我会引导您逐步完成所有制作环节</span>
+                    </div>
+                    <button class="btn-primary" id="sd-unified-send">
+                      <i class="fas fa-paper-plane"></i>
+                      发送
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 步骤进度指示器 -->
+              <div class="sd-progress-sidebar">
+                <div class="sd-progress-title">制作进度</div>
+                <div class="sd-progress-steps">
+                  <div class="sd-progress-step active" data-step="1">
+                    <div class="sd-progress-step-icon">
+                      <i class="fas fa-pen-fancy"></i>
+                    </div>
+                    <div class="sd-progress-step-content">
+                      <div class="sd-progress-step-name">剧本创作</div>
+                      <div class="sd-progress-step-status">进行中</div>
+                    </div>
+                  </div>
+                  <div class="sd-progress-step" data-step="2">
+                    <div class="sd-progress-step-icon">
+                      <i class="fas fa-clapperboard"></i>
+                    </div>
+                    <div class="sd-progress-step-content">
+                      <div class="sd-progress-step-name">镜头脚本</div>
+                      <div class="sd-progress-step-status">待开始</div>
+                    </div>
+                  </div>
+                  <div class="sd-progress-step" data-step="3">
+                    <div class="sd-progress-step-icon">
+                      <i class="fas fa-palette"></i>
+                    </div>
+                    <div class="sd-progress-step-content">
+                      <div class="sd-progress-step-name">素材生成</div>
+                      <div class="sd-progress-step-status">待开始</div>
+                    </div>
+                  </div>
+                  <div class="sd-progress-step" data-step="4">
+                    <div class="sd-progress-step-icon">
+                      <i class="fas fa-film"></i>
+                    </div>
+                    <div class="sd-progress-step-content">
+                      <div class="sd-progress-step-name">镜头生成</div>
+                      <div class="sd-progress-step-status">待开始</div>
+                    </div>
+                  </div>
+                  <div class="sd-progress-step" data-step="5">
+                    <div class="sd-progress-step-icon">
+                      <i class="fas fa-microphone"></i>
+                    </div>
+                    <div class="sd-progress-step-content">
+                      <div class="sd-progress-step-name">配音合成</div>
+                      <div class="sd-progress-step-status">待开始</div>
+                    </div>
+                  </div>
+                  <div class="sd-progress-step" data-step="6">
+                    <div class="sd-progress-step-icon">
+                      <i class="fas fa-wand-magic-sparkles"></i>
+                    </div>
+                    <div class="sd-progress-step-content">
+                      <div class="sd-progress-step-name">后期合成</div>
+                      <div class="sd-progress-step-status">待开始</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
+
+            <div style="display: none;">
+            <div class="stepper" id="sd-stepper">
+              <div class="step-item active" data-sd-step="1">
+                <div class="step-index">1</div>
+                <span class="step-label">剧本创作</span>
+              </div>
+              <div class="step-divider"></div>
+              <div class="step-item" data-sd-step="2">
+                <div class="step-index">2</div>
+                <span class="step-label">镜头脚本</span>
+              </div>
+              <div class="step-divider"></div>
+              <div class="step-item" data-sd-step="3">
+                <div class="step-index">3</div>
+                <span class="step-label">素材生成</span>
+              </div>
+              <div class="step-divider"></div>
+              <div class="step-item" data-sd-step="4">
+                <div class="step-index">4</div>
+                <span class="step-label">镜头生成</span>
+              </div>
+              <div class="step-divider"></div>
+              <div class="step-item" data-sd-step="5">
+                <div class="step-index">5</div>
+                <span class="step-label">配音合成</span>
+              </div>
+              <div class="step-divider"></div>
+              <div class="step-item" data-sd-step="6">
+                <div class="step-index">6</div>
+                <span class="step-label">后期合成</span>
+              </div>
+            </div>
+
+            <!-- 第1步：剧本创作 -->
+            <div class="sd-step-panel active" data-sd-panel="1">
+              <div class="panel">
+                <div class="section-title">
+                  <i class="fas fa-pen-fancy text-purple-500 text-sm"></i>
+                  <span>剧本创作</span>
+                </div>
+                <div class="section-content">
+                  <div class="sd-chat-container">
+                    <div class="sd-chat-header">
+                      <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-blue-500 flex items-center justify-center">
+                          <i class="fas fa-robot text-white text-sm"></i>
+                        </div>
+                        <div>
+                          <div class="text-sm font-medium text-gray-800">AI 编剧助手</div>
+                          <div class="text-xs text-gray-400">帮您创作精彩短剧剧本</div>
+                        </div>
+                      </div>
+                      <button class="btn-secondary text-xs" id="sd-clear-chat">
+                        <i class="fas fa-trash-alt mr-1"></i>清空对话
+                      </button>
+                    </div>
+
+                    <div class="sd-chat-messages" id="sd-chat-messages">
+                      <div class="sd-message sd-message-assistant">
+                        <div class="sd-message-avatar">
+                          <i class="fas fa-robot"></i>
+                        </div>
+                        <div class="sd-message-content">
+                          <div class="sd-message-text">
+                            您好！我是 AI 编剧助手，很高兴为您服务。请告诉我您想创作什么样的短剧？比如：
+                            <ul class="sd-suggestion-list">
+                              <li>• 短剧类型（都市言情、古装穿越、悬疑推理、霸道总裁等）</li>
+                              <li>• 故事主题或核心冲突</li>
+                              <li>• 主要角色设定</li>
+                              <li>• 预期集数或时长</li>
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="sd-chat-suggestions" id="sd-chat-suggestions">
+                      <div class="text-xs text-gray-500 mb-2">快速开始：</div>
+                      <div class="flex flex-wrap gap-2">
+                        <button class="sd-suggestion-chip" data-suggestion="我想创作一部现代都市霸道总裁题材的短剧，女主是一名普通职员，机缘巧合下救了男主，男主对她一见钟情。共10集，每集3分钟。">霸道总裁爱上我</button>
+                        <button class="sd-suggestion-chip" data-suggestion="我想创作一部古装穿越短剧，现代程序员穿越到古代，用现代知识改变命运。共15集，每集2分钟。">穿越之程序员在古代</button>
+                        <button class="sd-suggestion-chip" data-suggestion="我想创作一部悬疑推理短剧，一名侦探调查一起离奇失踪案，层层剥茧发现惊人真相。共8集，每集4分钟。">悬疑侦探</button>
+                        <button class="sd-suggestion-chip" data-suggestion="我想创作一部青春校园短剧，讲述一群高中生追逐梦想、友情与爱情的故事。共12集，每集3分钟。">青春校园</button>
+                      </div>
+                    </div>
+
+                    <div class="sd-chat-input-container">
+                      <textarea
+                        class="sd-chat-input"
+                        id="sd-chat-input"
+                        placeholder="描述您的短剧创意，AI 助手将帮您完善剧本..."
+                        rows="3"
+                      ></textarea>
+                      <div class="sd-chat-actions">
+                        <div class="flex items-center gap-2 text-xs text-gray-400">
+                          <i class="fas fa-lightbulb text-amber-400"></i>
+                          <span>提示：描述越详细，生成的剧本越符合预期</span>
+                        </div>
+                        <button class="btn-primary" id="sd-send-message">
+                          <i class="fas fa-paper-plane"></i>
+                          发送
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 第2步：镜头脚本 -->
+            <div class="sd-step-panel" data-sd-panel="2">
+              <div class="panel">
+                <div class="section-title">
+                  <i class="fas fa-clapperboard text-blue-500 text-sm"></i>
+                  <span>镜头脚本</span>
+                </div>
+                <div class="section-content">
+                  <div class="sd-chat-container">
+                    <div class="sd-chat-header">
+                      <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center">
+                          <i class="fas fa-clapperboard text-white text-sm"></i>
+                        </div>
+                        <div>
+                          <div class="text-sm font-medium text-gray-800">镜头脚本助手</div>
+                          <div class="text-xs text-gray-400">将剧本转化为分镜头脚本</div>
+                        </div>
+                      </div>
+                      <button class="btn-secondary text-xs" id="sd-clear-chat-2">
+                        <i class="fas fa-trash-alt mr-1"></i>清空对话
+                      </button>
+                    </div>
+
+                    <div class="sd-chat-messages" id="sd-chat-messages-2">
+                      <div class="sd-message sd-message-assistant">
+                        <div class="sd-message-avatar">
+                          <i class="fas fa-clapperboard"></i>
+                        </div>
+                        <div class="sd-message-content">
+                          <div class="sd-message-text">
+                            您好！我是镜头脚本助手。我会将您的剧本转化为详细的分镜头脚本。
+
+请告诉我：
+<ul class="sd-suggestion-list">
+<li>• 每个场景的镜头数量（通常3-5个镜头为一个场景）</li>
+<li>• 镜头景别偏好（特写、近景、中景、全景、远景）</li>
+<li>• 镜头运动（固定、推拉、摇移、跟拍等）</li>
+<li>• 拍摄角度（平视、俯视、仰视、侧面等）</li>
+<li>• 每个镜头的时长（建议2-8秒）</li>
+</ul>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="sd-chat-suggestions" id="sd-chat-suggestions-2">
+                      <div class="text-xs text-gray-500 mb-2">快速选择：</div>
+                      <div class="flex flex-wrap gap-2">
+                        <button class="sd-suggestion-chip" data-suggestion="经典镜头配置：每场景4个镜头，以中景和近景为主，镜头运动平稳，多用推拉镜头，平视角度为主，每镜头3-5秒。">经典影视风格</button>
+                        <button class="sd-suggestion-chip" data-suggestion="快节奏配置：每场景5-6个镜头，特写和近景为主，快速切换，镜头运动活跃，多角度拍摄，每镜头2-3秒。">快节奏剪辑</button>
+                        <button class="sd-suggestion-chip" data-suggestion="电影感配置：每场景3-4个镜头，全景和中景为主，长镜头为主，缓慢推拉，以平视和微仰视为主，每镜头5-8秒。">电影长镜头</button>
+                        <button class="sd-suggestion-chip" data-suggestion="纪实风格：每场景3-5个镜头，自然景别分布，镜头相对固定，手持摇晃感，多用平视角度，每镜头3-6秒。">纪实风格</button>
+                      </div>
+                    </div>
+
+                    <div class="sd-chat-input-container">
+                      <textarea
+                        class="sd-chat-input"
+                        id="sd-chat-input-2"
+                        placeholder="描述您期望的镜头脚本风格和要求..."
+                        rows="3"
+                      ></textarea>
+                      <div class="sd-chat-actions">
+                        <div class="flex items-center gap-2 text-xs text-gray-400">
+                          <i class="fas fa-lightbulb text-amber-400"></i>
+                          <span>提示：镜头脚本是连接剧本和视觉呈现的关键环节</span>
+                        </div>
+                        <button class="btn-primary" id="sd-send-message-2">
+                          <i class="fas fa-paper-plane"></i>
+                          发送
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 第3步：素材生成 -->
+            <div class="sd-step-panel" data-sd-panel="3">
+              <div class="panel">
+                <div class="section-title">
+                  <i class="fas fa-palette text-pink-500 text-sm"></i>
+                  <span>素材生成</span>
+                </div>
+                <div class="section-content">
+                  <div class="sd-chat-container">
+                    <div class="sd-chat-header">
+                      <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-pink-400 to-rose-500 flex items-center justify-center">
+                          <i class="fas fa-palette text-white text-sm"></i>
+                        </div>
+                        <div>
+                          <div class="text-sm font-medium text-gray-800">素材生成助手</div>
+                          <div class="text-xs text-gray-400">根据镜头脚本生成视觉素材</div>
+                        </div>
+                      </div>
+                      <button class="btn-secondary text-xs" id="sd-clear-chat-3">
+                        <i class="fas fa-trash-alt mr-1"></i>清空对话
+                      </button>
+                    </div>
+
+                    <div class="sd-chat-messages" id="sd-chat-messages-3">
+                      <div class="sd-message sd-message-assistant">
+                        <div class="sd-message-avatar">
+                          <i class="fas fa-palette"></i>
+                        </div>
+                        <div class="sd-message-content">
+                          <div class="sd-message-text">
+                            您好！我是素材生成助手。我会根据镜头脚本为每个镜头生成相应的视觉素材。
+
+请告诉我：
+<ul class="sd-suggestion-list">
+<li>• 希望使用的素材风格（写实、插画、3D、手绘等）</li>
+<li>• 画面色调偏好（明亮、暗黑、温暖、冷色等）</li>
+<li>• 是否有特定的视觉参考</li>
+<li>• 素材生成服务（RunningHub云端 / 本地ComfyUI / API模型）</li>
+</ul>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="sd-chat-suggestions" id="sd-chat-suggestions-3">
+                      <div class="text-xs text-gray-500 mb-2">快速选择：</div>
+                      <div class="flex flex-wrap gap-2">
+                        <button class="sd-suggestion-chip" data-suggestion="使用写实风格生成素材，画面要求高清细腻，色调偏电影感，使用RunningHub云端服务。">写实电影风</button>
+                        <button class="sd-suggestion-chip" data-suggestion="使用扁平插画风格，色彩明亮活泼，适合现代都市题材，使用API模型生成。">扁平插画风</button>
+                        <button class="sd-suggestion-chip" data-suggestion="使用中国风水墨画风格，适合古装题材，使用本地ComfyUI生成。">中国水墨风</button>
+                        <button class="sd-suggestion-chip" data-suggestion="使用赛博朋克风格，霓虹灯光效果，暗色调，科技感强。">赛博朋克风</button>
+                      </div>
+                    </div>
+
+                    <div class="sd-chat-input-container">
+                      <textarea
+                        class="sd-chat-input"
+                        id="sd-chat-input-3"
+                        placeholder="描述您想要的素材风格和要求..."
+                        rows="3"
+                      ></textarea>
+                      <div class="sd-chat-actions">
+                        <div class="flex items-center gap-2 text-xs text-gray-400">
+                          <i class="fas fa-lightbulb text-amber-400"></i>
+                          <span>提示：描述越详细，生成的素材越符合您的期望</span>
+                        </div>
+                        <button class="btn-primary" id="sd-send-message-3">
+                          <i class="fas fa-paper-plane"></i>
+                          发送
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 第4步：镜头生成 -->
+            <div class="sd-step-panel" data-sd-panel="4">
+              <div class="panel">
+                <div class="section-title">
+                  <i class="fas fa-film text-cyan-500 text-sm"></i>
+                  <span>镜头生成</span>
+                </div>
+                <div class="section-content">
+                  <div class="sd-chat-container">
+                    <div class="sd-chat-header">
+                      <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-400 to-teal-500 flex items-center justify-center">
+                          <i class="fas fa-film text-white text-sm"></i>
+                        </div>
+                        <div>
+                          <div class="text-sm font-medium text-gray-800">视频生成助手</div>
+                          <div class="text-xs text-gray-400">将素材合成为动态视频片段</div>
+                        </div>
+                      </div>
+                      <button class="btn-secondary text-xs" id="sd-clear-chat-4">
+                        <i class="fas fa-trash-alt mr-1"></i>清空对话
+                      </button>
+                    </div>
+
+                    <div class="sd-chat-messages" id="sd-chat-messages-4">
+                      <div class="sd-message sd-message-assistant">
+                        <div class="sd-message-avatar">
+                          <i class="fas fa-film"></i>
+                        </div>
+                        <div class="sd-message-content">
+                          <div class="sd-message-text">
+                            您好！我是视频生成助手。我会将静态素材转化为动态视频片段。
+
+请告诉我：
+<ul class="sd-suggestion-list">
+<li>• 视频生成方式（图生视频 / 动作迁移 / 特效合成）</li>
+<li>• 动态效果需求（镜头运动、人物动作、场景变化）</li>
+<li>• 转场效果偏好（淡入淡出、切换、特效转场）</li>
+<li>• 生成服务选择（RunningHub / ComfyUI / API）</li>
+</ul>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="sd-chat-suggestions" id="sd-chat-suggestions-4">
+                      <div class="text-xs text-gray-500 mb-2">快速选择：</div>
+                      <div class="flex flex-wrap gap-2">
+                        <button class="sd-suggestion-chip" data-suggestion="使用图生视频，添加缓慢的推拉镜头运动，自然的转场效果，使用RunningHub云端服务。">平稳图生视频</button>
+                        <button class="sd-suggestion-chip" data-suggestion="使用动作迁移技术，为人物添加自然的动作和表情，使用API模型生成。">人物动作迁移</button>
+                        <button class="sd-suggestion-chip" data-suggestion="添加特效合成，粒子效果、光效、氛围渲染，使用本地ComfyUI。">特效合成</button>
+                        <button class="sd-suggestion-chip" data-suggestion="快速剪辑模式，简单的淡入淡出转场，保持画面稳定。">快速剪辑</button>
+                      </div>
+                    </div>
+
+                    <div class="sd-chat-input-container">
+                      <textarea
+                        class="sd-chat-input"
+                        id="sd-chat-input-4"
+                        placeholder="描述您需要的视频效果和动态需求..."
+                        rows="3"
+                      ></textarea>
+                      <div class="sd-chat-actions">
+                        <div class="flex items-center gap-2 text-xs text-gray-400">
+                          <i class="fas fa-lightbulb text-amber-400"></i>
+                          <span>提示：动态效果让画面更生动，但生成时间会更长</span>
+                        </div>
+                        <button class="btn-primary" id="sd-send-message-4">
+                          <i class="fas fa-paper-plane"></i>
+                          发送
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 第5步：配音合成 -->
+            <div class="sd-step-panel" data-sd-panel="5">
+              <div class="panel">
+                <div class="section-title">
+                  <i class="fas fa-microphone text-red-500 text-sm"></i>
+                  <span>配音合成</span>
+                </div>
+                <div class="section-content">
+                  <div class="sd-chat-container">
+                    <div class="sd-chat-header">
+                      <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-red-400 to-pink-500 flex items-center justify-center">
+                          <i class="fas fa-microphone text-white text-sm"></i>
+                        </div>
+                        <div>
+                          <div class="text-sm font-medium text-gray-800">配音合成助手</div>
+                          <div class="text-xs text-gray-400">为角色配音，合成对白与旁白</div>
+                        </div>
+                      </div>
+                      <button class="btn-secondary text-xs" id="sd-clear-chat-5">
+                        <i class="fas fa-trash-alt mr-1"></i>清空对话
+                      </button>
+                    </div>
+
+                    <div class="sd-chat-messages" id="sd-chat-messages-5">
+                      <div class="sd-message sd-message-assistant">
+                        <div class="sd-message-avatar">
+                          <i class="fas fa-microphone"></i>
+                        </div>
+                        <div class="sd-message-content">
+                          <div class="sd-message-text">
+                            您好！我是配音合成助手。我会为您的短剧角色生成语音配音。
+
+请告诉我：
+<ul class="sd-suggestion-list">
+<li>• 每个角色的音色需求（男声/女声，音色特点）</li>
+<li>• 语速和语调偏好（快速/舒缓，激动/平静）</li>
+<li>• 情感表达要求（开心/悲伤/愤怒/温柔等）</li>
+<li>• 配音服务选择（本地Edge TTS / ComfyUI / API模型）</li>
+</ul>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="sd-chat-suggestions" id="sd-chat-suggestions-5">
+                      <div class="text-xs text-gray-500 mb-2">快速选择：</div>
+                      <div class="flex flex-wrap gap-2">
+                        <button class="sd-suggestion-chip" data-suggestion="男主角使用沉稳磁性的男声，语速适中；女主角使用温柔知性的女声，语速稍慢。使用本地Edge TTS。">经典男女主配音</button>
+                        <button class="sd-suggestion-chip" data-suggestion="使用播音腔专业男声作为旁白，音色浑厚，语速稳定，情感中立。">专业旁白</button>
+                        <button class="sd-suggestion-chip" data-suggestion="多角色配音，每个角色使用不同音色，语速根据角色性格调整，使用API模型。">多角色配音</button>
+                        <button class="sd-suggestion-chip" data-suggestion="青春活力风格，使用年轻化的音色，语速偏快，情感饱满。">青春活力</button>
+                      </div>
+                    </div>
+
+                    <div class="sd-chat-input-container">
+                      <textarea
+                        class="sd-chat-input"
+                        id="sd-chat-input-5"
+                        placeholder="描述每个角色的配音需求..."
+                        rows="3"
+                      ></textarea>
+                      <div class="sd-chat-actions">
+                        <div class="flex items-center gap-2 text-xs text-gray-400">
+                          <i class="fas fa-lightbulb text-amber-400"></i>
+                          <span>提示：角色配音要符合人物性格和剧情氛围</span>
+                        </div>
+                        <button class="btn-primary" id="sd-send-message-5">
+                          <i class="fas fa-paper-plane"></i>
+                          发送
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 第6步：后期合成 -->
+            <div class="sd-step-panel" data-sd-panel="6">
+              <div class="panel">
+                <div class="section-title">
+                  <i class="fas fa-sliders-h text-green-500 text-sm"></i>
+                  <span>后期合成</span>
+                </div>
+                <div class="section-content">
+                  <div class="sd-chat-container">
+                    <div class="sd-chat-header">
+                      <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center">
+                          <i class="fas fa-wand-magic-sparkles text-white text-sm"></i>
+                        </div>
+                        <div>
+                          <div class="text-sm font-medium text-gray-800">后期合成助手</div>
+                          <div class="text-xs text-gray-400">添加BGM、字幕、特效，完成最终渲染</div>
+                        </div>
+                      </div>
+                      <button class="btn-secondary text-xs" id="sd-clear-chat-6">
+                        <i class="fas fa-trash-alt mr-1"></i>清空对话
+                      </button>
+                    </div>
+
+                    <div class="sd-chat-messages" id="sd-chat-messages-6">
+                      <div class="sd-message sd-message-assistant">
+                        <div class="sd-message-avatar">
+                          <i class="fas fa-wand-magic-sparkles"></i>
+                        </div>
+                        <div class="sd-message-content">
+                          <div class="sd-message-text">
+                            您好！我是后期合成助手。我会为您的短剧添加最后的润色。
+
+请告诉我：
+<ul class="sd-suggestion-list">
+<li>• 背景音乐风格（激昂、舒缓、悬疑、浪漫等）</li>
+<li>• 字幕样式需求（字体、颜色、位置、特效）</li>
+<li>• 片头片尾设计（是否需要、时长、风格）</li>
+<li>• 调色风格（电影感、明亮、暗黑、复古等）</li>
+<li>• 输出格式和分辨率（1080p / 4K，MP4 / MOV）</li>
+</ul>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="sd-chat-suggestions" id="sd-chat-suggestions-6">
+                      <div class="text-xs text-gray-500 mb-2">快速选择：</div>
+                      <div class="flex flex-wrap gap-2">
+                        <button class="sd-suggestion-chip" data-suggestion="添加电影感配乐，白色字幕居中显示，简洁片头3秒，电影级调色，输出1080p MP4格式。">电影级成片</button>
+                        <button class="sd-suggestion-chip" data-suggestion="轻快的背景音乐，彩色动态字幕，无片头片尾，明亮调色风格，适合社交媒体分享。">社交媒体版</button>
+                        <button class="sd-suggestion-chip" data-suggestion="悬疑紧张配乐，暗色调色，特效字幕，5秒悬念片头，输出4K高清。">悬疑高清版</button>
+                        <button class="sd-suggestion-chip" data-suggestion="极简风格，仅添加必要字幕，无BGM，保持原声，输出1080p。">极简原声版</button>
+                      </div>
+                    </div>
+
+                    <div class="sd-chat-input-container">
+                      <textarea
+                        class="sd-chat-input"
+                        id="sd-chat-input-6"
+                        placeholder="描述您期望的后期效果和输出要求..."
+                        rows="3"
+                      ></textarea>
+                      <div class="sd-chat-actions">
+                        <div class="flex items-center gap-2 text-xs text-gray-400">
+                          <i class="fas fa-lightbulb text-amber-400"></i>
+                          <span>提示：后期处理是短剧品质的最后保障</span>
+                        </div>
+                        <button class="btn-primary" id="sd-send-message-6">
+                          <i class="fas fa-paper-plane"></i>
+                          发送
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="step-nav">
+              <button class="btn-secondary" id="sd-prev-step" disabled>
+                <i class="fas fa-arrow-left mr-1"></i> 上一步
+              </button>
+              <span class="text-sm text-gray-500">第 <span id="sd-step-current">1</span> / 6 步</span>
+              <button class="btn-primary" id="sd-next-step" style="padding: 8px 20px;">
+                下一步 <i class="fas fa-arrow-right ml-1"></i>
+              </button>
+            </div>
+            </div>
+            <!-- 结束隐藏的旧步骤 -->
           </div>
         </div>
       </div>
@@ -1852,7 +2721,7 @@
               <div class="flex items-center gap-2 p-2 border border-gray-100 rounded-lg bg-gray-50">
                 <i class="fas fa-cube text-gray-400"></i>
                 <div class="flex-1">
-                  <div class="text-sm text-gray-700 font-medium">my-private-llm</div>
+                  <div class="text-sm text-gray-800 font-medium">my-private-llm</div>
                   <div class="text-xs text-gray-400">https://internal.company.com/v1</div>
                 </div>
                 <button class="btn-secondary text-xs">编辑</button>
@@ -1952,7 +2821,7 @@
 
           <div class="config-section">
             <div class="config-section-title">
-              <i class="fab fa-openai text-gray-700"></i>
+              <i class="fab fa-openai text-gray-800"></i>
               <span>OpenAI / GPT Image</span>
               <label class="toggle-switch">
                 <input type="checkbox" checked />
