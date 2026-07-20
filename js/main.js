@@ -272,7 +272,20 @@ document.getElementById('cm-prev-step')?.addEventListener('click', () => {
   if (cmCurrentStep > 1) renderCmStep(cmCurrentStep - 1);
 });
 document.getElementById('cm-next-step')?.addEventListener('click', () => {
-  if (cmCurrentStep < CM_TOTAL_STEPS) renderCmStep(cmCurrentStep + 1);
+  if (cmCurrentStep < CM_TOTAL_STEPS) {
+    // 检查余额是否充足
+    if (typeof TokenManager !== 'undefined' && !TokenManager.checkBalance()) {
+      return;
+    }
+    renderCmStep(cmCurrentStep + 1);
+    // 模拟Token消耗
+    if (typeof TokenManager !== 'undefined') {
+      const modelSelect = document.getElementById('sd-model-select');
+      const currentModel = modelSelect ? modelSelect.value : 'GPT-4o';
+      const tokenAmount = Math.floor(Math.random() * 6000) + 1500;
+      TokenManager.recordUsage(currentModel, 'AI短视频', tokenAmount);
+    }
+  }
 });
 document.querySelectorAll('[data-cm-step]').forEach(item => {
   item.addEventListener('click', () => {
@@ -435,7 +448,20 @@ document.getElementById('da-prev-step')?.addEventListener('click', () => {
   if (daCurrentStep > 1) renderDaStep(daCurrentStep - 1);
 });
 document.getElementById('da-next-step')?.addEventListener('click', () => {
-  if (daCurrentStep < DA_TOTAL_STEPS) renderDaStep(daCurrentStep + 1);
+  if (daCurrentStep < DA_TOTAL_STEPS) {
+    // 检查余额是否充足
+    if (typeof TokenManager !== 'undefined' && !TokenManager.checkBalance()) {
+      return;
+    }
+    renderDaStep(daCurrentStep + 1);
+    // 模拟Token消耗
+    if (typeof TokenManager !== 'undefined') {
+      const modelSelect = document.getElementById('sd-model-select');
+      const currentModel = modelSelect ? modelSelect.value : 'GPT-4o';
+      const tokenAmount = Math.floor(Math.random() * 7000) + 3000;
+      TokenManager.recordUsage(currentModel, '数字人', tokenAmount);
+    }
+  }
 });
 document.querySelectorAll('[data-da-step]').forEach(item => {
   item.addEventListener('click', () => {
@@ -644,7 +670,20 @@ document.getElementById('i2v-prev-step')?.addEventListener('click', () => {
   if (i2vCurrentStep > 1) renderI2vStep(i2vCurrentStep - 1);
 });
 document.getElementById('i2v-next-step')?.addEventListener('click', () => {
-  if (i2vCurrentStep < I2V_TOTAL_STEPS) renderI2vStep(i2vCurrentStep + 1);
+  if (i2vCurrentStep < I2V_TOTAL_STEPS) {
+    // 检查余额是否充足
+    if (typeof TokenManager !== 'undefined' && !TokenManager.checkBalance()) {
+      return;
+    }
+    renderI2vStep(i2vCurrentStep + 1);
+    // 模拟Token消耗
+    if (typeof TokenManager !== 'undefined') {
+      const modelSelect = document.getElementById('sd-model-select');
+      const currentModel = modelSelect ? modelSelect.value : 'GPT-4o';
+      const tokenAmount = Math.floor(Math.random() * 9000) + 4000;
+      TokenManager.recordUsage(currentModel, '图生视频', tokenAmount);
+    }
+  }
 });
 document.querySelectorAll('[data-i2v-step]').forEach(item => {
   item.addEventListener('click', () => {
@@ -766,7 +805,20 @@ document.getElementById('mt-prev-step')?.addEventListener('click', () => {
   if (mtCurrentStep > 1) renderMtStep(mtCurrentStep - 1);
 });
 document.getElementById('mt-next-step')?.addEventListener('click', () => {
-  if (mtCurrentStep < MT_TOTAL_STEPS) renderMtStep(mtCurrentStep + 1);
+  if (mtCurrentStep < MT_TOTAL_STEPS) {
+    // 检查余额是否充足
+    if (typeof TokenManager !== 'undefined' && !TokenManager.checkBalance()) {
+      return;
+    }
+    renderMtStep(mtCurrentStep + 1);
+    // 模拟Token消耗
+    if (typeof TokenManager !== 'undefined') {
+      const modelSelect = document.getElementById('sd-model-select');
+      const currentModel = modelSelect ? modelSelect.value : 'GPT-4o';
+      const tokenAmount = Math.floor(Math.random() * 8000) + 3000;
+      TokenManager.recordUsage(currentModel, '数字人', tokenAmount);
+    }
+  }
 });
 document.querySelectorAll('[data-mt-step]').forEach(item => {
   item.addEventListener('click', () => {
@@ -1138,7 +1190,20 @@ document.getElementById('prev-step').addEventListener('click', () => {
   if (currentStep > 1) renderStep(currentStep - 1);
 });
 document.getElementById('next-step').addEventListener('click', () => {
-  if (currentStep < TOTAL_STEPS) renderStep(currentStep + 1);
+  if (currentStep < TOTAL_STEPS) {
+    // 检查余额是否充足
+    if (typeof TokenManager !== 'undefined' && !TokenManager.checkBalance()) {
+      return;
+    }
+    renderStep(currentStep + 1);
+    // 模拟Token消耗
+    if (typeof TokenManager !== 'undefined') {
+      const modelSelect = document.getElementById('sd-model-select');
+      const currentModel = modelSelect ? modelSelect.value : 'GPT-4o';
+      const tokenAmount = Math.floor(Math.random() * 8000) + 2000; // 2000-10000
+      TokenManager.recordUsage(currentModel, 'AI短视频', tokenAmount);
+    }
+  }
 });
 document.querySelectorAll('.step-item').forEach(item => {
   item.addEventListener('click', () => {
@@ -1788,8 +1853,21 @@ const SDChatAgent = {
 
     if (!message) return;
 
+    // 检查余额是否充足
+    if (typeof TokenManager !== 'undefined' && !TokenManager.checkBalance()) {
+      return;
+    }
+
     this.addMessage('user', message);
     inputField.value = '';
+
+    // 记录Token消耗
+    if (typeof TokenManager !== 'undefined') {
+      const modelSelect = document.getElementById('sd-model-select');
+      const currentModel = modelSelect ? modelSelect.value : 'GPT-4o';
+      const tokenAmount = Math.floor(Math.random() * 12000) + 5000; // 5000-17000
+      TokenManager.recordUsage(currentModel, 'AI短剧', tokenAmount);
+    }
 
     if (this.stepPhase === 'awaiting_modification') {
       // 用户在文本框中输入了修改反馈，触发重新生成
@@ -1877,6 +1955,12 @@ const SDChatAgent = {
       return this.generateShotParameters(userMessage);
     } else if (step === 3) {
       return this.generateMaterialParameters(userMessage);
+    } else if (step === 4) {
+      return this.generateVideoParameters(userMessage);
+    } else if (step === 5) {
+      return this.generateVoiceParameters(userMessage);
+    } else if (step === 6) {
+      return this.generatePostParameters(userMessage);
     }
     return [];
   },
@@ -2133,6 +2217,112 @@ const SDChatAgent = {
     ];
   },
 
+  generateVideoParameters: function(userMessage) {
+    return [
+      {
+        label: '生成方式？',
+        name: 'videoMethod',
+        options: [
+          { value: 'i2v', label: '图生视频（推荐）', selected: true },
+          { value: 'motion', label: '动作迁移', selected: false },
+          { value: 'effect', label: '特效合成', selected: false }
+        ]
+      },
+      {
+        label: '动态效果？',
+        name: 'dynamicEffect',
+        options: [
+          { value: 'smooth', label: '自然流畅', selected: true },
+          { value: 'intense', label: '强烈动感', selected: false },
+          { value: 'subtle', label: '微妙细腻', selected: false }
+        ]
+      },
+      {
+        label: '转场效果？',
+        name: 'transition',
+        options: [
+          { value: 'fade', label: '淡入淡出', selected: true },
+          { value: 'cut', label: '直接切换', selected: false },
+          { value: 'effect', label: '特效转场', selected: false }
+        ]
+      }
+    ];
+  },
+
+  generateVoiceParameters: function(userMessage) {
+    return [
+      {
+        label: '男主音色？',
+        name: 'maleVoice',
+        options: [
+          { value: 'mature', label: '成熟男声', selected: true },
+          { value: 'young', label: '青年男声', selected: false },
+          { value: 'deep', label: '低沉磁性', selected: false }
+        ]
+      },
+      {
+        label: '女主音色？',
+        name: 'femaleVoice',
+        options: [
+          { value: 'gentle', label: '温柔女声', selected: true },
+          { value: 'sweet', label: '甜美可爱', selected: false },
+          { value: 'elegant', label: '优雅知性', selected: false }
+        ]
+      },
+      {
+        label: '语速节奏？',
+        name: 'speechRate',
+        options: [
+          { value: 'normal', label: '正常语速', selected: true },
+          { value: 'fast', label: '快速紧凑', selected: false },
+          { value: 'slow', label: '舒缓从容', selected: false }
+        ]
+      }
+    ];
+  },
+
+  generatePostParameters: function(userMessage) {
+    return [
+      {
+        label: '背景音乐？',
+        name: 'bgmStyle',
+        options: [
+          { value: 'soothing', label: '舒缓温馨', selected: true },
+          { value: 'intense', label: '激昂紧张', selected: false },
+          { value: 'romantic', label: '浪漫甜蜜', selected: false },
+          { value: 'suspense', label: '悬疑神秘', selected: false }
+        ]
+      },
+      {
+        label: '字幕样式？',
+        name: 'subtitleStyle',
+        options: [
+          { value: 'simple', label: '简洁白色居中', selected: true },
+          { value: 'fancy', label: '华丽描边', selected: false },
+          { value: 'minimal', label: '极简透明', selected: false }
+        ]
+      },
+      {
+        label: '调色风格？',
+        name: 'colorGrading',
+        options: [
+          { value: 'cinematic', label: '电影感', selected: true },
+          { value: 'bright', label: '明亮清新', selected: false },
+          { value: 'dark', label: '暗黑风格', selected: false }
+        ]
+      },
+      {
+        label: '输出格式？',
+        name: 'outputFormat',
+        options: [
+          { value: '1080p_mp4', label: '1080p MP4（推荐）', selected: true },
+          { value: '4k_mp4', label: '4K MP4', selected: false },
+          { value: '1080p_mov', label: '1080p MOV', selected: false }
+        ]
+      }
+    ];
+  },
+
   renderParameterGroups: function(params) {
     return params.map((param, index) => {
       if (param.type === 'textarea') {
@@ -2165,6 +2355,11 @@ const SDChatAgent = {
     const panels = document.querySelectorAll('.sd-confirmation-panel');
     const latestPanel = panels[panels.length - 1];
     if (!latestPanel) return;
+
+    // 检查余额是否充足
+    if (typeof TokenManager !== 'undefined' && !TokenManager.checkBalance()) {
+      return;
+    }
 
     const selectedParams = {};
     latestPanel.querySelectorAll('input[type="radio"]:checked').forEach(input => {
@@ -2714,6 +2909,45 @@ const SDChatAgent = {
     if (prevArtifact) {
       this.addMessage('assistant', `<div class="sd-context-note"><i class="fas fa-link"></i> 已加载上一步的<strong>${this.stepMeta[this.currentStep - 1].artifactName}</strong>作为本阶段的输入基础。</div>`);
     }
+
+    // 如果是步骤2-6，自动生成默认参数确认面板
+    if (this.currentStep >= 2 && this.currentStep <= 6) {
+      setTimeout(() => {
+        this.autoGenerateNextStepConfirmation();
+      }, 800);
+    }
+  },
+
+  autoGenerateNextStepConfirmation: function() {
+    // 根据上一步的产出物，自动生成当前步骤的默认参数和确认面板
+    const prevArtifact = this.stepArtifacts[this.currentStep - 1];
+    let defaultMessage = '';
+
+    // 根据步骤生成默认消息
+    if (this.currentStep === 2) {
+      // 镜头脚本：基于剧本生成默认镜头参数
+      defaultMessage = '经典镜头配置：每场景4个镜头，以中景和近景为主，镜头运动平稳，多用推拉镜头，平视角度为主，每镜头3-5秒。';
+    } else if (this.currentStep === 3) {
+      // 素材生成：基于镜头脚本生成默认素材参数
+      defaultMessage = '写实风格，明亮色调，使用RunningHub云端生成服务。';
+    } else if (this.currentStep === 4) {
+      // 镜头生成：基于素材生成默认视频参数
+      defaultMessage = '图生视频方式，镜头运动自然流畅，使用淡入淡出转场效果。';
+    } else if (this.currentStep === 5) {
+      // 配音合成：基于视频生成默认配音参数
+      defaultMessage = '男主使用成熟男声，女主使用温柔女声，语速正常，情感真挚。';
+    } else if (this.currentStep === 6) {
+      // 后期合成：生成默认后期参数
+      defaultMessage = '背景音乐风格舒缓，字幕样式简洁白色居中，电影感调色，输出1080p MP4格式。';
+    }
+
+    // 显示自动生成的消息
+    this.addMessage('assistant', `<div class="sd-auto-hint"><i class="fas fa-magic"></i> 我已根据上一步的内容，为您准备了推荐的默认参数配置。您可以直接确认使用，或者根据需要进行调整。</div>`);
+
+    // 模拟用户输入默认消息，触发参数确认面板
+    setTimeout(() => {
+      this.showConfirmationPanel(defaultMessage);
+    }, 500);
   },
 
   generateArtifact: function(step, userMessage) {
@@ -3268,8 +3502,282 @@ const SDChatAgent = {
   }
 };
 
+// ===== Token消耗管理模块 =====
+const TokenManager = {
+  STORAGE_KEY: 'aurora_token_data',
+  QUOTA_LIMIT: 500, // 默认500token额度 = ¥0.5 (用于测试余额不足)
+  TOKEN_TO_MONEY_RATE: 1000, // 1000 tokens = ¥1
+
+  // 将tokens转换为金额
+  tokensToMoney: function(tokens) {
+    return (tokens / this.TOKEN_TO_MONEY_RATE).toFixed(2);
+  },
+
+  // 格式化金额显示
+  formatMoney: function(tokens) {
+    return '¥' + this.tokensToMoney(tokens);
+  },
+
+  // 格式化数字
+  formatNumber: function(num) {
+    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  },
+
+  // 初始化Token数据
+  init: function() {
+    let data = this.getData();
+    if (!data) {
+      data = this.createEmptyData();
+      this.saveData(data);
+    }
+    this.refreshDashboard();
+    this.bindEvents();
+  },
+
+  // 创建空数据结构
+  createEmptyData: function() {
+    return {
+      totalTokens: 0,
+      todayTokens: 0,
+      monthlyTokens: 0,
+      quotaLimit: this.QUOTA_LIMIT,
+      lastResetDate: new Date().toISOString().split('T')[0],
+      lastResetMonth: new Date().toISOString().slice(0, 7),
+      history: [],
+      byModel: {},
+      byModule: {},
+      callCount: { byModel: {}, byModule: {} }
+    };
+  },
+
+  // 从localStorage获取数据
+  getData: function() {
+    try {
+      const json = localStorage.getItem(this.STORAGE_KEY);
+      if (!json) return null;
+      const data = JSON.parse(json);
+
+      // 检查是否需要重置今日/本月数据
+      const today = new Date().toISOString().split('T')[0];
+      const thisMonth = new Date().toISOString().slice(0, 7);
+
+      if (data.lastResetDate !== today) {
+        data.todayTokens = 0;
+        data.lastResetDate = today;
+      }
+
+      if (data.lastResetMonth !== thisMonth) {
+        data.monthlyTokens = 0;
+        data.lastResetMonth = thisMonth;
+      }
+
+      return data;
+    } catch (e) {
+      console.error('读取Token数据失败:', e);
+      return null;
+    }
+  },
+
+  // 保存数据到localStorage
+  saveData: function(data) {
+    try {
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(data));
+    } catch (e) {
+      console.error('保存Token数据失败:', e);
+    }
+  },
+
+  // 检查余额是否充足（至少1元）
+  checkBalance: function() {
+    const data = this.getData() || this.createEmptyData();
+    const remaining = Math.max(0, data.quotaLimit - data.totalTokens);
+    const remainingMoney = remaining / this.TOKEN_TO_MONEY_RATE;
+
+    if (remainingMoney < 1) {
+      alert('账户余额不足1元，无法生成任务。请充值后再试。');
+      return false;
+    }
+    return true;
+  },
+
+  // 记录Token消耗
+  recordUsage: function(model, module, tokens) {
+    const data = this.getData() || this.createEmptyData();
+
+    // 更新总计
+    data.totalTokens += tokens;
+    data.todayTokens += tokens;
+    data.monthlyTokens += tokens;
+
+    // 更新按模型分类
+    data.byModel[model] = (data.byModel[model] || 0) + tokens;
+    data.callCount.byModel[model] = (data.callCount.byModel[model] || 0) + 1;
+
+    // 更新按模块分类
+    data.byModule[module] = (data.byModule[module] || 0) + tokens;
+    data.callCount.byModule[module] = (data.callCount.byModule[module] || 0) + 1;
+
+    // 添加历史记录
+    const now = new Date();
+    const timeStr = now.toLocaleString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    });
+
+    data.history.unshift({
+      time: timeStr,
+      model: model,
+      module: module,
+      tokens: tokens,
+      timestamp: now.getTime()
+    });
+
+    // 只保留最近100条记录
+    if (data.history.length > 100) {
+      data.history = data.history.slice(0, 100);
+    }
+
+    this.saveData(data);
+    this.refreshDashboard();
+  },
+
+  // 刷新仪表板
+  refreshDashboard: function() {
+    const data = this.getData() || this.createEmptyData();
+
+    // 更新头部余额显示
+    const headerBalance = document.getElementById('header-token-balance');
+    if (headerBalance) {
+      const remaining = Math.max(0, data.quotaLimit - data.totalTokens);
+      headerBalance.textContent = this.formatMoney(remaining);
+    }
+
+    // 更新历史记录
+    this.renderHistory(data);
+  },
+
+  // 渲染历史记录
+  renderHistory: function(data) {
+    const container = document.getElementById('tk-history-list');
+    if (!container) return;
+
+    if (data.history.length === 0) {
+      container.innerHTML = `
+        <div class="tk-empty-state">
+          <i class="fas fa-inbox"></i>
+          <p>暂无消耗记录</p>
+        </div>
+      `;
+      return;
+    }
+
+    let html = '';
+    data.history.forEach(item => {
+      const iconColors = {
+        'GPT-4o': 'bg-green-50 text-green-500',
+        'GPT-4 Turbo': 'bg-green-50 text-green-500',
+        'Claude 3 Opus': 'bg-purple-50 text-purple-500',
+        'Claude 3 Sonnet': 'bg-purple-50 text-purple-500',
+        'DeepSeek Chat': 'bg-blue-50 text-blue-500',
+        'Qwen Max': 'bg-orange-50 text-orange-500',
+        'Moonshot v1': 'bg-pink-50 text-pink-500'
+      };
+
+      const iconColor = iconColors[item.model] || 'bg-gray-50 text-gray-500';
+
+      html += `
+        <div class="tk-history-item">
+          <div class="tk-history-left">
+            <div class="tk-history-icon ${iconColor}">
+              <i class="fas fa-brain"></i>
+            </div>
+            <div class="tk-history-info">
+              <div class="tk-history-model">${item.model}</div>
+              <div class="tk-history-meta">
+                <span><i class="fas fa-clock"></i> ${item.time}</span>
+              </div>
+            </div>
+          </div>
+          <div class="tk-history-tokens">${this.formatMoney(item.tokens)}</div>
+        </div>
+      `;
+    });
+
+    container.innerHTML = html;
+  },
+
+  // 清除所有记录
+  clearAll: function() {
+    if (confirm('确定要清除所有消费记录吗？此操作不可撤销。')) {
+      localStorage.removeItem(this.STORAGE_KEY);
+      const data = this.createEmptyData();
+      this.saveData(data);
+      this.refreshDashboard();
+      alert('记录已清除');
+    }
+  },
+
+  // 绑定事件
+  bindEvents: function() {
+    const clearBtn = document.getElementById('tk-clear-btn');
+    if (clearBtn) {
+      clearBtn.addEventListener('click', () => this.clearAll());
+    }
+
+    // 绑定Token余额显示点击事件
+    const balanceDisplay = document.getElementById('token-balance-display');
+    if (balanceDisplay) {
+      balanceDisplay.addEventListener('click', () => this.openDetailModal());
+    }
+
+    // 绑定模态框关闭事件
+    const closeBtn = document.getElementById('close-token-detail');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => this.closeDetailModal());
+    }
+
+    const closeFooterBtn = document.getElementById('close-token-detail-footer');
+    if (closeFooterBtn) {
+      closeFooterBtn.addEventListener('click', () => this.closeDetailModal());
+    }
+
+    // 点击遮罩层关闭
+    const modalOverlay = document.getElementById('token-detail-modal');
+    if (modalOverlay) {
+      modalOverlay.addEventListener('click', (e) => {
+        if (e.target === modalOverlay) {
+          this.closeDetailModal();
+        }
+      });
+    }
+  },
+
+  // 打开详情模态框
+  openDetailModal: function() {
+    const modal = document.getElementById('token-detail-modal');
+    if (modal) {
+      modal.classList.add('open');
+      this.refreshDashboard();
+    }
+  },
+
+  // 关闭详情模态框
+  closeDetailModal: function() {
+    const modal = document.getElementById('token-detail-modal');
+    if (modal) {
+      modal.classList.remove('open');
+    }
+  }
+};
+
 document.addEventListener('DOMContentLoaded', () => {
   initLogin();
   DesignSpec.init();
   SDChatAgent.init();
+  TokenManager.init();
 });
