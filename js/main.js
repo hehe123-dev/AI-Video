@@ -3505,7 +3505,7 @@ const SDChatAgent = {
 // ===== Token消耗管理模块 =====
 const TokenManager = {
   STORAGE_KEY: 'aurora_token_data',
-  QUOTA_LIMIT: 500, // 默认500token额度 = ¥0.5 (用于测试余额不足)
+  QUOTA_LIMIT: 9999000, // 默认500token额度 = ¥0.5 (用于测试余额不足)
   TOKEN_TO_MONEY_RATE: 1000, // 1000 tokens = ¥1
 
   // 将tokens转换为金额
@@ -3528,6 +3528,16 @@ const TokenManager = {
     let data = this.getData();
     if (!data) {
       data = this.createEmptyData();
+      this.saveData(data);
+    } else if (data.quotaLimit < this.QUOTA_LIMIT) {
+      data.quotaLimit = this.QUOTA_LIMIT;
+      data.totalTokens = 0;
+      data.todayTokens = 0;
+      data.monthlyTokens = 0;
+      data.history = [];
+      data.byModel = {};
+      data.byModule = {};
+      data.callCount = { byModel: {}, byModule: {} };
       this.saveData(data);
     }
     this.refreshDashboard();
@@ -3709,6 +3719,21 @@ const TokenManager = {
     });
 
     container.innerHTML = html;
+  },
+
+  // 充值：设置配额并清空消费记录
+  recharge: function(quotaTokens) {
+    const data = this.getData() || this.createEmptyData();
+    data.quotaLimit = quotaTokens;
+    data.totalTokens = 0;
+    data.todayTokens = 0;
+    data.monthlyTokens = 0;
+    data.history = [];
+    data.byModel = {};
+    data.byModule = {};
+    data.callCount = { byModel: {}, byModule: {} };
+    this.saveData(data);
+    this.refreshDashboard();
   },
 
   // 清除所有记录
