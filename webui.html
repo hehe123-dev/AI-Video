@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI 视频中台</title>
+  <title>Aurora视频平台</title>
   <script>
     window.tailwind = { config: {
       theme: {
@@ -61,7 +61,7 @@
     <div class="login-card">
       <div class="login-header">
         <img src="logo.png" alt="AI Video Hub" class="login-logo" />
-        <h1>AI 视频中台</h1>
+        <h1>Aurora视频平台</h1>
         <p>一站式 AI 视频生产平台</p>
       </div>
       <div class="login-form">
@@ -97,7 +97,7 @@
     <nav class="top-nav">
       <div class="top-nav-item active" data-view="project">
         <i class="fas fa-folder-tree"></i>
-        <span>项目管理</span>
+        <span>任务管理</span>
       </div>
       <div class="top-nav-item" data-view="short-video">
         <i class="fas fa-video"></i>
@@ -117,20 +117,6 @@
       </div>
     </nav>
     <div class="flex items-center gap-4">
-      <div class="global-model-selector" id="header-model-selector">
-        <div class="w-7 h-7 rounded-lg bg-purple-50 flex items-center justify-center">
-          <i class="fas fa-brain text-purple-500 text-sm"></i>
-        </div>
-        <select class="global-model-select" id="sd-model-select">
-          <option value="gpt-4o">GPT-4o</option>
-          <option value="gpt-4-turbo">GPT-4 Turbo</option>
-          <option value="claude-3-opus">Claude 3 Opus</option>
-          <option value="claude-3-sonnet">Claude 3 Sonnet</option>
-          <option value="deepseek-chat">DeepSeek Chat</option>
-          <option value="qwen-max">Qwen Max</option>
-          <option value="moonshot-v1">Moonshot v1</option>
-        </select>
-      </div>
       <button class="global-config-btn" id="open-global-config">
         <div class="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center">
           <i class="fas fa-cog text-blue-500 text-sm"></i>
@@ -142,6 +128,16 @@
       </button>
       <div class="h-8 w-px bg-gray-200"></div>
       <div id="user-area" class="flex items-center gap-3" style="display:none">
+        <div class="token-balance-display" id="token-balance-display">
+          <div class="token-balance-icon">
+            <i class="fas fa-coins"></i>
+          </div>
+          <div class="token-balance-info">
+            <div class="token-balance-label">账户余额</div>
+            <div class="token-balance-value" id="header-token-balance">¥1,000.00</div>
+          </div>
+        </div>
+        <div class="h-8 w-px bg-gray-200"></div>
         <div class="flex items-center gap-2">
           <div class="w-7 h-7 rounded-full bg-orange-100 flex items-center justify-center">
             <i class="fas fa-user text-orange-500 text-xs"></i>
@@ -163,17 +159,13 @@
           <div class="pm-header">
             <div class="pm-header-title">
               <i class="fas fa-folder-tree text-orange-500"></i>
-              <span>项目管理</span>
+              <span>任务管理</span>
             </div>
             <div class="pm-header-actions">
               <div class="pm-search">
                 <i class="fas fa-search"></i>
-                <input type="text" placeholder="搜索项目..." id="pm-search-input" />
+                <input type="text" placeholder="搜索任务..." id="pm-search-input" />
               </div>
-              <button class="btn-primary" id="pm-new-project-btn">
-                <i class="fas fa-plus"></i>
-                <span>新建项目</span>
-              </button>
             </div>
           </div>
 
@@ -235,7 +227,7 @@
           <div class="pm-project-grid" id="pm-project-grid">
             <div class="pm-project-card" data-pm-type="short-video" data-pm-status="done">
               <div class="pm-project-thumb">
-                <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Financial%20passive%20income%20video%20thumbnail%20modern%20design&image_size=landscape_16_9" alt="项目缩略图" />
+                <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Financial%20passive%20income%20video%20thumbnail%20modern%20design&image_size=landscape_16_9" alt="任务缩略图" />
                 <span class="pm-project-badge type-short-video"><i class="fas fa-video"></i>AI 短视频</span>
                 <span class="pm-project-duration">01:12</span>
               </div>
@@ -256,7 +248,7 @@
 
             <div class="pm-project-card" data-pm-type="short-video" data-pm-status="processing">
               <div class="pm-project-thumb">
-                <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Vintage%20cinematic%20movie%20scene%20warm%20tones&image_size=landscape_16_9" alt="项目缩略图" />
+                <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Vintage%20cinematic%20movie%20scene%20warm%20tones&image_size=landscape_16_9" alt="任务缩略图" />
                 <span class="pm-project-badge type-short-video"><i class="fas fa-video"></i>AI 短视频</span>
                 <span class="pm-project-duration">进行中</span>
               </div>
@@ -276,7 +268,7 @@
 
             <div class="pm-project-card" data-pm-type="short-drama" data-pm-status="done">
               <div class="pm-project-thumb">
-                <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Ancient%20Chinese%20drama%20scene%20traditional%20costume&image_size=landscape_16_9" alt="项目缩略图" />
+                <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Ancient%20Chinese%20drama%20scene%20traditional%20costume&image_size=landscape_16_9" alt="任务缩略图" />
                 <span class="pm-project-badge type-short-drama"><i class="fas fa-film"></i>AI 短剧</span>
                 <span class="pm-project-duration">15 集</span>
               </div>
@@ -297,7 +289,7 @@
 
             <div class="pm-project-card" data-pm-type="short-drama" data-pm-status="processing">
               <div class="pm-project-thumb">
-                <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Modern%20office%20boss%20female%20employee%20romance&image_size=landscape_16_9" alt="项目缩略图" />
+                <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Modern%20office%20boss%20female%20employee%20romance&image_size=landscape_16_9" alt="任务缩略图" />
                 <span class="pm-project-badge type-short-drama"><i class="fas fa-film"></i>AI 短剧</span>
                 <span class="pm-project-duration">10 集</span>
               </div>
@@ -317,7 +309,7 @@
 
             <div class="pm-project-card" data-pm-type="digital-human" data-pm-status="done">
               <div class="pm-project-thumb">
-                <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Digital%20avatar%20presenter%20studio%20lighting&image_size=landscape_16_9" alt="项目缩略图" />
+                <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Digital%20avatar%20presenter%20studio%20lighting&image_size=landscape_16_9" alt="任务缩略图" />
                 <span class="pm-project-badge type-digital-human"><i class="fas fa-user-tie"></i>数字人</span>
                 <span class="pm-project-duration">00:45</span>
               </div>
@@ -338,7 +330,7 @@
 
             <div class="pm-project-card" data-pm-type="image-to-video" data-pm-status="draft">
               <div class="pm-project-thumb">
-                <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Motion%20blur%20cinematic%20scene%20transition&image_size=landscape_16_9" alt="项目缩略图" />
+                <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Motion%20blur%20cinematic%20scene%20transition&image_size=landscape_16_9" alt="任务缩略图" />
                 <span class="pm-project-badge type-image-to-video"><i class="fas fa-image"></i>图生视频</span>
                 <span class="pm-project-duration">草稿</span>
               </div>
@@ -607,7 +599,7 @@
               </div>
               <div class="accordion-body">
                 <div class="flex items-center gap-3">
-                  <input type="text" class="input-field flex-1" placeholder="请输入试听文本" value="欢迎使用 AI 视频中台，一站式 AI 视频生产平台。" />
+                  <input type="text" class="input-field flex-1" placeholder="请输入试听文本" value="欢迎使用 Aurora视频平台，一站式 AI 视频生产平台。" />
                   <button class="btn-secondary flex items-center gap-2">
                     <i class="fas fa-play text-green-500"></i>试听
                   </button>
@@ -2615,7 +2607,47 @@
         </div>
       </div>
     </div>
+
   </main>
+
+  <!-- 消耗详情模态框 -->
+  <div class="modal-overlay" id="token-detail-modal">
+    <div class="modal" style="max-width: 800px;">
+      <div class="modal-header">
+        <div class="modal-title">
+          <i class="fas fa-coins text-amber-400"></i>
+          <span>消费明细</span>
+        </div>
+        <button class="modal-close" id="close-token-detail">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body" style="max-height: 70vh;">
+        <!-- 每日消费明细 -->
+        <div class="panel">
+          <div class="section-title">
+            <i class="fas fa-history text-orange-500"></i>
+            <span>每日消费明细</span>
+          </div>
+          <div class="section-content">
+            <div class="tk-history-list" id="tk-history-list">
+              <div class="tk-empty-state">
+                <i class="fas fa-inbox"></i>
+                <p>暂无消费记录</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="tk-clear-btn">
+          <i class="fas fa-trash-alt"></i> 清除记录
+        </button>
+        <div class="flex-1"></div>
+        <button class="btn-secondary" id="close-token-detail-footer">关闭</button>
+      </div>
+    </div>
+  </div>
 
   <div class="modal-overlay" id="global-config-modal">
     <div class="modal">
