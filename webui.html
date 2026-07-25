@@ -10,13 +10,13 @@
         extend: {
           colors: {
             gray: {
-              50: '#0B1020', 100: '#111827', 200: '#1E293B',
+              50: '#162D52', 100: '#111827', 200: '#1E293B',
               300: '#334155', 400: '#64748b', 500: '#94a3b8',
               600: '#94a3b8', 700: '#e2e8f0', 800: '#e2e8f0',
               900: '#e2e8f0'
             },
             orange: {
-              50: '#070A14', 100: '#0B1020', 400: '#45E6D5',
+              50: '#070A14', 100: '#162D52', 400: '#45E6D5',
               500: '#5B8CFF', 600: '#8B5CFF'
             },
             blue: {
@@ -88,7 +88,7 @@
     </div>
   </div>
 
-  <header class="h-14 flex items-center justify-between px-6 border-b border-gray-200 bg-[#0B1020]">
+  <header class="h-14 flex items-center justify-between px-6 border-b border-gray-200 bg-[#162D52]">
     <div class="flex items-center gap-4">
       <img src="logo.png" alt="VideoAI Hub" class="h-11 object-contain" />
       <span class="text-sm text-gray-500">- 一站式 AI 视频生产平台</span>
@@ -114,6 +114,10 @@
       <div class="top-nav-item" data-view="image-to-video">
         <i class="fas fa-image"></i>
         <span>图生视频</span>
+      </div>
+      <div class="top-nav-item" data-view="ai-kezhuan">
+        <i class="fas fa-flask"></i>
+        <span>AI科转</span>
       </div>
     </nav>
     <div class="flex items-center gap-4">
@@ -2607,6 +2611,176 @@
         </div>
       </div>
     </div>
+
+      <div class="view-panel" data-view-panel="ai-kezhuan">
+        <div class="workspace-main">
+            <!-- 统一的智能体对话框 -->
+            <div class="akz-unified-chat-wrapper">
+              <div class="akz-unified-chat-container">
+                <!-- 内容预览抽屉 -->
+                <div class="akz-preview-drawer" id="akz-preview-drawer">
+                  <div class="akz-preview-drawer-header">
+                    <div class="akz-preview-drawer-title">
+                      <i class="fas fa-file-lines"></i>
+                      <span id="akz-preview-drawer-title-text">内容预览</span>
+                    </div>
+                    <button class="akz-preview-drawer-close" onclick="AKZChatAgent.closePreviewDrawer()">
+                      <i class="fas fa-times"></i>
+                    </button>
+                  </div>
+                  <div class="akz-preview-drawer-body" id="akz-preview-drawer-body">
+                    <!-- 预览内容动态填充 -->
+                  </div>
+                  <div class="akz-preview-drawer-footer" id="akz-preview-drawer-footer" style="display:none;">
+                    <!-- 审阅操作按钮动态填充 -->
+                  </div>
+                </div>
+                <div class="akz-preview-drawer-mask" id="akz-preview-drawer-mask" onclick="AKZChatAgent.closePreviewDrawer()"></div>
+                <div class="akz-chat-header">
+                  <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center">
+                      <i class="fas fa-flask text-white text-sm"></i>
+                    </div>
+                    <div>
+                      <div class="text-sm font-medium text-gray-800">AI 科转制作助手</div>
+                      <div class="text-xs text-gray-400" id="akz-current-phase">当前阶段：文档上传</div>
+                    </div>
+                  </div>
+                  <button class="btn-secondary text-xs" id="akz-unified-clear-chat">
+                    <i class="fas fa-trash-alt mr-1"></i>清空对话
+                  </button>
+                </div>
+
+                <div class="akz-chat-messages" id="akz-unified-messages">
+                  <div class="akz-message akz-message-assistant">
+                    <div class="akz-message-avatar">
+                      <i class="fas fa-flask"></i>
+                    </div>
+                    <div class="akz-message-content">
+                      <div class="akz-message-text">
+                        您好！我是 AI 科转制作助手，很高兴为您服务。
+
+我将引导您完成科技成果转化短视频的制作全流程：
+<ul class="akz-suggestion-list">
+<li><strong>步骤1：文档上传</strong> - 上传您的科技成果相关文档（支持图片、PPT、PDF、Word格式）</li>
+<li><strong>步骤2：智能解析</strong> - AI自动解析文档内容，提取核心技术亮点与创新点</li>
+<li><strong>步骤3：脚本创作</strong> - 基于解析结果，自动生成适合传播的短视频脚本</li>
+<li><strong>步骤4：素材生成</strong> - 根据脚本生成对应的视觉素材和画面</li>
+<li><strong>步骤5：视频生成</strong> - 将素材转化为动态短视频</li>
+<li><strong>步骤6：后期合成</strong> - 添加BGM、字幕、特效，输出成片</li>
+</ul>
+
+现在让我们从<strong>文档上传</strong>开始。请上传您的科技成果相关文档，或直接描述您要展示的科技成果。
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="akz-chat-suggestions" id="akz-unified-suggestions">
+                  <div class="text-xs text-gray-500 mb-2">快速开始：</div>
+                  <div class="flex flex-wrap gap-2" id="akz-suggestion-chips">
+                    <button class="akz-suggestion-chip" data-suggestion="我有一项新材料领域的科研成果，研发了一种高强度的碳纤维复合材料，想在展会上用短视频展示其性能优势和应用前景。">新材料成果展示</button>
+                    <button class="akz-suggestion-chip" data-suggestion="我们团队研发出了一套智能农业监测系统，通过AI视觉识别病虫害，需要制作一个3分钟的产品介绍短视频。">智能农业系统</button>
+                    <button class="akz-suggestion-chip" data-suggestion="我有一份关于新型电池技术的专利文档，能量密度提升了40%，想制作一个短视频向投资人展示技术优势。">新能源电池技术</button>
+                    <button class="akz-suggestion-chip" data-suggestion="我们开发了一套医疗影像AI辅助诊断系统，已通过临床验证，需要制作短视频向医院推广。">医疗AI系统推广</button>
+                  </div>
+                </div>
+
+                <div class="akz-chat-input-container">
+                  <!-- 文件上传区域 -->
+                  <div class="akz-file-upload-area" id="akz-file-upload-area">
+                    <div class="akz-file-upload-hint" id="akz-file-upload-hint">
+                      <i class="fas fa-cloud-upload-alt text-2xl text-gray-400"></i>
+                      <span class="text-sm text-gray-500">支持上传图片、PPT、PDF、Word文档</span>
+                      <span class="text-xs text-gray-400">点击或拖拽文件到此处上传</span>
+                    </div>
+                    <div class="akz-file-list" id="akz-file-list" style="display:none;">
+                      <!-- 已上传文件列表动态填充 -->
+                    </div>
+                    <input type="file" id="akz-file-input" accept=".jpg,.jpeg,.png,.gif,.bmp,.webp,.ppt,.pptx,.pdf,.doc,.docx" multiple style="display:none;" />
+                  </div>
+                  <textarea
+                    class="akz-chat-input"
+                    id="akz-unified-input"
+                    placeholder="描述您的科技成果或回答当前阶段的问题..."
+                    rows="3"
+                  ></textarea>
+                  <div class="akz-chat-actions">
+                    <div class="flex items-center gap-2 text-xs text-gray-400">
+                      <i class="fas fa-lightbulb text-amber-400"></i>
+                      <span>提示：上传文档可帮助AI更准确地理解您的科技成果</span>
+                    </div>
+                    <button class="btn-primary" id="akz-unified-send">
+                      <i class="fas fa-paper-plane"></i>
+                      发送
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 步骤进度指示器 -->
+              <div class="akz-progress-sidebar">
+                <div class="akz-progress-title">制作进度</div>
+                <div class="akz-progress-steps">
+                  <div class="akz-progress-step active" data-step="1">
+                    <div class="akz-progress-step-icon">
+                      <i class="fas fa-cloud-upload-alt"></i>
+                    </div>
+                    <div class="akz-progress-step-content">
+                      <div class="akz-progress-step-name">文档上传</div>
+                      <div class="akz-progress-step-status">进行中</div>
+                    </div>
+                  </div>
+                  <div class="akz-progress-step" data-step="2">
+                    <div class="akz-progress-step-icon">
+                      <i class="fas fa-brain"></i>
+                    </div>
+                    <div class="akz-progress-step-content">
+                      <div class="akz-progress-step-name">智能解析</div>
+                      <div class="akz-progress-step-status">待开始</div>
+                    </div>
+                  </div>
+                  <div class="akz-progress-step" data-step="3">
+                    <div class="akz-progress-step-icon">
+                      <i class="fas fa-pen-fancy"></i>
+                    </div>
+                    <div class="akz-progress-step-content">
+                      <div class="akz-progress-step-name">脚本创作</div>
+                      <div class="akz-progress-step-status">待开始</div>
+                    </div>
+                  </div>
+                  <div class="akz-progress-step" data-step="4">
+                    <div class="akz-progress-step-icon">
+                      <i class="fas fa-palette"></i>
+                    </div>
+                    <div class="akz-progress-step-content">
+                      <div class="akz-progress-step-name">素材生成</div>
+                      <div class="akz-progress-step-status">待开始</div>
+                    </div>
+                  </div>
+                  <div class="akz-progress-step" data-step="5">
+                    <div class="akz-progress-step-icon">
+                      <i class="fas fa-video"></i>
+                    </div>
+                    <div class="akz-progress-step-content">
+                      <div class="akz-progress-step-name">视频生成</div>
+                      <div class="akz-progress-step-status">待开始</div>
+                    </div>
+                  </div>
+                  <div class="akz-progress-step" data-step="6">
+                    <div class="akz-progress-step-icon">
+                      <i class="fas fa-wand-magic-sparkles"></i>
+                    </div>
+                    <div class="akz-progress-step-content">
+                      <div class="akz-progress-step-name">后期合成</div>
+                      <div class="akz-progress-step-status">待开始</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+      </div>
 
   </main>
 

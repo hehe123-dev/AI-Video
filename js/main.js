@@ -2623,7 +2623,7 @@ const SDChatAgent = {
       editBtn.style.pointerEvents = '';
       editBtn.style.borderColor = '#334155';
       editBtn.style.color = '#e2e8f0';
-      editBtn.style.background = '#0B1020';
+      editBtn.style.background = '#162D52';
       editBtn.querySelector('i').className = 'fas fa-edit';
     }
 
@@ -2652,7 +2652,7 @@ const SDChatAgent = {
       editBtn.style.pointerEvents = '';
       editBtn.style.borderColor = '#334155';
       editBtn.style.color = '#e2e8f0';
-      editBtn.style.background = '#0B1020';
+      editBtn.style.background = '#162D52';
       editBtn.querySelector('i').className = 'fas fa-edit';
     }
   },
@@ -3502,6 +3502,1412 @@ const SDChatAgent = {
   }
 };
 
+// ===== AI科转 智能体 =====
+const AKZChatAgent = {
+  messages: [],
+  currentStep: 1,
+  totalSteps: 6,
+  stepPhase: 'awaiting_input',
+  stepArtifacts: {},
+  stepData: {},
+  selectedModel: 'gpt-4o',
+
+  stepMeta: {
+    1: { name: '文档上传', icon: 'fa-cloud-upload-alt', artifactName: '文档解析结果', skill: '文档解析助手' },
+    2: { name: '智能解析', icon: 'fa-brain', artifactName: '智能解析报告', skill: '成果解析助手' },
+    3: { name: '脚本创作', icon: 'fa-pen-fancy', artifactName: '视频脚本', skill: '脚本创作助手' },
+    4: { name: '素材生成', icon: 'fa-palette', artifactName: '视觉素材', skill: '素材生成助手' },
+    5: { name: '视频生成', icon: 'fa-video', artifactName: '短视频', skill: '视频生成助手' },
+    6: { name: '后期合成', icon: 'fa-wand-magic-sparkles', artifactName: '成片', skill: '后期合成助手' }
+  },
+
+  init: function() {
+    const sendBtn = document.getElementById('akz-unified-send');
+    const inputField = document.getElementById('akz-unified-input');
+    const clearBtn = document.getElementById('akz-unified-clear-chat');
+    const suggestionChips = document.querySelectorAll('#akz-suggestion-chips .akz-suggestion-chip');
+    const fileUploadArea = document.getElementById('akz-file-upload-area');
+    const fileInput = document.getElementById('akz-file-input');
+
+    if (sendBtn) {
+      sendBtn.addEventListener('click', () => this.sendMessage());
+    }
+
+    if (inputField) {
+      inputField.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          this.sendMessage();
+        }
+      });
+    }
+
+    if (clearBtn) {
+      clearBtn.addEventListener('click', () => this.clearChat());
+    }
+
+    // 文件上传区域点击
+    if (fileUploadArea && fileInput) {
+      fileUploadArea.addEventListener('click', () => fileInput.click());
+      fileUploadArea.addEventListener('dragover', (e) => { e.preventDefault(); fileUploadArea.classList.add('akz-file-upload-dragover'); });
+      fileUploadArea.addEventListener('dragleave', () => { fileUploadArea.classList.remove('akz-file-upload-dragover'); });
+      fileUploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        fileUploadArea.classList.remove('akz-file-upload-dragover');
+        if (e.dataTransfer.files.length > 0) {
+          this.handleFileUpload(e.dataTransfer.files);
+        }
+      });
+      fileInput.addEventListener('change', () => {
+        if (fileInput.files.length > 0) {
+          this.handleFileUpload(fileInput.files);
+        }
+      });
+    }
+
+    suggestionChips.forEach(chip => {
+      chip.addEventListener('click', () => {
+        const suggestion = chip.getAttribute('data-suggestion');
+        if (inputField) {
+          inputField.value = suggestion;
+          inputField.focus();
+        }
+      });
+    });
+
+    const progressSteps = document.querySelectorAll('.akz-progress-step');
+    progressSteps.forEach(step => {
+      step.addEventListener('click', () => {
+        const stepNum = parseInt(step.getAttribute('data-step'));
+        if (stepNum < this.currentStep) {
+          this.goToStep(stepNum);
+        }
+      });
+    });
+  },
+
+  handleFileUpload: function(files) {
+    const fileList = document.getElementById('akz-file-list');
+    const uploadHint = document.getElementById('akz-file-upload-hint');
+    if (!fileList) return;
+
+    const allowedExts = /\.(jpg|jpeg|png|gif|bmp|webp|ppt|pptx|pdf|doc|docx)$/i;
+    let validFiles = [];
+
+    for (const file of files) {
+      if (allowedExts.test(file.name)) {
+        validFiles.push(file);
+        const sizeKb = (file.size / 1024).toFixed(1);
+        const sizeDisplay = file.size > 1024 * 1024
+          ? (file.size / (1024 * 1024)).toFixed(1) + ' MB'
+          : sizeKb + ' KB';
+        const icon = this.getFileIcon(file.name);
+
+        const fileEl = document.createElement('div');
+        fileEl.className = 'akz-file-item';
+        fileEl.innerHTML = `
+          <i class="${icon}"></i>
+          <span class="akz-file-name">${file.name}</span>
+          <span class="akz-file-size">${sizeDisplay}</span>
+          <button class="akz-file-remove" onclick="this.parentElement.remove(); AKZChatAgent.updateFileListVisibility();">
+            <i class="fas fa-times"></i>
+          </button>
+        `;
+        fileList.appendChild(fileEl);
+      }
+    }
+
+    this.updateFileListVisibility();
+    if (validFiles.length > 0) {
+      this.addMessage('user', `<div class="akz-uploaded-file"><i class="fas fa-file-arrow-up"></i> 已上传 <strong>${validFiles.length}</strong> 个文档文件</div>`);
+
+      if (this.currentStep === 1 && this.stepPhase === 'awaiting_input') {
+        const fileNames = validFiles.map(f => f.name).join('、');
+        this.stepData[1] = `用户上传了科技成果相关文档：${fileNames}`;
+        setTimeout(() => {
+          this.startAnalysis(this.stepData[1], false);
+        }, 500);
+      }
+    }
+  },
+
+  getFileIcon: function(fileName) {
+    const ext = fileName.split('.').pop().toLowerCase();
+    const icons = {
+      jpg: 'fas fa-file-image', jpeg: 'fas fa-file-image', png: 'fas fa-file-image',
+      gif: 'fas fa-file-image', bmp: 'fas fa-file-image', webp: 'fas fa-file-image',
+      ppt: 'fas fa-file-powerpoint', pptx: 'fas fa-file-powerpoint',
+      pdf: 'fas fa-file-pdf',
+      doc: 'fas fa-file-word', docx: 'fas fa-file-word'
+    };
+    return icons[ext] || 'fas fa-file';
+  },
+
+  updateFileListVisibility: function() {
+    const fileList = document.getElementById('akz-file-list');
+    const uploadHint = document.getElementById('akz-file-upload-hint');
+    if (!fileList || !uploadHint) return;
+    if (fileList.children.length > 0) {
+      fileList.style.display = 'flex';
+      uploadHint.style.display = 'none';
+    } else {
+      fileList.style.display = 'none';
+      uploadHint.style.display = 'flex';
+    }
+  },
+
+  sendMessage: function() {
+    const inputField = document.getElementById('akz-unified-input');
+    const message = inputField.value.trim();
+
+    if (!message) return;
+
+    if (typeof TokenManager !== 'undefined' && !TokenManager.checkBalance()) {
+      return;
+    }
+
+    this.addMessage('user', message);
+    inputField.value = '';
+
+    if (typeof TokenManager !== 'undefined') {
+      const tokenAmount = Math.floor(Math.random() * 12000) + 5000;
+      TokenManager.recordUsage(this.selectedModel || 'GPT-4o', 'AI科转', tokenAmount);
+    }
+
+    if (this.stepPhase === 'awaiting_modification') {
+      this.stepData[this.currentStep] = message;
+      this.startAnalysis(message, true);
+    } else if (this.stepPhase === 'reviewing') {
+      this.stepData[this.currentStep] = message;
+      this.startAnalysis(message, true);
+    } else {
+      this.stepData[this.currentStep] = message;
+      this.startAnalysis(message, false);
+    }
+  },
+
+  startAnalysis: function(userMessage, isRevision) {
+    this.stepPhase = 'analyzing';
+    const meta = this.stepMeta[this.currentStep];
+    this.showTyping();
+
+    setTimeout(() => {
+      this.hideTyping();
+      const modelName = this.selectedModel || 'gpt-4o';
+      const analysisText = isRevision
+        ? `收到您的修改反馈。我会使用 <strong>${modelName}</strong> 重新分析并调整<strong>${meta.name}</strong>...`
+        : `正在使用 <strong>${modelName}</strong> 分析您的需求。本次将调用「<strong>${meta.skill}</strong>」为您处理...`;
+      this.addMessage('assistant', analysisText);
+
+      if (!isRevision) {
+        setTimeout(() => this.showConfirmationPanel(userMessage), 800);
+      } else {
+        setTimeout(() => this.startGeneration(userMessage, isRevision), 800);
+      }
+    }, 900);
+  },
+
+  showConfirmationPanel: function(userMessage) {
+    this.stepPhase = 'confirming_params';
+    const meta = this.stepMeta[this.currentStep];
+    const params = this.getStepParameters(this.currentStep, userMessage);
+    const intro = this.getConfirmationIntro(this.currentStep, userMessage);
+
+    const panelHtml = `
+      <div class="akz-confirmation-panel">
+        <div class="akz-confirmation-header">
+          <i class="fas fa-clipboard-list"></i>
+          <span>${meta.artifactName}创作（待确认）</span>
+          <button class="akz-panel-toggle" onclick="AKZChatAgent.togglePanel(this)">
+            <i class="fas fa-chevron-up"></i>
+          </button>
+        </div>
+        <div class="akz-confirmation-body">
+          <div class="akz-confirmation-intro">${intro}</div>
+          ${this.renderParameterGroups(params)}
+          <div class="akz-confirmation-actions">
+            <button class="btn-primary akz-btn-confirm-params" onclick="AKZChatAgent.confirmParameters('${this.escapeForAttr(userMessage)}')">
+              <i class="fas fa-check"></i> 确认并开始生成
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+    this.addMessage('assistant', panelHtml);
+  },
+
+  getConfirmationIntro: function(step, message) {
+    const intros = {
+      1: `您提交了科技成果文档。我先确认几个关键信息，以便更好地为您制作展示视频：`,
+      2: `文档上传完成。系统将对文档进行<strong>智能解析</strong>，自动提取成果名称、核心技术、应用企业、经济数据、荣誉资质等信息颗粒，并进行结构映射、数据翻译和镜头语言分析。请确认以下分析维度：`,
+      3: `内容提炼完成。现在开始创作<strong>视频脚本</strong>。请确认脚本参数：`,
+      4: `脚本创作完成。接下来生成<strong>视觉素材</strong>。请确认素材参数：`,
+      5: `素材已就绪。现在将素材转化为<strong>短视频</strong>。请确认视频参数：`,
+      6: `视频生成完成。最后进行<strong>后期合成</strong>。请确认后期参数：`
+    };
+    return intros[step] || `请确认以下${this.stepMeta[step].name}的相关参数：`;
+  },
+
+  getStepParameters: function(step, userMessage) {
+    if (step === 1) return this.generateDocParseParams(userMessage);
+    if (step === 2) return this.generateContentExtractParams(userMessage);
+    if (step === 3) return this.generateScriptParams(userMessage);
+    if (step === 4) return this.generateMaterialParams(userMessage);
+    if (step === 5) return this.generateVideoParams(userMessage);
+    if (step === 6) return this.generatePostParams(userMessage);
+    return [];
+  },
+
+  generateDocParseParams: function(userMessage) {
+    return [
+      {
+        label: '成果所属领域？',
+        name: 'field',
+        options: [
+          { value: 'new_material', label: '新材料', selected: this.matchField(userMessage, '材料') },
+          { value: 'ai_bigdata', label: 'AI与大数据', selected: this.matchField(userMessage, '智能|AI|数据') },
+          { value: 'new_energy', label: '新能源', selected: this.matchField(userMessage, '能源|电池|光伏') },
+          { value: 'biomedical', label: '生物医药', selected: this.matchField(userMessage, '医疗|医药|生物') },
+          { value: 'advanced_mfg', label: '先进制造', selected: this.matchField(userMessage, '制造|装备|机器人') },
+          { value: 'agriculture', label: '现代农业', selected: this.matchField(userMessage, '农业|种植|养殖') }
+        ]
+      },
+      {
+        label: '展示目标？',
+        name: 'goal',
+        options: [
+          { value: 'investor', label: '面向投资人（突出市场前景）', selected: this.matchField(userMessage, '投资|融资') },
+          { value: 'exhibition', label: '展会展示（突出技术亮点）', selected: this.matchField(userMessage, '展会|展览|展示') },
+          { value: 'promotion', label: '产品推广（突出应用价值）', selected: this.matchField(userMessage, '推广|产品|应用') },
+          { value: 'academic', label: '学术交流（突出创新性）', selected: this.matchField(userMessage, '学术|论文|研究') }
+        ]
+      },
+      {
+        label: '视频时长？',
+        name: 'duration',
+        options: [
+          { value: '1min', label: '约1分钟（快速展示）', selected: false },
+          { value: '3min', label: '约3分钟（标准介绍）', selected: true },
+          { value: '5min', label: '约5分钟（深度讲解）', selected: false }
+        ]
+      },
+      {
+        label: '视频比例？',
+        name: 'ratio',
+        options: [
+          { value: '9:16', label: '9:16 竖屏（适合手机）', selected: true },
+          { value: '16:9', label: '16:9 横屏（适合大屏）', selected: false }
+        ]
+      },
+      {
+        label: '还有其他要求吗？',
+        name: 'additional',
+        type: 'textarea',
+        placeholder: '例如：需要展示专利证书、团队介绍、实验数据、应用案例等...'
+      }
+    ];
+  },
+
+  matchField: function(msg, pattern) {
+    return new RegExp(pattern, 'i').test(msg);
+  },
+
+  generateContentExtractParams: function(userMessage) {
+    return [
+      {
+        label: '分析粒度？',
+        name: 'granularity',
+        options: [
+          { value: 'detailed', label: '详尽分析（全部信息颗粒）', selected: true },
+          { value: 'focused', label: '聚焦核心（技术与市场为主）', selected: false }
+        ]
+      },
+      {
+        label: '数据呈现方式？',
+        name: 'dataFormat',
+        options: [
+          { value: 'structured', label: '结构化报告（分类清晰）', selected: true },
+          { value: 'narrative', label: '叙事型总结（故事化表达）', selected: false }
+        ]
+      },
+      {
+        label: '镜头语言风格？',
+        name: 'visualLang',
+        options: [
+          { value: 'professional', label: '专业科技风（严谨权威）', selected: true },
+          { value: 'commercial', label: '商业宣传风（突出价值）', selected: false },
+          { value: 'educational', label: '科普教育风（通俗易懂）', selected: false }
+        ]
+      }
+    ];
+  },
+
+  generateScriptParams: function(userMessage) {
+    return [
+      {
+        label: '脚本结构？',
+        name: 'structure',
+        options: [
+          { value: 'problem_solution', label: '问题-方案（痛点→技术→解决）', selected: true },
+          { value: 'story', label: '故事叙述（研发历程）', selected: false },
+          { value: 'demo', label: '产品演示（功能展示为主）', selected: false },
+          { value: 'interview', label: '专家讲解（人物主导）', selected: false }
+        ]
+      },
+      {
+        label: '旁白风格？',
+        name: 'narration',
+        options: [
+          { value: 'professional_male', label: '专业男声', selected: true },
+          { value: 'professional_female', label: '专业女声', selected: false },
+          { value: 'warm_male', label: '亲切男声', selected: false },
+          { value: 'elegant_female', label: '优雅女声', selected: false }
+        ]
+      },
+      {
+        label: '是否需要人物出镜？',
+        name: 'host',
+        options: [
+          { value: 'digital_human', label: '数字人讲解', selected: true },
+          { value: 'voice_only', label: '纯旁白+画面', selected: false }
+        ]
+      }
+    ];
+  },
+
+  generateMaterialParams: function(userMessage) {
+    return [
+      {
+        label: '视觉风格？',
+        name: 'visualStyle',
+        options: [
+          { value: 'tech_futuristic', label: '科技未来风（蓝白配色）', selected: true },
+          { value: 'clean_business', label: '简洁商务风', selected: false },
+          { value: 'warm_natural', label: '自然温馨风', selected: false },
+          { value: 'dark_tech', label: '深色科技风', selected: false }
+        ]
+      },
+      {
+        label: '画面比例侧重？',
+        name: 'contentRatio',
+        options: [
+          { value: 'data_heavy', label: '数据图表为主', selected: false },
+          { value: 'scene_heavy', label: '场景实拍为主', selected: false },
+          { value: 'balanced', label: '图文均衡', selected: true }
+        ]
+      }
+    ];
+  },
+
+  generateVideoParams: function(userMessage) {
+    return [
+      {
+        label: '生成方式？',
+        name: 'videoMethod',
+        options: [
+          { value: 'i2v', label: '图生视频（推荐）', selected: true },
+          { value: 'motion', label: '动作迁移', selected: false },
+          { value: 'effect', label: '特效合成', selected: false }
+        ]
+      },
+      {
+        label: '转场风格？',
+        name: 'transition',
+        options: [
+          { value: 'smooth', label: '平滑过渡', selected: true },
+          { value: 'dynamic', label: '动感切换', selected: false },
+          { value: 'minimal', label: '简洁硬切', selected: false }
+        ]
+      },
+      {
+        label: '动态效果？',
+        name: 'dynamicEffect',
+        options: [
+          { value: 'ken_burns', label: 'Ken Burns效果（缓慢推拉）', selected: true },
+          { value: 'parallax', label: '视差滚动', selected: false },
+          { value: 'static', label: '静态画面为主', selected: false }
+        ]
+      }
+    ];
+  },
+
+  generatePostParams: function(userMessage) {
+    return [
+      {
+        label: '背景音乐？',
+        name: 'bgmStyle',
+        options: [
+          { value: 'corporate', label: '企业宣传风', selected: true },
+          { value: 'tech', label: '科技电子风', selected: false },
+          { value: 'inspiring', label: '励志进取风', selected: false },
+          { value: 'ambient', label: '氛围舒缓风', selected: false }
+        ]
+      },
+      {
+        label: '字幕样式？',
+        name: 'subtitleStyle',
+        options: [
+          { value: 'clean', label: '简洁白字', selected: true },
+          { value: 'tech_style', label: '科技风格字幕', selected: false },
+          { value: 'fancy', label: '动态字幕', selected: false }
+        ]
+      },
+      {
+        label: '输出格式？',
+        name: 'outputFormat',
+        options: [
+          { value: '1080p_mp4', label: '1080p MP4（推荐）', selected: true },
+          { value: '4k_mp4', label: '4K MP4', selected: false }
+        ]
+      }
+    ];
+  },
+
+  renderParameterGroups: function(params) {
+    return params.map((param, index) => {
+      if (param.type === 'textarea') {
+        return `
+          <div class="akz-param-group">
+            <div class="akz-param-label">${index + 1}. ${param.label}</div>
+            <textarea class="akz-param-textarea" name="${param.name}" placeholder="${param.placeholder}"></textarea>
+          </div>
+        `;
+      } else {
+        const optionsHtml = param.options.map(opt => `
+          <label class="akz-param-option">
+            <input type="radio" name="${param.name}" value="${opt.value}" ${opt.selected ? 'checked' : ''}>
+            <span>${opt.label}</span>
+          </label>
+        `).join('');
+        return `
+          <div class="akz-param-group">
+            <div class="akz-param-label">${index + 1}. ${param.label}</div>
+            <div class="akz-param-options">
+              ${optionsHtml}
+            </div>
+          </div>
+        `;
+      }
+    }).join('');
+  },
+
+  confirmParameters: function(userMessage) {
+    const panels = document.querySelectorAll('.akz-confirmation-panel');
+    const latestPanel = panels[panels.length - 1];
+    if (!latestPanel) return;
+
+    if (typeof TokenManager !== 'undefined' && !TokenManager.checkBalance()) {
+      return;
+    }
+
+    const selectedParams = {};
+    latestPanel.querySelectorAll('input[type="radio"]:checked').forEach(input => {
+      selectedParams[input.name] = input.value;
+    });
+    latestPanel.querySelectorAll('textarea').forEach(textarea => {
+      if (textarea.value.trim()) {
+        selectedParams[textarea.name] = textarea.value.trim();
+      }
+    });
+
+    this.stepParams = this.stepParams || {};
+    this.stepParams[this.currentStep] = selectedParams;
+
+    this.addMessage('assistant', '<div class="akz-step-done"><i class="fas fa-check-circle"></i> 参数已确认</div>');
+    this.startGeneration(userMessage, false);
+  },
+
+  togglePanel: function(button) {
+    const panel = button.closest('.akz-confirmation-panel');
+    if (!panel) return;
+    const body = panel.querySelector('.akz-confirmation-body');
+    const icon = button.querySelector('i');
+    if (body.style.display === 'none') {
+      body.style.display = 'block';
+      icon.className = 'fas fa-chevron-up';
+    } else {
+      body.style.display = 'none';
+      icon.className = 'fas fa-chevron-down';
+    }
+  },
+
+  openPreviewDrawer: function(step) {
+    const artifact = this.stepArtifacts[step];
+    if (!artifact) return;
+
+    const drawer = document.getElementById('akz-preview-drawer');
+    const mask = document.getElementById('akz-preview-drawer-mask');
+    const titleEl = document.getElementById('akz-preview-drawer-title-text');
+    const bodyEl = document.getElementById('akz-preview-drawer-body');
+    const footerEl = document.getElementById('akz-preview-drawer-footer');
+    if (!drawer || !bodyEl) return;
+
+    const isCurrentStep = step === this.currentStep;
+    const isReviewing = this.stepPhase === 'reviewing' && isCurrentStep;
+    const isLast = step >= this.totalSteps;
+    const nextName = !isLast ? this.stepMeta[step + 1].name : null;
+
+    if (titleEl) titleEl.textContent = `${artifact.title} - ${isReviewing ? '审阅确认' : '查看内容'}`;
+
+    let contentHtml = '';
+
+    if (artifact.summary) {
+      contentHtml += `<div class="akz-drawer-summary"><i class="fas fa-quote-left"></i> ${artifact.summary}</div>`;
+    }
+
+    if (artifact.sections && artifact.sections.length) {
+      contentHtml += '<div class="akz-drawer-section"><div class="akz-drawer-section-title"><i class="fas fa-list"></i> 关键参数</div><div class="akz-drawer-sections">';
+      artifact.sections.forEach(s => {
+        contentHtml += `<div class="akz-drawer-row"><span class="akz-drawer-key">${s.label}</span><span class="akz-drawer-val">${s.value}</span></div>`;
+      });
+      contentHtml += '</div></div>';
+    }
+
+    if (artifact.source === 'user_upload' && artifact.fileName) {
+      const sizeKb = (artifact.fileSize / 1024).toFixed(1);
+      contentHtml += `<div class="akz-drawer-section"><div class="akz-drawer-section-title"><i class="fas fa-file-arrow-up"></i> 上传文件</div><div class="akz-drawer-file"><i class="fas fa-file-lines"></i> ${artifact.fileName} <span class="akz-file-size">(${sizeKb} KB)</span></div></div>`;
+    }
+
+    if (artifact.preview) {
+      contentHtml += `<div class="akz-drawer-section"><div class="akz-drawer-section-title"><i class="fas fa-file-alt"></i> ${artifact.title}详细内容</div><pre class="akz-drawer-preview">${this.escapeHtml(artifact.preview)}</pre></div>`;
+    }
+
+    bodyEl.innerHTML = contentHtml;
+
+    if (footerEl) {
+      if (isReviewing) {
+        const isTextEditable = step === 2 || step === 3;
+        const editButtonHtml = isTextEditable
+          ? `<button class="btn-secondary akz-btn-edit-doc" onclick="AKZChatAgent.handleDrawerAction('edit')">
+               <i class="fas fa-edit"></i> 编辑内容
+             </button>`
+          : '';
+        const hintText = isTextEditable
+          ? '如需调整，可编辑、上传修订版或输入修改意见。'
+          : '如需调整，可上传修订版或输入修改意见。';
+        const renderAction = isLast ? 'render' : 'confirm';
+
+        footerEl.innerHTML = `
+          <div class="akz-drawer-review-hint">
+            ${isLast
+              ? '全部制作流程已完成。检查无误后即可<strong>开始渲染</strong>最终成片。' + hintText
+              : `确认无误后即可进入<strong>${nextName}</strong>阶段。` + hintText}
+          </div>
+          <div class="akz-drawer-actions">
+            <button class="${isLast ? 'btn-primary akz-btn-render' : 'btn-primary akz-btn-confirm'}" onclick="AKZChatAgent.handleDrawerAction('${renderAction}')">
+              ${isLast
+                ? '<i class="fas fa-play"></i> 确认并开始渲染'
+                : `<i class="fas fa-check"></i> 确认并进入${nextName}`}
+            </button>
+            ${editButtonHtml}
+            <button class="btn-secondary akz-btn-upload" onclick="AKZChatAgent.handleDrawerAction('upload')">
+              <i class="fas fa-upload"></i> 上传修订版
+            </button>
+            <button class="btn-secondary akz-btn-modify" onclick="AKZChatAgent.handleDrawerAction('modify')">
+              <i class="fas fa-pen"></i> 修改意见
+            </button>
+          </div>
+        `;
+        footerEl.style.display = 'block';
+      } else {
+        footerEl.innerHTML = '';
+        footerEl.style.display = 'none';
+      }
+    }
+
+    drawer.classList.add('open');
+    if (mask) mask.classList.add('open');
+  },
+
+  handleDrawerAction: function(action) {
+    if (action === 'confirm') {
+      this.closePreviewDrawer();
+      setTimeout(() => this.confirmStep(), 300);
+    } else if (action === 'render') {
+      this.closePreviewDrawer();
+      setTimeout(() => this.startRendering(), 300);
+    } else if (action === 'upload') {
+      this.triggerUpload();
+    } else if (action === 'edit') {
+      this.enterEditMode();
+    } else if (action === 'modify') {
+      this.closePreviewDrawer();
+      setTimeout(() => this.focusInputForModification(), 300);
+    }
+  },
+
+  startRendering: function() {
+    this.stepPhase = 'rendering';
+    this.addMessage('assistant', `
+      <div class="akz-render-start">
+        <div class="akz-render-title"><i class="fas fa-play-circle"></i> 开始渲染最终成片</div>
+        <div class="akz-render-status" id="akz-render-status">正在初始化渲染引擎...</div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="akz-render-bar" style="width:0%"></div>
+        </div>
+        <div class="akz-render-info" id="akz-render-info"></div>
+      </div>
+    `);
+    this.simulateRender();
+  },
+
+  simulateRender: function() {
+    const steps = [
+      { pct: 5, status: '正在合成视频片段...', info: '加载素材与镜头' },
+      { pct: 15, status: '正在生成旁白配音...', info: 'TTS合成讲解语音' },
+      { pct: 30, status: '正在添加字幕...', info: '渲染中文字幕 · 时间轴对齐' },
+      { pct: 50, status: '正在调色...', info: '应用科技风格LUT' },
+      { pct: 65, status: '正在合成BGM...', info: '背景音乐混音' },
+      { pct: 80, status: '正在编码输出...', info: 'H.264 · 1080p' },
+      { pct: 95, status: '正在封装文件...', info: 'MP4容器 · 校验完整性' },
+      { pct: 100, status: '渲染完成！', info: '/outputs/tech_video_' + new Date().toISOString().slice(0,10).replace(/-/g,'') + '/final.mp4' }
+    ];
+
+    let i = 0;
+    const tick = () => {
+      if (i >= steps.length) {
+        this.addMessage('assistant', `
+          <div class="akz-render-done">
+            <i class="fas fa-check-circle"></i>
+            <strong>渲染成功！</strong>
+            <div class="akz-render-output">输出文件：${steps[steps.length-1].info}</div>
+            <button class="btn-primary" style="margin-top:10px" onclick="alert('文件已保存到：${steps[steps.length-1].info}')">
+              <i class="fas fa-download"></i> 下载成片
+            </button>
+          </div>
+        `);
+        return;
+      }
+      const s = steps[i];
+      const statusEl = document.getElementById('akz-render-status');
+      const barEl = document.getElementById('akz-render-bar');
+      const infoEl = document.getElementById('akz-render-info');
+      if (statusEl) statusEl.textContent = s.status;
+      if (barEl) barEl.style.width = s.pct + '%';
+      if (infoEl) infoEl.textContent = s.info;
+      i++;
+      setTimeout(tick, 1200);
+    };
+    tick();
+  },
+
+  enterEditMode: function() {
+    if (this.currentStep !== 2 && this.currentStep !== 3) return;
+
+    const previewEl = document.querySelector('.akz-drawer-preview');
+    const sectionEl = previewEl ? previewEl.closest('.akz-drawer-section') : null;
+    if (!previewEl || !sectionEl) return;
+
+    const currentText = previewEl.textContent;
+    const step = this.currentStep;
+
+    previewEl.style.display = 'none';
+
+    const editArea = document.createElement('div');
+    editArea.className = 'akz-drawer-edit-area';
+    editArea.innerHTML = `
+      <textarea class="akz-drawer-editor" id="akz-drawer-editor">${this.escapeHtml(currentText)}</textarea>
+      <div class="akz-drawer-edit-actions">
+        <button class="btn-primary akz-btn-save-edit" onclick="AKZChatAgent.saveEdit(${step})">
+          <i class="fas fa-save"></i> 保存修改
+        </button>
+        <button class="btn-secondary akz-btn-cancel-edit" onclick="AKZChatAgent.cancelEdit(${step})">
+          <i class="fas fa-times"></i> 取消
+        </button>
+      </div>
+    `;
+    sectionEl.appendChild(editArea);
+
+    const editBtn = document.querySelector('.akz-btn-edit-doc');
+    if (editBtn) {
+      editBtn.style.borderColor = '#6366f1';
+      editBtn.style.color = '#4f46e5';
+      editBtn.style.background = 'rgba(99, 102, 241, 0.08)';
+      editBtn.querySelector('i').className = 'fas fa-edit';
+      editBtn.style.pointerEvents = 'none';
+    }
+  },
+
+  saveEdit: function(step) {
+    const editor = document.getElementById('akz-drawer-editor');
+    if (!editor) return;
+    const newContent = editor.value;
+
+    const artifact = this.stepArtifacts[step];
+    if (artifact) {
+      artifact.preview = newContent;
+      artifact.source = 'user_upload';
+      artifact.fileName = artifact.fileName || '（用户内联编辑）';
+      artifact.summary = `用户已通过内联编辑修改内容，后续步骤将基于修改后的版本继续。`;
+    }
+
+    const editArea = document.querySelector('.akz-drawer-edit-area');
+    if (editArea) editArea.remove();
+
+    const editBtn = document.querySelector('.akz-btn-edit-doc');
+    if (editBtn) {
+      editBtn.style.pointerEvents = '';
+      editBtn.style.borderColor = '#334155';
+      editBtn.style.color = '#e2e8f0';
+      editBtn.style.background = '#162D52';
+      editBtn.querySelector('i').className = 'fas fa-edit';
+    }
+
+    const bodyEl = document.getElementById('akz-preview-drawer-body');
+    const previewEl = bodyEl ? bodyEl.querySelector('.akz-drawer-preview') : null;
+    if (previewEl) {
+      previewEl.textContent = newContent;
+      previewEl.style.display = '';
+    }
+
+    this.renderArtifact(step, artifact);
+  },
+
+  cancelEdit: function(step) {
+    const editArea = document.querySelector('.akz-drawer-edit-area');
+    if (editArea) editArea.remove();
+
+    const previewEl = document.querySelector('.akz-drawer-preview');
+    if (previewEl) previewEl.style.display = '';
+
+    const editBtn = document.querySelector('.akz-btn-edit-doc');
+    if (editBtn) {
+      editBtn.style.pointerEvents = '';
+      editBtn.style.borderColor = '#334155';
+      editBtn.style.color = '#e2e8f0';
+      editBtn.style.background = '#162D52';
+      editBtn.querySelector('i').className = 'fas fa-edit';
+    }
+  },
+
+  closePreviewDrawer: function() {
+    const drawer = document.getElementById('akz-preview-drawer');
+    const mask = document.getElementById('akz-preview-drawer-mask');
+    if (drawer) drawer.classList.remove('open');
+    if (mask) mask.classList.remove('open');
+  },
+
+  escapeForAttr: function(str) {
+    return String(str).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  },
+
+  startGeneration: function(userMessage, isRevision) {
+    this.stepPhase = 'generating';
+    const meta = this.stepMeta[this.currentStep];
+
+    const modelName = this.selectedModel || 'gpt-4o';
+    this.addMessage('assistant', `<div class="akz-skill-badge"><i class="fas fa-bolt"></i> 正在使用 <strong>${modelName}</strong> 调用 <strong>${meta.skill}</strong> 生成${meta.artifactName}...</div>`);
+    this.showTyping();
+
+    setTimeout(() => {
+      this.hideTyping();
+      const artifact = this.generateArtifact(this.currentStep, userMessage);
+      this.stepArtifacts[this.currentStep] = artifact;
+      this.renderArtifact(this.currentStep, artifact);
+      this.enterReview();
+    }, 1800);
+  },
+
+  enterReview: function() {
+    this.stepPhase = 'reviewing';
+    const meta = this.stepMeta[this.currentStep];
+
+    const hintHtml = `
+      <div class="akz-review-hint">
+        <i class="fas fa-clipboard-check"></i>
+        <span>${meta.artifactName}已生成，请在右侧抽屉审阅并确认下一步操作</span>
+        <button class="akz-btn-open-drawer" onclick="AKZChatAgent.openPreviewDrawer(${this.currentStep})">
+          <i class="fas fa-external-link-alt"></i> 打开审阅抽屉
+        </button>
+      </div>
+    `;
+    this.addMessage('assistant', hintHtml);
+    this.updateInputPlaceholder();
+
+    setTimeout(() => this.openPreviewDrawer(this.currentStep), 400);
+  },
+
+  focusInputForModification: function() {
+    this.stepPhase = 'awaiting_modification';
+    this.updateInputPlaceholder();
+    const inputField = document.getElementById('akz-unified-input');
+    if (inputField) inputField.focus();
+    this.addMessage('assistant', '好的，请在下方输入您对当前产出物的修改意见，我会重新生成。');
+  },
+
+  triggerUpload: function() {
+    let fileInput = document.getElementById('akz-artifact-upload-input');
+    if (!fileInput) {
+      fileInput = document.createElement('input');
+      fileInput.type = 'file';
+      fileInput.id = 'akz-artifact-upload-input';
+      fileInput.accept = '.txt,.md,.json,.docx,.pdf,.jpg,.jpeg,.png,.mp4,.mov,.mp3,.wav';
+      fileInput.style.display = 'none';
+      document.body.appendChild(fileInput);
+      fileInput.addEventListener('change', e => this.handleUpload(e));
+    }
+    fileInput.value = '';
+    fileInput.click();
+  },
+
+  handleUpload: function(event) {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+    const meta = this.stepMeta[this.currentStep];
+    const step = this.currentStep;
+    const self = this;
+
+    const sizeKb = (file.size / 1024).toFixed(1);
+    this.addMessage('user', `<div class="akz-uploaded-file"><i class="fas fa-file-arrow-up"></i> 已上传修订版：<strong>${file.name}</strong> <span class="akz-file-size">(${sizeKb} KB)</span></div>`);
+
+    this.closePreviewDrawer();
+
+    const isTextFile = /\.(txt|md|json|csv|log|xml|yml|yaml)$/i.test(file.name);
+    const readFileContent = (callback) => {
+      if (isTextFile) {
+        const reader = new FileReader();
+        reader.onload = e => callback(e.target.result || '');
+        reader.onerror = () => callback('');
+        reader.readAsText(file);
+      } else {
+        callback('');
+      }
+    };
+
+    readFileContent(fileContent => {
+      const artifact = {
+        title: `${meta.artifactName}（用户修订版）`,
+        source: 'user_upload',
+        fileName: file.name,
+        fileSize: file.size,
+        summary: `已采用用户上传的 ${file.name} 作为本步骤最终版本，后续步骤将基于该文件继续。`,
+        sections: [
+          { label: '文件名', value: file.name },
+          { label: '文件大小', value: sizeKb + ' KB' },
+          { label: '文件类型', value: file.type || this.getFileExt(file.name) },
+          { label: '上传时间', value: new Date().toLocaleString('zh-CN') },
+          { label: '状态', value: '已采用为本步骤最终版本' }
+        ],
+        preview: fileContent || `[${file.name}]\n\n此文件为非文本格式，无法在此预览具体内容。\n\n文件大小：${sizeKb} KB\n\n系统会将该文件作为本步骤的最终版本，后续步骤将基于此继续。`
+      };
+      this.stepArtifacts[step] = artifact;
+      this.showTyping();
+      setTimeout(() => {
+        this.hideTyping();
+        this.addMessage('assistant', `已收到您的修订版 <strong>${file.name}</strong>，请在右侧抽屉中查看内容并确认后续操作。`);
+        this.stepPhase = 'reviewing';
+        setTimeout(() => self.openPreviewDrawer(step), 300);
+      }, 900);
+    });
+  },
+
+  getFileExt: function(name) {
+    const match = /\.([a-zA-Z0-9]+)$/.exec(name || '');
+    return match ? match[1].toUpperCase() : '未知';
+  },
+
+  confirmStep: function() {
+    const meta = this.stepMeta[this.currentStep];
+    this.addMessage('assistant', `<div class="akz-step-done"><i class="fas fa-check-circle"></i> <strong>${meta.name}</strong> 已确认。</div>`);
+    this.proceedToNextStep();
+  },
+
+  updateInputPlaceholder: function() {
+    const inputField = document.getElementById('akz-unified-input');
+    if (!inputField) return;
+    const placeholders = {
+      awaiting_input: '描述您的科技成果或回答当前阶段的问题...',
+      reviewing: '如需调整，可直接在此输入修改意见后发送...',
+      awaiting_modification: '请输入具体的修改意见，我会重新生成...'
+    };
+    inputField.placeholder = placeholders[this.stepPhase] || placeholders.awaiting_input;
+  },
+
+  addMessage: function(role, content) {
+    const messagesContainer = document.getElementById('akz-unified-messages');
+    if (!messagesContainer) return;
+
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `akz-message akz-message-${role}`;
+
+    const avatarDiv = document.createElement('div');
+    avatarDiv.className = 'akz-message-avatar';
+    avatarDiv.innerHTML = role === 'assistant'
+      ? '<i class="fas fa-flask"></i>'
+      : '<i class="fas fa-user"></i>';
+
+    const contentDiv = document.createElement('div');
+    contentDiv.className = 'akz-message-content';
+
+    const textDiv = document.createElement('div');
+    textDiv.className = 'akz-message-text';
+    textDiv.innerHTML = content;
+
+    contentDiv.appendChild(textDiv);
+    messageDiv.appendChild(avatarDiv);
+    messageDiv.appendChild(contentDiv);
+
+    messagesContainer.appendChild(messageDiv);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+    this.messages.push({ role, content });
+  },
+
+  showTyping: function() {
+    const messagesContainer = document.getElementById('akz-unified-messages');
+    if (!messagesContainer) return;
+
+    const typingDiv = document.createElement('div');
+    typingDiv.className = 'akz-message akz-message-assistant';
+    typingDiv.id = 'akz-unified-typing';
+
+    const avatarDiv = document.createElement('div');
+    avatarDiv.className = 'akz-message-avatar';
+    avatarDiv.innerHTML = '<i class="fas fa-flask"></i>';
+
+    const contentDiv = document.createElement('div');
+    contentDiv.className = 'akz-message-content';
+
+    const typingIndicator = document.createElement('div');
+    typingIndicator.className = 'akz-message-text';
+    typingIndicator.innerHTML = `
+      <div class="akz-message-typing">
+        <div class="akz-typing-dot"></div>
+        <div class="akz-typing-dot"></div>
+        <div class="akz-typing-dot"></div>
+      </div>
+    `;
+
+    contentDiv.appendChild(typingIndicator);
+    typingDiv.appendChild(avatarDiv);
+    typingDiv.appendChild(contentDiv);
+
+    messagesContainer.appendChild(typingDiv);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  },
+
+  hideTyping: function() {
+    const typingIndicator = document.getElementById('akz-unified-typing');
+    if (typingIndicator) {
+      typingIndicator.remove();
+    }
+  },
+
+  proceedToNextStep: function() {
+    if (this.currentStep >= this.totalSteps) {
+      this.stepPhase = 'completed';
+      this.addMessage('assistant', `
+🎉 <strong>恭喜！所有制作流程已完成！</strong>
+
+您的科技成果转化短视频已经准备就绪，包括：
+✓ 文档解析与内容提炼
+✓ 完整的视频脚本
+✓ 精美的视觉素材
+✓ 动态视频片段
+✓ 专业旁白配音
+✓ 后期合成
+
+现在可以开始最终渲染了！
+      `);
+      this.updateProgress();
+      return;
+    }
+
+    this.currentStep++;
+    this.stepPhase = 'awaiting_input';
+    this.updateProgress();
+    this.addMessage('assistant', this.getStepIntroduction(this.currentStep));
+    this.updateSuggestions(this.currentStep);
+    this.updateInputPlaceholder();
+
+    const prevArtifact = this.stepArtifacts[this.currentStep - 1];
+    if (prevArtifact) {
+      this.addMessage('assistant', `<div class="akz-context-note"><i class="fas fa-link"></i> 已加载上一步的<strong>${this.stepMeta[this.currentStep - 1].artifactName}</strong>作为本阶段的输入基础。</div>`);
+    }
+
+    if (this.currentStep >= 2 && this.currentStep <= 6) {
+      setTimeout(() => {
+        this.autoGenerateNextStepConfirmation();
+      }, 800);
+    }
+  },
+
+  autoGenerateNextStepConfirmation: function() {
+    let defaultMessage = '';
+
+    if (this.currentStep === 2) {
+      defaultMessage = '详尽分析全部信息颗粒，结构化报告呈现，镜头语言采用专业科技风。';
+    } else if (this.currentStep === 3) {
+      defaultMessage = '使用问题-方案结构，专业男声旁白，结合数字人讲解。';
+    } else if (this.currentStep === 4) {
+      defaultMessage = '科技未来风，图文均衡，使用自有AI引擎生成素材。';
+    } else if (this.currentStep === 5) {
+      defaultMessage = '图生视频方式，使用平滑过渡和Ken Burns效果。';
+    } else if (this.currentStep === 6) {
+      defaultMessage = '企业宣传风背景音乐，简洁白字字幕，科技风格调色，输出1080p MP4格式。';
+    }
+
+    this.addMessage('assistant', `<div class="akz-auto-hint"><i class="fas fa-magic"></i> 我已根据上一步的内容，为您准备了推荐的默认参数配置。您可以直接确认使用，或者根据需要进行调整。</div>`);
+
+    setTimeout(() => {
+      this.showConfirmationPanel(defaultMessage);
+    }, 500);
+  },
+
+  generateArtifact: function(step, userMessage) {
+    const generators = {
+      1: () => this.buildDocParseArtifact(userMessage),
+      2: () => this.buildContentExtractArtifact(userMessage),
+      3: () => this.buildScriptArtifact(userMessage),
+      4: () => this.buildMaterialArtifact(userMessage),
+      5: () => this.buildVideoArtifact(userMessage),
+      6: () => this.buildPostArtifact(userMessage)
+    };
+    const build = generators[step];
+    return build ? build() : { title: '产出物', source: 'ai', summary: '已生成' };
+  },
+
+  buildDocParseArtifact: function(message) {
+    const field = this.extractField(message);
+    return {
+      title: '文档解析结果',
+      source: 'ai',
+      summary: `已完成对「${field}」领域科技成果文档的解析`,
+      sections: [
+        { label: '所属领域', value: field },
+        { label: '文档类型', value: '包含文字、图片、数据图表等内容' },
+        { label: '核心技术点', value: '已提取 3-5 项关键技术特征' },
+        { label: '创新指数', value: '高（具备显著的技术创新性）' }
+      ],
+      preview: `科技成果解析报告\n\n领域：${field}\n\n核心发现：\n1. 技术创新点识别完成\n2. 关键性能指标提取完成\n3. 应用场景分析完成\n\n建议：以"技术突破+应用价值"为主线进行视频呈现。`
+    };
+  },
+
+  buildContentExtractArtifact: function(message) {
+    const field = this.extractField(message);
+    const goal = this.extractGoal(message);
+    const duration = this.extractDuration(message);
+    const visualLang = this.extractVisualLang(message);
+
+    return {
+      title: '智能解析报告',
+      source: 'ai',
+      summary: `已完成文档解析、结构映射、数据翻译和镜头语言分析，共提取 15+ 项信息颗粒`,
+      sections: [
+        { label: '成果名称', value: this.extractAchievementName(message) },
+        { label: '所属领域', value: field },
+        { label: '核心技术', value: this.extractCoreTech(message) },
+        { label: '应用企业/场景', value: this.extractApplication(message) },
+        { label: '经济数据', value: '已提取相关市场与财务指标' },
+        { label: '荣誉资质', value: '已提取专利、奖项等资质信息' },
+        { label: '场景映射', value: '6 个场景（开场→痛点→方案→亮点→应用→收尾）' },
+        { label: '镜头语言风格', value: visualLang },
+        { label: '视频时长建议', value: duration }
+      ],
+      preview: `═══════════════════════════════════\n  科技成果智能解析报告\n═══════════════════════════════════\n\n【文档解析】\n• 成果名称：${this.extractAchievementName(message)}\n• 所属领域：${field}\n• 核心技术：${this.extractCoreTech(message)}\n• 应用企业/场景：${this.extractApplication(message)}\n• 经济数据：已完成关键指标提取\n• 荣誉资质：已完成专利与奖项梳理\n\n【结构映射】\n• 将文档内容映射为视频场景：\n  场景1（开场）→ 成果背景引入\n  场景2（痛点）→ 行业需求与技术挑战\n  场景3（方案）→ 核心技术原理展示\n  场景4（亮点）→ 性能数据与对比优势\n  场景5（应用）→ 实际落地案例\n  场景6（收尾）→ 市场前景与联系方式\n• 叙事主线：以"${goal}"为导向\n\n【数据翻译】\n• 将专业技术指标转化为大众可理解的视频语言\n• 关键数据可视化方案已规划\n\n【镜头语言】\n• 风格定位：${visualLang}\n• 视觉基调：科技蓝 + 数据可视化\n• 推荐时长：${duration}\n\n═══════════════════════════════════\n以上信息颗粒将用于后续脚本创作`
+    };
+  },
+
+  buildScriptArtifact: function(message) {
+    const structure = this.extractStructure(message);
+    return {
+      title: '视频脚本',
+      source: 'ai',
+      summary: `采用「${structure}」结构，约${this.extractDuration(message)}视频脚本`,
+      sections: [
+        { label: '脚本结构', value: structure },
+        { label: '旁白风格', value: this.extractNarration(message) },
+        { label: '出镜方式', value: this.extractHost(message) },
+        { label: '预估段落', value: '5-8 个段落' },
+        { label: '预估字数', value: '约 800-1200 字' }
+      ],
+      preview: `【视频脚本】\n\n[开场 15s]\n画面：科技感动态背景 + 标题文字\n旁白：在${this.extractField(message)}领域，一项革命性的技术正在改变行业格局...\n\n[痛点 20s]\n画面：数据图表 + 场景实拍\n旁白：传统技术面临的效率瓶颈与成本挑战...\n\n[技术方案 45s]\n画面：3D产品展示 + 工作原理动画\n旁白：我们的核心技术突破在于...\n\n[应用展示 60s]\n画面：实际应用场景 + 对比数据\n旁白：在实际应用中，该技术已经...\n\n[总结 15s]\n画面：团队合影 + 联系方式\n旁白：让我们携手共创科技未来...`
+    };
+  },
+
+  buildMaterialArtifact: function(message) {
+    const style = this.extractVisualStyle(message);
+    return {
+      title: '视觉素材',
+      source: 'ai',
+      summary: `${style} · 图文均衡布局`,
+      sections: [
+        { label: '视觉风格', value: style },
+        { label: '配色方案', value: '科技蓝+白+深灰为主色调' },
+        { label: '生成引擎', value: '自有AI引擎' },
+        { label: '已生成资源', value: '背景模板 × 8 · 图标元素 × 20 · 数据图表 × 5' }
+      ],
+      preview: `[已生成素材列表]\n\n- 科技感动态背景（1920×1080）× 4\n- 数据图表模板（柱状图/折线图/饼图）× 5\n- 图标元素包（科技/创新/环保/医疗等）× 20\n- 文字排版模板 × 8\n- 转场动画预设 × 6`
+    };
+  },
+
+  buildVideoArtifact: function(message) {
+    const method = this.extractVideoMethod(message);
+    return {
+      title: '短视频片段',
+      source: 'ai',
+      summary: `${method} · ${this.extractDynamicEffect(message)}`,
+      sections: [
+        { label: '生成方式', value: method },
+        { label: '动态效果', value: this.extractDynamicEffect(message) },
+        { label: '转场风格', value: this.extractTransition(message) },
+        { label: '已生成片段', value: '8-12 个场景片段' },
+        { label: '总时长', value: `约 ${this.extractDuration(message)}` }
+      ],
+      preview: `[视频片段预览占位]\n\n场景1_开场.mp4  15s\n场景2_痛点.mp4  20s\n场景3_技术方案.mp4  45s\n场景4_应用展示.mp4  60s\n场景5_总结.mp4  15s`
+    };
+  },
+
+  buildPostArtifact: function(message) {
+    const prevSteps = this.stepArtifacts;
+    const duration = this.extractDuration(message);
+
+    return {
+      title: '最终成片',
+      source: 'ai',
+      summary: `已完成全部6步制作流程，${this.extractBGMStyle(message)}配乐 + 科技风格调色`,
+      sections: [
+        { label: '片头', value: '科技感标题动画 · 3秒' },
+        { label: '正片', value: `8-12个场景 · 总时长约${duration}` },
+        { label: '旁白', value: this.extractNarration(message) || '专业配音' },
+        { label: '背景音乐', value: this.extractBGMStyle(message) },
+        { label: '字幕', value: '中文字幕 · 时间轴同步' },
+        { label: '调色', value: '科技风格LUT' },
+        { label: '片尾', value: '联系方式+二维码 · 5秒' },
+        { label: '输出格式', value: '1080p · MP4 · H.264' },
+        { label: '输出路径', value: '/outputs/tech_video_' + new Date().toISOString().slice(0,10).replace(/-/g,'') + '/final.mp4' }
+      ],
+      preview: `╔══════════════════════════════╗\n║     科技成果展示视频        ║\n║                            ║\n║   🎬 科技感动态片头         ║\n║   📊 数据可视化展示         ║\n║   🎯 核心技术解析           ║\n║   🌟 应用场景呈现           ║\n║                            ║\n║   🎵 BGM: ${this.extractBGMStyle(message)}       ║\n║                            ║\n║   1080p MP4 · ${duration}        ║\n╚══════════════════════════════╝\n\n以上为最终成片预览\n实际渲染后将输出完整视频文件`
+    };
+  },
+
+  renderArtifact: function(step, artifact) {
+    if (!artifact) return;
+    const meta = this.stepMeta[step];
+    const sourceLabel = artifact.source === 'user_upload'
+      ? '<span class="akz-artifact-source user"><i class="fas fa-user"></i> 用户修订版</span>'
+      : '<span class="akz-artifact-source ai"><i class="fas fa-robot"></i> AI 生成</span>';
+
+    let sectionsHtml = '';
+    if (artifact.sections && artifact.sections.length) {
+      sectionsHtml = '<div class="akz-artifact-sections">' +
+        artifact.sections.map(s => `<div class="akz-artifact-row"><span class="akz-artifact-key">${s.label}</span><span class="akz-artifact-val">${s.value}</span></div>`).join('') +
+        '</div>';
+    }
+
+    let fileInfoHtml = '';
+    if (artifact.source === 'user_upload' && artifact.fileName) {
+      const sizeKb = (artifact.fileSize / 1024).toFixed(1);
+      fileInfoHtml = `<div class="akz-artifact-file"><i class="fas fa-file-lines"></i> ${artifact.fileName} <span class="akz-file-size">(${sizeKb} KB)</span></div>`;
+    }
+
+    const previewHtml = artifact.preview
+      ? `<div class="akz-artifact-preview">
+           <button class="akz-artifact-preview-header" type="button" onclick="AKZChatAgent.openPreviewDrawer(${step})">
+             <span><i class="fas fa-eye"></i> 内容预览</span>
+             <i class="fas fa-arrow-right akz-preview-arrow"></i>
+           </button>
+         </div>`
+      : '';
+
+    const summaryHtml = artifact.summary ? `<div class="akz-artifact-summary">${artifact.summary}</div>` : '';
+
+    const card = `
+      <div class="akz-artifact-card">
+        <div class="akz-artifact-header">
+          <div class="akz-artifact-title"><i class="fas ${meta.icon}"></i> ${artifact.title}</div>
+          ${sourceLabel}
+        </div>
+        ${summaryHtml}
+        ${fileInfoHtml}
+        ${sectionsHtml}
+        ${previewHtml}
+      </div>
+    `;
+    this.addMessage('assistant', card);
+  },
+
+  escapeHtml: function(str) {
+    if (str == null) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  },
+
+  goToStep: function(stepNum) {
+    if (stepNum < 1 || stepNum > this.totalSteps) return;
+    const meta = this.stepMeta[stepNum];
+    const artifact = this.stepArtifacts[stepNum];
+    if (artifact) {
+      this.addMessage('assistant', `<div class="akz-context-note"><i class="fas fa-clock-rotate-left"></i> 回看 <strong>${meta.name}</strong> 的产出物：</div>`);
+      this.renderArtifact(stepNum, artifact);
+    } else {
+      this.addMessage('assistant', `<div class="akz-context-note"><i class="fas fa-info-circle"></i> <strong>${meta.name}</strong> 尚未生成产出物。</div>`);
+    }
+  },
+
+  updateProgress: function() {
+    const steps = document.querySelectorAll('.akz-progress-step');
+    steps.forEach((step, index) => {
+      const stepNum = index + 1;
+      const statusEl = step.querySelector('.akz-progress-step-status');
+
+      if (stepNum < this.currentStep) {
+        step.classList.remove('active');
+        step.classList.add('completed');
+        if (statusEl) statusEl.textContent = '已完成';
+      } else if (stepNum === this.currentStep) {
+        step.classList.remove('completed');
+        step.classList.add('active');
+        if (statusEl) statusEl.textContent = '进行中';
+      } else {
+        step.classList.remove('active', 'completed');
+        if (statusEl) statusEl.textContent = '待开始';
+      }
+    });
+
+    const phaseEl = document.getElementById('akz-current-phase');
+    if (phaseEl) {
+      const phaseNames = ['', '文档上传', '智能解析', '脚本创作', '素材生成', '视频生成', '后期合成'];
+      phaseEl.textContent = `当前阶段：${phaseNames[this.currentStep]}`;
+    }
+  },
+
+  getStepIntroduction: function(step) {
+    const introductions = {
+      1: `现在让我们从<strong>文档上传</strong>开始。请上传您的科技成果相关文档（支持图片、PPT、PDF、Word格式），或直接描述您要展示的科技成果。`,
+      2: `文档上传完成！现在进入<strong>智能解析</strong>阶段。
+
+系统将对文档进行深度分析：
+• 提取成果名称、核心技术、应用企业、经济数据、荣誉资质等全部信息颗粒
+• 进行结构映射与数据翻译
+• 生成镜头语言建议
+
+以上流程将自动完成，您只需确认分析维度即可。`,
+      3: `内容提炼完成！现在进入<strong>脚本创作</strong>阶段。
+
+请告诉我您对视频脚本的偏好：
+• 脚本结构（问题-方案型 / 故事叙述型 / 产品演示型）
+• 旁白风格（专业严谨 / 通俗易懂 / 激情澎湃）
+• 是否需要数字人出镜讲解`,
+      4: `脚本创作完成！现在进入<strong>素材生成</strong>阶段。
+
+请告诉我视觉风格偏好：
+• 视觉风格（科技未来风 / 简洁商务风 / 自然温馨风）
+• 数据展示方式（图表动画 / 信息图 / 3D演示）
+• 系统将使用自有AI引擎自动生成素材`,
+      5: `素材准备就绪！现在进入<strong>视频生成</strong>阶段。
+
+请告诉我视频制作偏好：
+• 生成方式（图生视频 / 动作迁移 / 特效合成）
+• 转场风格（平滑过渡 / 动感切换 / 简洁硬切）
+• 动态效果（Ken Burns缓慢推拉 / 视差滚动 / 静态画面）`,
+      6: `视频片段生成完成！最后进入<strong>后期合成</strong>阶段。
+
+请告诉我后期处理需求：
+• 背景音乐风格（企业宣传风 / 科技电子风 / 励志进取风）
+• 字幕样式（简洁白字 / 科技风格 / 动态字幕）
+• 输出格式（1080p / 4K）`
+    };
+
+    return introductions[step] || '';
+  },
+
+  updateSuggestions: function(step) {
+    const suggestionsContainer = document.getElementById('akz-suggestion-chips');
+    if (!suggestionsContainer) return;
+
+    const suggestions = {
+      1: [
+        { text: '新材料成果展示', value: '我有一项新材料领域的科研成果，研发了一种高强度的碳纤维复合材料，想在展会上用短视频展示其性能优势和应用前景。' },
+        { text: '智能农业系统', value: '我们团队研发出了一套智能农业监测系统，通过AI视觉识别病虫害，需要制作一个3分钟的产品介绍短视频。' },
+        { text: '新能源电池技术', value: '我有一份关于新型电池技术的专利文档，能量密度提升了40%，想制作一个短视频向投资人展示技术优势。' },
+        { text: '医疗AI系统推广', value: '我们开发了一套医疗影像AI辅助诊断系统，已通过临床验证，需要制作短视频向医院推广。' }
+      ],
+      2: [
+        { text: '详尽分析', value: '详尽分析全部信息颗粒，结构化报告呈现，镜头语言采用专业科技风。' },
+        { text: '聚焦核心', value: '聚焦核心技术与市场数据，叙事型总结，镜头语言采用商业宣传风。' },
+        { text: '科普教育', value: '全面均衡分析，结构化报告，镜头语言采用科普教育风，通俗易懂。' }
+      ],
+      3: [
+        { text: '问题-方案型', value: '使用问题-方案结构，先展示行业痛点，再引出技术方案，专业男声旁白，数字人讲解。' },
+        { text: '故事叙述型', value: '以研发故事为主线，从灵感来源到技术突破，亲切男声旁白，纯画面+配音。' },
+        { text: '产品演示型', value: '以产品功能展示为主，直观呈现技术优势，优雅女声旁白，数字人出镜。' }
+      ],
+      4: [
+        { text: '科技未来风', value: '科技未来风，蓝白配色为主，数据图表展示关键指标。' },
+        { text: '简洁商务风', value: '简洁商务风，白色为主色调，信息图+场景实拍。' },
+        { text: '深色科技风', value: '深色科技风，深蓝+霓虹色，3D产品演示。' }
+      ],
+      5: [
+        { text: '平滑图生视频', value: '图生视频方式，使用平滑过渡和Ken Burns效果，自然流畅的视觉体验。' },
+        { text: '动感展示', value: '图生视频+特效合成，动感切换转场，视差滚动效果，富有视觉冲击力。' },
+        { text: '简洁静态', value: '图生视频为主，简洁硬切转场，静态画面配合旁白，突出内容本身。' }
+      ],
+      6: [
+        { text: '企业宣传级', value: '企业宣传风背景音乐，简洁白字字幕居中，科技风格调色，输出1080p MP4格式。' },
+        { text: '展会展示版', value: '科技电子风BGM，动态科技感字幕，高对比度调色，适合大屏展示，输出4K MP4。' },
+        { text: '社交媒体版', value: '轻快进取风BGM，动态字幕，明亮调色，适合手机竖屏观看，输出1080p MP4。' }
+      ]
+    };
+
+    const stepSuggestions = suggestions[step] || [];
+    suggestionsContainer.innerHTML = stepSuggestions.map(s =>
+      `<button class="akz-suggestion-chip" data-suggestion="${s.value}">${s.text}</button>`
+    ).join('');
+
+    const newChips = suggestionsContainer.querySelectorAll('.akz-suggestion-chip');
+    const inputField = document.getElementById('akz-unified-input');
+    newChips.forEach(chip => {
+      chip.addEventListener('click', () => {
+        const suggestion = chip.getAttribute('data-suggestion');
+        if (inputField) {
+          inputField.value = suggestion;
+          inputField.focus();
+        }
+      });
+    });
+  },
+
+  clearChat: function() {
+    const messagesContainer = document.getElementById('akz-unified-messages');
+    if (!messagesContainer) return;
+
+    const welcomeMessage = messagesContainer.querySelector('.akz-message-assistant');
+    messagesContainer.innerHTML = '';
+    if (welcomeMessage) {
+      messagesContainer.appendChild(welcomeMessage);
+    }
+
+    this.messages = [];
+    this.stepPhase = 'awaiting_input';
+    this.updateInputPlaceholder();
+  },
+
+  // 辅助提取函数
+  extractField: function(m) { if (/材料|碳纤维|复合/i.test(m)) return '新材料'; if (/智能|AI|数据|算法/i.test(m)) return 'AI与大数据'; if (/能源|电池|光伏|储能/i.test(m)) return '新能源'; if (/医疗|医药|生物|临床/i.test(m)) return '生物医药'; if (/制造|装备|机器人|自动化/i.test(m)) return '先进制造'; if (/农业|种植|养殖|农产品/i.test(m)) return '现代农业'; return '高新科技'; },
+  extractGoal: function(m) { if (/投资|融资/i.test(m)) return '面向投资人'; if (/展会|展览/i.test(m)) return '展会展示'; if (/推广|产品|应用/i.test(m)) return '产品推广'; return '学术交流'; },
+  extractDuration: function(m) { if (/1.*分钟|快速/i.test(m)) return '约1分钟'; if (/5.*分钟|深度/i.test(m)) return '约5分钟'; return '约3分钟'; },
+  extractTarget: function(m) { if (/投资/i.test(m)) return '投资人'; if (/医院/i.test(m)) return '医疗机构'; if (/企业/i.test(m)) return '企业客户'; return '专业观众'; },
+  extractHighlight: function(m) { if (/应用|场景/i.test(m)) return '应用场景展示'; if (/性能|对比/i.test(m)) return '性能优势对比'; return '技术突破创新'; },
+  extractStructure: function(m) { if (/故事/i.test(m)) return '故事叙述型'; if (/演示|产品/i.test(m)) return '产品演示型'; return '问题-方案型'; },
+  extractNarration: function(m) { if (/亲切|男/i.test(m)) return '亲切男声'; if (/优雅|女/i.test(m)) return '优雅女声'; if (/专业.*女/i.test(m)) return '专业女声'; return '专业男声'; },
+  extractHost: function(m) { if (/纯旁白|配音|不出镜/i.test(m)) return '纯旁白+画面'; return '数字人讲解'; },
+  extractVisualStyle: function(m) { if (/商务/i.test(m)) return '简洁商务风'; if (/深色|暗/i.test(m)) return '深色科技风'; if (/温馨|自然/i.test(m)) return '自然温馨风'; return '科技未来风'; },
+  extractVideoMethod: function(m) { if (/动作迁移/i.test(m)) return '动作迁移'; if (/特效/i.test(m)) return '特效合成'; return '图生视频'; },
+  extractDynamicEffect: function(m) { if (/视差/i.test(m)) return '视差滚动'; if (/静态/i.test(m)) return '静态画面'; return 'Ken Burns效果'; },
+  extractTransition: function(m) { if (/动感/i.test(m)) return '动感切换'; if (/硬切|简洁/i.test(m)) return '简洁硬切'; return '平滑过渡'; },
+  extractService: function(m) { return '自有AI引擎'; },
+  extractBGMStyle: function(m) { if (/科技.*电子|电子/i.test(m)) return '科技电子风'; if (/励志|进取/i.test(m)) return '励志进取风'; if (/舒缓|氛围/i.test(m)) return '氛围舒缓风'; return '企业宣传风'; },
+  extractAchievementName: function(m) { if (/碳纤维|复合/i.test(m)) return '高强度碳纤维复合材料'; if (/监测|农业/i.test(m)) return 'AI视觉农业监测系统'; if (/电池|储能|能量/i.test(m)) return '新型高能量密度电池技术'; if (/医疗|影像|诊断/i.test(m)) return '医疗影像AI辅助诊断系统'; if (/制造|装备|机器人/i.test(m)) return '智能制造成套装备'; return '待确认的科技成果'; },
+  extractCoreTech: function(m) { if (/碳纤维|复合/i.test(m)) return '纳米增强碳纤维编织工艺'; if (/AI|视觉|识别/i.test(m)) return '深度学习视觉识别算法'; if (/电池|能量密度/i.test(m)) return '固态电解质界面优化技术'; if (/医疗|影像/i.test(m)) return '多模态医学影像融合分析引擎'; if (/制造|机器人/i.test(m)) return '自适应柔性装配系统'; return '待提取的核心技术'; },
+  extractApplication: function(m) { if (/碳纤维|航空/i.test(m)) return '航空航天 / 新能源汽车'; if (/农业/i.test(m)) return '智慧农业示范基地'; if (/电池|新能源/i.test(m)) return '新能源汽车 / 储能电站'; if (/医疗|医院/i.test(m)) return '三甲医院影像科 / 体检中心'; return '多行业应用场景'; },
+  extractVisualLang: function(m) { if (/商业|宣传/i.test(m)) return '商业宣传风'; if (/科普|教育/i.test(m)) return '科普教育风'; return '专业科技风'; }
+};
+
 // ===== Token消耗管理模块 =====
 const TokenManager = {
   STORAGE_KEY: 'aurora_token_data',
@@ -3804,5 +5210,6 @@ document.addEventListener('DOMContentLoaded', () => {
   initLogin();
   DesignSpec.init();
   SDChatAgent.init();
+  AKZChatAgent.init();
   TokenManager.init();
 });
