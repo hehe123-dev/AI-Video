@@ -3506,19 +3506,18 @@ const SDChatAgent = {
 const AKZChatAgent = {
   messages: [],
   currentStep: 1,
-  totalSteps: 6,
+  totalSteps: 5,
   stepPhase: 'awaiting_input',
   stepArtifacts: {},
   stepData: {},
   selectedModel: 'gpt-4o',
 
   stepMeta: {
-    1: { name: '文档上传', icon: 'fa-cloud-upload-alt', artifactName: '文档解析结果', skill: '文档解析助手' },
-    2: { name: '智能解析', icon: 'fa-brain', artifactName: '智能解析报告', skill: '成果解析助手' },
-    3: { name: '脚本创作', icon: 'fa-pen-fancy', artifactName: '视频脚本', skill: '脚本创作助手' },
-    4: { name: '素材生成', icon: 'fa-palette', artifactName: '视觉素材', skill: '素材生成助手' },
-    5: { name: '视频生成', icon: 'fa-video', artifactName: '短视频', skill: '视频生成助手' },
-    6: { name: '后期合成', icon: 'fa-wand-magic-sparkles', artifactName: '成片', skill: '后期合成助手' }
+    1: { name: '文档解析', icon: 'fa-file-magnifying-glass', artifactName: '文档解析报告', skill: '文档解析助手' },
+    2: { name: '脚本创作', icon: 'fa-pen-fancy', artifactName: '视频脚本', skill: '脚本创作助手' },
+    3: { name: '素材生成', icon: 'fa-palette', artifactName: '视觉素材', skill: '素材生成助手' },
+    4: { name: '视频生成', icon: 'fa-video', artifactName: '短视频', skill: '视频生成助手' },
+    5: { name: '后期合成', icon: 'fa-wand-magic-sparkles', artifactName: '成片', skill: '后期合成助手' }
   },
 
   init: function() {
@@ -3738,23 +3737,21 @@ const AKZChatAgent = {
 
   getConfirmationIntro: function(step, message) {
     const intros = {
-      1: `您提交了科技成果文档。我先确认几个关键信息，以便更好地为您制作展示视频：`,
-      2: `文档上传完成。系统将对文档进行<strong>智能解析</strong>，自动提取成果名称、核心技术、应用企业、经济数据、荣誉资质等信息颗粒，并进行结构映射、数据翻译和镜头语言分析。请确认以下分析维度：`,
-      3: `内容提炼完成。现在开始创作<strong>视频脚本</strong>。请确认脚本参数：`,
-      4: `脚本创作完成。接下来生成<strong>视觉素材</strong>。请确认素材参数：`,
-      5: `素材已就绪。现在将素材转化为<strong>短视频</strong>。请确认视频参数：`,
-      6: `视频生成完成。最后进行<strong>后期合成</strong>。请确认后期参数：`
+      1: `您提交了科技成果文档。系统将对文档进行<strong>智能解析</strong>，自动提取成果名称、核心技术、应用企业、经济数据、荣誉资质等信息颗粒，并进行结构映射、数据翻译和镜头语言分析。请确认以下分析与制作参数：`,
+      2: `文档解析完成。现在开始创作<strong>视频脚本</strong>。请确认脚本参数：`,
+      3: `脚本创作完成。接下来生成<strong>视觉素材</strong>。请确认素材参数：`,
+      4: `素材已就绪。现在将素材转化为<strong>短视频</strong>。请确认视频参数：`,
+      5: `视频生成完成。最后进行<strong>后期合成</strong>。请确认后期参数：`
     };
     return intros[step] || `请确认以下${this.stepMeta[step].name}的相关参数：`;
   },
 
   getStepParameters: function(step, userMessage) {
     if (step === 1) return this.generateDocParseParams(userMessage);
-    if (step === 2) return this.generateContentExtractParams(userMessage);
-    if (step === 3) return this.generateScriptParams(userMessage);
-    if (step === 4) return this.generateMaterialParams(userMessage);
-    if (step === 5) return this.generateVideoParams(userMessage);
-    if (step === 6) return this.generatePostParams(userMessage);
+    if (step === 2) return this.generateScriptParams(userMessage);
+    if (step === 3) return this.generateMaterialParams(userMessage);
+    if (step === 4) return this.generateVideoParams(userMessage);
+    if (step === 5) return this.generatePostParams(userMessage);
     return [];
   },
 
@@ -3800,21 +3797,6 @@ const AKZChatAgent = {
         ]
       },
       {
-        label: '还有其他要求吗？',
-        name: 'additional',
-        type: 'textarea',
-        placeholder: '例如：需要展示专利证书、团队介绍、实验数据、应用案例等...'
-      }
-    ];
-  },
-
-  matchField: function(msg, pattern) {
-    return new RegExp(pattern, 'i').test(msg);
-  },
-
-  generateContentExtractParams: function(userMessage) {
-    return [
-      {
         label: '分析粒度？',
         name: 'granularity',
         options: [
@@ -3838,9 +3820,20 @@ const AKZChatAgent = {
           { value: 'commercial', label: '商业宣传风（突出价值）', selected: false },
           { value: 'educational', label: '科普教育风（通俗易懂）', selected: false }
         ]
+      },
+      {
+        label: '还有其他要求吗？',
+        name: 'additional',
+        type: 'textarea',
+        placeholder: '例如：需要展示专利证书、团队介绍、实验数据、应用案例等...'
       }
     ];
   },
+
+  matchField: function(msg, pattern) {
+    return new RegExp(pattern, 'i').test(msg);
+  },
+
 
   generateScriptParams: function(userMessage) {
     return [
@@ -4525,7 +4518,7 @@ const AKZChatAgent = {
       this.addMessage('assistant', `<div class="akz-context-note"><i class="fas fa-link"></i> 已加载上一步的<strong>${this.stepMeta[this.currentStep - 1].artifactName}</strong>作为本阶段的输入基础。</div>`);
     }
 
-    if (this.currentStep >= 2 && this.currentStep <= 6) {
+    if (this.currentStep >= 2 && this.currentStep <= 5) {
       setTimeout(() => {
         this.autoGenerateNextStepConfirmation();
       }, 800);
@@ -4536,14 +4529,12 @@ const AKZChatAgent = {
     let defaultMessage = '';
 
     if (this.currentStep === 2) {
-      defaultMessage = '详尽分析全部信息颗粒，结构化报告呈现，镜头语言采用专业科技风。';
-    } else if (this.currentStep === 3) {
       defaultMessage = '使用问题-方案结构，专业男声旁白，结合数字人讲解。';
-    } else if (this.currentStep === 4) {
+    } else if (this.currentStep === 3) {
       defaultMessage = '科技未来风，图文均衡，使用自有AI引擎生成素材。';
-    } else if (this.currentStep === 5) {
+    } else if (this.currentStep === 4) {
       defaultMessage = '图生视频方式，使用平滑过渡和Ken Burns效果。';
-    } else if (this.currentStep === 6) {
+    } else if (this.currentStep === 5) {
       defaultMessage = '企业宣传风背景音乐，简洁白字字幕，科技风格调色，输出1080p MP4格式。';
     }
 
@@ -4557,11 +4548,10 @@ const AKZChatAgent = {
   generateArtifact: function(step, userMessage) {
     const generators = {
       1: () => this.buildDocParseArtifact(userMessage),
-      2: () => this.buildContentExtractArtifact(userMessage),
-      3: () => this.buildScriptArtifact(userMessage),
-      4: () => this.buildMaterialArtifact(userMessage),
-      5: () => this.buildVideoArtifact(userMessage),
-      6: () => this.buildPostArtifact(userMessage)
+      2: () => this.buildScriptArtifact(userMessage),
+      3: () => this.buildMaterialArtifact(userMessage),
+      4: () => this.buildVideoArtifact(userMessage),
+      5: () => this.buildPostArtifact(userMessage)
     };
     const build = generators[step];
     return build ? build() : { title: '产出物', source: 'ai', summary: '已生成' };
@@ -4569,42 +4559,28 @@ const AKZChatAgent = {
 
   buildDocParseArtifact: function(message) {
     const field = this.extractField(message);
-    return {
-      title: '文档解析结果',
-      source: 'ai',
-      summary: `已完成对「${field}」领域科技成果文档的解析`,
-      sections: [
-        { label: '所属领域', value: field },
-        { label: '文档类型', value: '包含文字、图片、数据图表等内容' },
-        { label: '核心技术点', value: '已提取 3-5 项关键技术特征' },
-        { label: '创新指数', value: '高（具备显著的技术创新性）' }
-      ],
-      preview: `科技成果解析报告\n\n领域：${field}\n\n核心发现：\n1. 技术创新点识别完成\n2. 关键性能指标提取完成\n3. 应用场景分析完成\n\n建议：以"技术突破+应用价值"为主线进行视频呈现。`
-    };
-  },
-
-  buildContentExtractArtifact: function(message) {
-    const field = this.extractField(message);
     const goal = this.extractGoal(message);
     const duration = this.extractDuration(message);
     const visualLang = this.extractVisualLang(message);
 
     return {
-      title: '智能解析报告',
+      title: '文档解析报告',
       source: 'ai',
-      summary: `已完成文档解析、结构映射、数据翻译和镜头语言分析，共提取 15+ 项信息颗粒`,
+      summary: `已完成文档上传与智能解析，共提取 15+ 项信息颗粒，涵盖「${field}」领域科技成果`,
       sections: [
         { label: '成果名称', value: this.extractAchievementName(message) },
         { label: '所属领域', value: field },
+        { label: '文档类型', value: '包含文字、图片、数据图表等内容' },
         { label: '核心技术', value: this.extractCoreTech(message) },
         { label: '应用企业/场景', value: this.extractApplication(message) },
         { label: '经济数据', value: '已提取相关市场与财务指标' },
         { label: '荣誉资质', value: '已提取专利、奖项等资质信息' },
+        { label: '创新指数', value: '高（具备显著的技术创新性）' },
         { label: '场景映射', value: '6 个场景（开场→痛点→方案→亮点→应用→收尾）' },
         { label: '镜头语言风格', value: visualLang },
         { label: '视频时长建议', value: duration }
       ],
-      preview: `═══════════════════════════════════\n  科技成果智能解析报告\n═══════════════════════════════════\n\n【文档解析】\n• 成果名称：${this.extractAchievementName(message)}\n• 所属领域：${field}\n• 核心技术：${this.extractCoreTech(message)}\n• 应用企业/场景：${this.extractApplication(message)}\n• 经济数据：已完成关键指标提取\n• 荣誉资质：已完成专利与奖项梳理\n\n【结构映射】\n• 将文档内容映射为视频场景：\n  场景1（开场）→ 成果背景引入\n  场景2（痛点）→ 行业需求与技术挑战\n  场景3（方案）→ 核心技术原理展示\n  场景4（亮点）→ 性能数据与对比优势\n  场景5（应用）→ 实际落地案例\n  场景6（收尾）→ 市场前景与联系方式\n• 叙事主线：以"${goal}"为导向\n\n【数据翻译】\n• 将专业技术指标转化为大众可理解的视频语言\n• 关键数据可视化方案已规划\n\n【镜头语言】\n• 风格定位：${visualLang}\n• 视觉基调：科技蓝 + 数据可视化\n• 推荐时长：${duration}\n\n═══════════════════════════════════\n以上信息颗粒将用于后续脚本创作`
+      preview: `═══════════════════════════════════\n  科技成果文档解析报告\n═══════════════════════════════════\n\n【文档解析】\n• 成果名称：${this.extractAchievementName(message)}\n• 所属领域：${field}\n• 核心技术：${this.extractCoreTech(message)}\n• 应用企业/场景：${this.extractApplication(message)}\n• 经济数据：已完成关键指标提取\n• 荣誉资质：已完成专利与奖项梳理\n\n【结构映射】\n• 将文档内容映射为视频场景：\n  场景1（开场）→ 成果背景引入\n  场景2（痛点）→ 行业需求与技术挑战\n  场景3（方案）→ 核心技术原理展示\n  场景4（亮点）→ 性能数据与对比优势\n  场景5（应用）→ 实际落地案例\n  场景6（收尾）→ 市场前景与联系方式\n• 叙事主线：以"${goal}"为导向\n\n【数据翻译】\n• 将专业技术指标转化为大众可理解的视频语言\n• 关键数据可视化方案已规划\n\n【镜头语言】\n• 风格定位：${visualLang}\n• 视觉基调：科技蓝 + 数据可视化\n• 推荐时长：${duration}\n\n═══════════════════════════════════\n以上信息颗粒将用于后续脚本创作`
     };
   },
 
@@ -4665,7 +4641,7 @@ const AKZChatAgent = {
     return {
       title: '最终成片',
       source: 'ai',
-      summary: `已完成全部6步制作流程，${this.extractBGMStyle(message)}配乐 + 科技风格调色`,
+      summary: `已完成全部5步制作流程，${this.extractBGMStyle(message)}配乐 + 科技风格调色`,
       sections: [
         { label: '片头', value: '科技感标题动画 · 3秒' },
         { label: '正片', value: `8-12个场景 · 总时长约${duration}` },
@@ -4771,15 +4747,14 @@ const AKZChatAgent = {
 
     const phaseEl = document.getElementById('akz-current-phase');
     if (phaseEl) {
-      const phaseNames = ['', '文档上传', '智能解析', '脚本创作', '素材生成', '视频生成', '后期合成'];
+      const phaseNames = ['', '文档解析', '脚本创作', '素材生成', '视频生成', '后期合成'];
       phaseEl.textContent = `当前阶段：${phaseNames[this.currentStep]}`;
     }
   },
 
   getStepIntroduction: function(step) {
     const introductions = {
-      1: `现在让我们从<strong>文档上传</strong>开始。请上传您的科技成果相关文档（支持图片、PPT、PDF、Word格式），或直接描述您要展示的科技成果。`,
-      2: `文档上传完成！现在进入<strong>智能解析</strong>阶段。
+      1: `现在让我们从<strong>文档解析</strong>开始。请上传您的科技成果相关文档（支持图片、PPT、PDF、Word格式），或直接描述您要展示的科技成果。
 
 系统将对文档进行深度分析：
 • 提取成果名称、核心技术、应用企业、经济数据、荣誉资质等全部信息颗粒
@@ -4787,25 +4762,25 @@ const AKZChatAgent = {
 • 生成镜头语言建议
 
 以上流程将自动完成，您只需确认分析维度即可。`,
-      3: `内容提炼完成！现在进入<strong>脚本创作</strong>阶段。
+      2: `文档解析完成！现在进入<strong>脚本创作</strong>阶段。
 
 请告诉我您对视频脚本的偏好：
 • 脚本结构（问题-方案型 / 故事叙述型 / 产品演示型）
 • 旁白风格（专业严谨 / 通俗易懂 / 激情澎湃）
 • 是否需要数字人出镜讲解`,
-      4: `脚本创作完成！现在进入<strong>素材生成</strong>阶段。
+      3: `脚本创作完成！现在进入<strong>素材生成</strong>阶段。
 
 请告诉我视觉风格偏好：
 • 视觉风格（科技未来风 / 简洁商务风 / 自然温馨风）
 • 数据展示方式（图表动画 / 信息图 / 3D演示）
 • 系统将使用自有AI引擎自动生成素材`,
-      5: `素材准备就绪！现在进入<strong>视频生成</strong>阶段。
+      4: `素材准备就绪！现在进入<strong>视频生成</strong>阶段。
 
 请告诉我视频制作偏好：
 • 生成方式（图生视频 / 动作迁移 / 特效合成）
 • 转场风格（平滑过渡 / 动感切换 / 简洁硬切）
 • 动态效果（Ken Burns缓慢推拉 / 视差滚动 / 静态画面）`,
-      6: `视频片段生成完成！最后进入<strong>后期合成</strong>阶段。
+      5: `视频片段生成完成！最后进入<strong>后期合成</strong>阶段。
 
 请告诉我后期处理需求：
 • 背景音乐风格（企业宣传风 / 科技电子风 / 励志进取风）
@@ -4828,26 +4803,21 @@ const AKZChatAgent = {
         { text: '医疗AI系统推广', value: '我们开发了一套医疗影像AI辅助诊断系统，已通过临床验证，需要制作短视频向医院推广。' }
       ],
       2: [
-        { text: '详尽分析', value: '详尽分析全部信息颗粒，结构化报告呈现，镜头语言采用专业科技风。' },
-        { text: '聚焦核心', value: '聚焦核心技术与市场数据，叙事型总结，镜头语言采用商业宣传风。' },
-        { text: '科普教育', value: '全面均衡分析，结构化报告，镜头语言采用科普教育风，通俗易懂。' }
-      ],
-      3: [
         { text: '问题-方案型', value: '使用问题-方案结构，先展示行业痛点，再引出技术方案，专业男声旁白，数字人讲解。' },
         { text: '故事叙述型', value: '以研发故事为主线，从灵感来源到技术突破，亲切男声旁白，纯画面+配音。' },
         { text: '产品演示型', value: '以产品功能展示为主，直观呈现技术优势，优雅女声旁白，数字人出镜。' }
       ],
-      4: [
+      3: [
         { text: '科技未来风', value: '科技未来风，蓝白配色为主，数据图表展示关键指标。' },
         { text: '简洁商务风', value: '简洁商务风，白色为主色调，信息图+场景实拍。' },
         { text: '深色科技风', value: '深色科技风，深蓝+霓虹色，3D产品演示。' }
       ],
-      5: [
+      4: [
         { text: '平滑图生视频', value: '图生视频方式，使用平滑过渡和Ken Burns效果，自然流畅的视觉体验。' },
         { text: '动感展示', value: '图生视频+特效合成，动感切换转场，视差滚动效果，富有视觉冲击力。' },
         { text: '简洁静态', value: '图生视频为主，简洁硬切转场，静态画面配合旁白，突出内容本身。' }
       ],
-      6: [
+      5: [
         { text: '企业宣传级', value: '企业宣传风背景音乐，简洁白字字幕居中，科技风格调色，输出1080p MP4格式。' },
         { text: '展会展示版', value: '科技电子风BGM，动态科技感字幕，高对比度调色，适合大屏展示，输出4K MP4。' },
         { text: '社交媒体版', value: '轻快进取风BGM，动态字幕，明亮调色，适合手机竖屏观看，输出1080p MP4。' }
