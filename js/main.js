@@ -3514,7 +3514,7 @@ const AKZChatAgent = {
 
   stepMeta: {
     1: { name: '文档解析', icon: 'fa-file-magnifying-glass', artifactName: '文档解析报告', skill: '文档解析助手' },
-    2: { name: '脚本创作', icon: 'fa-pen-fancy', artifactName: '视频脚本', skill: '脚本创作助手' },
+    2: { name: '镜头脚本', icon: 'fa-pen-fancy', artifactName: '视频脚本', skill: '镜头脚本助手' },
     3: { name: '素材生成', icon: 'fa-palette', artifactName: '视觉素材', skill: '素材生成助手' },
     4: { name: '视频生成', icon: 'fa-video', artifactName: '短视频', skill: '视频生成助手' },
     5: { name: '后期合成', icon: 'fa-wand-magic-sparkles', artifactName: '成片', skill: '后期合成助手' }
@@ -3739,7 +3739,7 @@ const AKZChatAgent = {
     const intros = {
       1: `您提交了科技成果文档。系统将对文档进行<strong>智能解析</strong>，自动提取成果名称、核心技术、应用企业、经济数据、荣誉资质等信息颗粒，并进行结构映射、数据翻译和镜头语言分析。请确认以下分析与制作参数：`,
       2: `文档解析完成。现在开始创作<strong>视频脚本</strong>。请确认脚本参数：`,
-      3: `脚本创作完成。接下来生成<strong>视觉素材</strong>。请确认素材参数：`,
+      3: `镜头脚本完成。接下来生成<strong>视觉素材</strong>。请确认素材参数：`,
       4: `素材已就绪。现在将素材转化为<strong>短视频</strong>。请确认视频参数：`,
       5: `视频生成完成。最后进行<strong>后期合成</strong>。请确认后期参数：`
     };
@@ -4580,7 +4580,7 @@ const AKZChatAgent = {
         { label: '镜头语言风格', value: visualLang },
         { label: '视频时长建议', value: duration }
       ],
-      preview: `═══════════════════════════════════\n  科技成果文档解析报告\n═══════════════════════════════════\n\n【文档解析】\n• 成果名称：${this.extractAchievementName(message)}\n• 所属领域：${field}\n• 核心技术：${this.extractCoreTech(message)}\n• 应用企业/场景：${this.extractApplication(message)}\n• 经济数据：已完成关键指标提取\n• 荣誉资质：已完成专利与奖项梳理\n\n【结构映射】\n• 将文档内容映射为视频场景：\n  场景1（开场）→ 成果背景引入\n  场景2（痛点）→ 行业需求与技术挑战\n  场景3（方案）→ 核心技术原理展示\n  场景4（亮点）→ 性能数据与对比优势\n  场景5（应用）→ 实际落地案例\n  场景6（收尾）→ 市场前景与联系方式\n• 叙事主线：以"${goal}"为导向\n\n【数据翻译】\n• 将专业技术指标转化为大众可理解的视频语言\n• 关键数据可视化方案已规划\n\n【镜头语言】\n• 风格定位：${visualLang}\n• 视觉基调：科技蓝 + 数据可视化\n• 推荐时长：${duration}\n\n═══════════════════════════════════\n以上信息颗粒将用于后续脚本创作`
+      preview: `═══════════════════════════════════\n  科技成果文档解析报告\n═══════════════════════════════════\n\n【文档解析】\n• 成果名称：${this.extractAchievementName(message)}\n• 所属领域：${field}\n• 核心技术：${this.extractCoreTech(message)}\n• 应用企业/场景：${this.extractApplication(message)}\n• 经济数据：已完成关键指标提取\n• 荣誉资质：已完成专利与奖项梳理\n\n【结构映射】\n• 将文档内容映射为视频场景：\n  场景1（开场）→ 成果背景引入\n  场景2（痛点）→ 行业需求与技术挑战\n  场景3（方案）→ 核心技术原理展示\n  场景4（亮点）→ 性能数据与对比优势\n  场景5（应用）→ 实际落地案例\n  场景6（收尾）→ 市场前景与联系方式\n• 叙事主线：以"${goal}"为导向\n\n【数据翻译】\n• 将专业技术指标转化为大众可理解的视频语言\n• 关键数据可视化方案已规划\n\n【镜头语言】\n• 风格定位：${visualLang}\n• 视觉基调：科技蓝 + 数据可视化\n• 推荐时长：${duration}\n\n═══════════════════════════════════\n以上信息颗粒将用于后续镜头脚本`
     };
   },
 
@@ -4747,7 +4747,7 @@ const AKZChatAgent = {
 
     const phaseEl = document.getElementById('akz-current-phase');
     if (phaseEl) {
-      const phaseNames = ['', '文档解析', '脚本创作', '素材生成', '视频生成', '后期合成'];
+      const phaseNames = ['', '文档解析', '镜头脚本', '素材生成', '视频生成', '后期合成'];
       phaseEl.textContent = `当前阶段：${phaseNames[this.currentStep]}`;
     }
   },
@@ -4762,13 +4762,13 @@ const AKZChatAgent = {
 • 生成镜头语言建议
 
 以上流程将自动完成，您只需确认分析维度即可。`,
-      2: `文档解析完成！现在进入<strong>脚本创作</strong>阶段。
+      2: `文档解析完成！现在进入<strong>镜头脚本</strong>阶段。
 
 请告诉我您对视频脚本的偏好：
 • 脚本结构（问题-方案型 / 故事叙述型 / 产品演示型）
 • 旁白风格（专业严谨 / 通俗易懂 / 激情澎湃）
 • 是否需要数字人出镜讲解`,
-      3: `脚本创作完成！现在进入<strong>素材生成</strong>阶段。
+      3: `镜头脚本完成！现在进入<strong>素材生成</strong>阶段。
 
 请告诉我视觉风格偏好：
 • 视觉风格（科技未来风 / 简洁商务风 / 自然温馨风）
