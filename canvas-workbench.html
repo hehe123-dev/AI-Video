@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Open Canvas · 画布工作台</title>
+<style>
+  :root{
+    --bg:#050507; --panel:#111216; --border:#2C2D32; --text:#ECECF1; --text2:#A8A9B0;
+    --accent:#7B5CF5; --accent-soft:rgba(123,92,245,0.15); --hover:#1A1B1F; --shadow:0 1px 2px rgba(0,0,0,.3);
+    --radius:8px;
+    --node-bg:#111216; --node-border:#2C2D32; --node-text:#ECECF1; --node-text2:#A8A9B0;
+    --node-header:#050507; --node-content-bg:#1A1B1F; --node-dashed:#2C2D32;
+    --panel-bg:#111216; --panel-border:#2C2D32; --panel-input:#242529;
+    --sidebar-bg:#111216; --sidebar-border:#2C2D32;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;background:#050507}
+  body{font-family:-apple-system,Segoe UI,Roboto,"Helvetica Neue","PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);overflow:hidden;display:flex;flex-direction:column}
+  .toolbar{display:flex;align-items:center;gap:12px;padding:8px 14px;background:var(--panel);border-bottom:1px solid var(--border);flex-shrink:0}
+  .toolbar .back,.toolbar .btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);background:var(--panel);border-radius:var(--radius);padding:6px 12px;font-size:13px;cursor:pointer;color:var(--text)}
+  .toolbar .back:hover,.toolbar .btn:hover{background:var(--hover)}
+  .toolbar .btn.generate-btn{
+    background:linear-gradient(135deg, #7B5CF5 0%, #4A7CFF 100%);
+    color:#fff;border:none;
+    box-shadow:0 0 14px rgba(123,92,245,0.28);
+    font-weight:600;
+  }
+  .toolbar .btn.generate-btn:hover{
+    background:linear-gradient(135deg, #6B4FE0 0%, #3A6CE0 100%);
+    box-shadow:0 0 20px rgba(123,92,245,0.4);
+  }
+  .toolbar .title{font-size:14px;font-weight:600;margin-left:4px}
+  .spacer{flex:1}
+  .save-state{font-size:12px;color:var(--text2);display:inline-flex;align-items:center;gap:5px}
+  .dot{width:7px;height:7px;border-radius:50%;background:#2FC48D;display:inline-block}
+  .btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .btn.primary:hover{background:#6B4FE0}
+  .btn.icon{width:34px;padding:6px;justify-content:center}
+  .wrap{flex:1;display:flex;overflow:hidden}
+
+  /* ===== 左侧暗色工具栏 ===== */
+  .left-toolbar{
+    position:absolute;left:16px;top:50%;transform:translateY(-50%);
+    width:52px;
+    background:var(--sidebar-bg);
+    border:1px solid var(--sidebar-border);
+    border-radius:26px;
+    display:flex;flex-direction:column;align-items:center;
+    padding:10px 0;gap:4px;
+    z-index:20;
+    box-shadow:0 4px 20px rgba(0,0,0,.3);
+  }
+  .left-toolbar .lt-btn{
+    width:38px;height:38px;
+    display:flex;align-items:center;justify-content:center;
+    border:none;background:transparent;
+    border-radius:50%;cursor:pointer;
+    color:#888;font-size:16px;
+    transition:background .15s,color .15s;
+  }
+  .left-toolbar .lt-btn:hover{background:rgba(255,255,255,.08);color:#ccc}
+  .left-toolbar .lt-btn.add-btn{
+    width:40px;height:40px;
+    background:#fff;color:#111;
+    font-size:22px;font-weight:300;
+    margin-bottom:6px;
+    box-shadow:0 2px 8px rgba(0,0,0,.2);
+  }
+  .left-toolbar .lt-btn.add-btn:hover{background:#1A1B1F;color:#fff}
+  .left-toolbar .lt-divider{width:28px;height:1px;background:var(--sidebar-border);margin:2px 0}
+
+  /* ===== 节点选择弹窗 ===== */
+  .node-picker-overlay{
+    position:fixed;inset:0;z-index:100;
+    display:none;
+  }
+  .node-picker-overlay.active{display:block}
+  .node-picker{
+    position:absolute;
+    left:80px;top:50%;transform:translateY(-50%);
+    width:260px;
+    background:var(--sidebar-bg);
+    border:1px solid var(--sidebar-border);
+    border-radius:16px;
+    padding:12px;
+    box-shadow:0 8px 40px rgba(0,0,0,.5);
+    display:flex;flex-direction:column;gap:6px;
+    z-index:101;
+  }
+  .node-picker .np-item{
+    display:flex;align-items:center;gap:12px;
+    padding:12px 14px;
+    border-radius:12px;
+    background:rgba(255,255,255,.04);
+    border:1px solid rgba(255,255,255,.06);
+    cursor:pointer;
+    transition:background .15s;
+  }
+  .node-picker .np-item:hover{background:rgba(255,255,255,.08)}
+  .node-picker .np-icon{
+    width:32px;height:32px;border-radius:50%;
+    background:rgba(255,255,255,.08);
+    display:flex;align-items:center;justify-content:center;
+    font-size:14px;color:#aaa;
+    border:1px solid rgba(255,255,255,.1);
+    flex-shrink:0;
+  }
+  .node-picker .np-label{font-size:14px;color:#ddd;font-weight:500}
+
+  .canvas-area{flex:1;position:relative;background:
+      radial-gradient(circle,#2C2D32 1px,transparent 1px);background-size:24px 24px;overflow:hidden}
+  .canvas-area::before{content:"";position:absolute;inset:0;background:rgba(5,5,7,.45)}
+  .empty-card{position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);width:430px;max-width:90%;background:var(--panel);border:1px solid var(--border);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.08);padding:28px 26px;text-align:center;z-index:2}
+  .empty-card h2{font-size:17px;font-weight:700;margin-bottom:10px}
+  .empty-card p{font-size:13px;line-height:1.7;color:var(--text2);margin:0 auto 18px;max-width:380px}
+  .add-buttons{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:14px}
+  .add-buttons .ab{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);background:#fff;border-radius:var(--radius);padding:7px 14px;font-size:13px;cursor:pointer}
+  .add-buttons .ab:hover{background:var(--accent-soft);border-color:var(--accent)}
+  .ab .ic{width:16px;height:16px;flex-shrink:0}
+  .file-row{display:flex;justify-content:center}
+  .file{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);border:1px dashed var(--border);padding:6px 12px;border-radius:var(--radius);cursor:pointer}
+  .hint{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);font-size:12px;color:var(--text2);background:rgba(17,18,22,.85);border:1px solid var(--border);padding:6px 14px;border-radius:999px;z-index:2}
+  .side-head{display:flex;align-items:center;justify-content:space-between;padding:12px 12px 8px;font-size:12px;color:var(--text2)}
+  .minimap{margin:0 12px;padding:12px 10px;border:1px solid var(--border);border-radius:10px;background:var(--panel);font-size:11px;color:var(--text2);line-height:1.9}
+  .mm-dot{position:relative;display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:middle}
+  .mm-row{display:flex;align-items:center}
+  .zoom{position:absolute;right:16px;bottom:16px;z-index:20;width:240px;display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--panel);border:1px solid var(--border);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+  .zoom span{font-size:12px;color:var(--text2);min-width:46px;text-align:center}
+  .zoom input[type=range]{flex:1;accent-color:var(--accent)}
+  .saved-memory{border-top:1px solid var(--border);padding:10px 12px;font-size:11px;color:var(--text2);display:flex;gap:6px;align-items:center}
+
+  /* ===== 暗色节点样式 ===== */
+  .canvas-node{position:absolute;display:flex;flex-direction:column;align-items:center;z-index:10;cursor:grab}
+  .canvas-node:active{cursor:grabbing}
+  .canvas-node .node-card{
+    width:220px;
+    background:var(--node-bg);
+    border:1px solid var(--node-border);
+    border-radius:14px;
+    padding:16px 18px 18px;
+    box-shadow:0 8px 32px rgba(0,0,0,.4);
+    position:relative;
+  }
+  .canvas-node .node-header{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+  .canvas-node .node-icon{
+    width:28px;height:28px;border-radius:50%;
+    background:rgba(255,255,255,.08);
+    display:flex;align-items:center;justify-content:center;
+    font-size:13px;font-weight:700;color:#ccc;
+    border:1px solid rgba(255,255,255,.1);
+  }
+  .canvas-node .node-title{font-size:14px;font-weight:600;color:#e0e0e0}
+  .canvas-node .node-content{
+    border:1px dashed var(--node-dashed);
+    border-radius:10px;
+    background:var(--node-content-bg);
+    min-height:120px;
+    display:flex;align-items:center;justify-content:center;
+    padding:16px;
+  }
+  .canvas-node .node-content-text{font-size:13px;color:var(--node-text2);text-align:center;line-height:1.6}
+  .canvas-node .node-connector{
+    position:absolute;top:50%;transform:translateY(-50%);
+    width:14px;height:14px;border-radius:50%;
+    background:#fff;border:2px solid #888;
+    box-shadow:0 0 4px rgba(0,0,0,.3);
+    z-index:2;
+  }
+  .canvas-node .node-connector.left{left:-8px}
+  .canvas-node .node-connector.right{right:-8px}
+
+  /* 节点下方控制面板 */
+  .canvas-node .node-panel{
+    margin-top:10px;
+    width:380px;
+    background:var(--panel-bg);
+    border:1px solid var(--panel-border);
+    border-radius:12px;
+    padding:14px 16px;
+    display:flex;flex-direction:column;gap:10px;
+    box-shadow:0 6px 24px rgba(0,0,0,.35);
+  }
+  .canvas-node .node-panel textarea{
+    width:100%;
+    background:var(--panel-input);
+    border:1px solid var(--panel-border);
+    border-radius:8px;
+    color:#ccc;
+    font-size:13px;
+    padding:10px 12px;
+    resize:none;
+    outline:none;
+    min-height:60px;
+    font-family:inherit;
+    line-height:1.5;
+    box-sizing:border-box;
+  }
+  .canvas-node .node-panel textarea::placeholder{color:#666}
+  .canvas-node .node-panel textarea:focus{border-color:#7B5CF5}
+  .canvas-node .node-panel .panel-actions{display:flex;align-items:center;justify-content:flex-end}
+  .canvas-node .node-panel .generate-btn{
+    display:flex;align-items:center;justify-content:center;gap:6px;
+    background:linear-gradient(135deg, #7B5CF5 0%, #4A7CFF 100%);color:#fff;
+    border:none;border-radius:8px;
+    padding:8px 20px;font-size:13px;font-weight:600;
+    cursor:pointer;
+    transition:all .15s;
+    box-shadow:0 0 12px rgba(123,92,245,0.28);
+    box-sizing:border-box;
+  }
+  .canvas-node .node-panel .generate-btn:hover{background:linear-gradient(135deg, #6B4FE0 0%, #3A6CE0 100%);box-shadow:0 0 16px rgba(123,92,245,0.4)}
+  .canvas-node .node-panel .generate-btn .sparkle{font-size:14px}
+
+  /* 上传 / 生成 标签切换 */
+  .canvas-node .node-panel .panel-tabs{
+    display:flex;gap:4px;
+    padding:3px;
+    background:var(--panel-input);
+    border:1px solid var(--panel-border);
+    border-radius:var(--radius);
+  }
+  .canvas-node .node-panel .panel-tab{
+    flex:1;
+    padding:4px 0;
+    border:none;background:transparent;
+    border-radius:5px;
+    color:var(--text2);
+    font-size:12px;
+    cursor:pointer;
+    transition:all .15s;
+  }
+  .canvas-node .node-panel .panel-tab:hover{color:var(--text)}
+  .canvas-node .node-panel .panel-tab.active{
+    background:linear-gradient(135deg, #7B5CF5 0%, #4A7CFF 100%);
+    color:#fff;
+    box-shadow:0 0 10px rgba(123,92,245,0.25);
+  }
+  .canvas-node .node-panel .panel-tab-content{
+    display:flex;flex-direction:column;gap:10px;
+  }
+  .canvas-node .node-panel .panel-tab-content textarea{
+    width:100%;
+  }
+  .canvas-node .node-panel .panel-tab-content[data-tab-content="upload"]{display:none}
+  .canvas-node .node-panel .panel-tab-content[data-tab-content="asset"]{display:none}
+
+  /* 上传按钮 */
+  .canvas-node .node-panel .upload-btn{
+    display:flex;align-items:center;gap:6px;
+    width:100%;
+    padding:8px 12px;
+    border:1px dashed var(--panel-border);
+    border-radius:var(--radius);
+    background:var(--panel-input);
+    color:var(--text2);
+    font-size:12px;
+    cursor:pointer;
+    transition:border-color .15s,color .15s;
+    box-sizing:border-box;
+  }
+  .canvas-node .node-panel .upload-btn:hover{border-color:var(--accent);color:var(--text)}
+  .canvas-node .node-panel .upload-btn svg{width:18px;height:18px;flex-shrink:0;color:var(--accent)}
+  .canvas-node .node-panel .upload-btn .upload-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .canvas-node .node-panel .upload-btn .upload-label.has-file{color:var(--accent)}
+
+  /* 从资产中选择 */
+  .canvas-node .node-panel .asset-list{display:flex;flex-direction:column;gap:6px;max-height:160px;overflow-y:auto}
+  .canvas-node .node-panel .asset-item{
+    display:flex;align-items:center;gap:8px;width:100%;
+    padding:8px 10px;border:1px solid var(--panel-border);border-radius:var(--radius);
+    background:var(--panel-input);color:var(--text);font-size:12px;cursor:pointer;text-align:left;
+    transition:border-color .15s,background .15s;box-sizing:border-box;
+  }
+  .canvas-node .node-panel .asset-item:hover{border-color:var(--accent);background:var(--hover)}
+  .canvas-node .node-panel .asset-item .asset-icon{width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;font-size:12px;color:var(--accent);flex-shrink:0}
+  .canvas-node .node-panel .asset-empty{padding:10px;font-size:12px;color:var(--text2);text-align:center}
+  .canvas-node .node-asset-selected{
+    display:flex;align-items:center;gap:8px;padding:10px 12px;
+    background:var(--panel-input);border:1px solid var(--panel-border);border-radius:var(--radius);
+    font-size:12px;color:var(--text);
+  }
+  .canvas-node .node-asset-selected i{font-style:normal;color:var(--accent)}
+
+  /* 上传预览 */
+  .canvas-node .node-upload-preview{
+    width:100%;max-height:140px;
+    object-fit:cover;
+    border-radius:6px;
+    display:block;
+  }
+  .canvas-node .node-audio-preview{
+    display:flex;flex-direction:column;align-items:center;gap:8px;
+    padding:8px;color:var(--node-text2);
+  }
+  .canvas-node .node-audio-preview .music-icon{font-size:20px;color:var(--accent)}
+  .canvas-node .node-audio-preview .fname{font-size:12px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .canvas-node .node-audio-preview audio{width:100%;height:32px}
+
+  /* 节点右上角三个点菜单 */
+  .canvas-node .node-more-btn{
+    position:absolute;top:10px;right:10px;
+    width:24px;height:24px;
+    display:flex;align-items:center;justify-content:center;
+    background:transparent;
+    border:none;
+    border-radius:6px;
+    cursor:pointer;
+    color:#888;
+    font-size:14px;
+    transition:background .15s,color .15s;
+    z-index:5;
+  }
+  .canvas-node .node-more-btn:hover{background:rgba(255,255,255,.1);color:#ccc}
+  .canvas-node .node-more-menu{
+    position:absolute;top:38px;right:10px;
+    min-width:120px;
+    background:var(--node-bg);
+    border:1px solid var(--node-border);
+    border-radius:8px;
+    padding:4px;
+    box-shadow:0 4px 16px rgba(0,0,0,.4);
+    z-index:10;
+    display:none;
+  }
+  .canvas-node .node-more-menu.show{display:block}
+  .canvas-node .node-more-menu .menu-item{
+    display:flex;align-items:center;gap:8px;
+    padding:8px 12px;
+    border-radius:6px;
+    cursor:pointer;
+    color:#ccc;
+    font-size:13px;
+    transition:background .15s;
+  }
+  .canvas-node .node-more-menu .menu-item:hover{background:rgba(255,255,255,.08)}
+  .canvas-node .node-more-menu .menu-item.danger{color:#D94C62}
+  .canvas-node .node-more-menu .menu-item.danger:hover{background:rgba(248,113,113,.1)}
+  .canvas-node .node-more-menu .menu-item svg{width:14px;height:14px;flex-shrink:0}
+
+  .hidden{display:none!important}
+</style>
+</head>
+<body>
+
+  <!-- 顶部工具栏 -->
+  <div class="toolbar">
+    <div class="spacer"></div>
+    <span class="save-state"><span class="dot"></span>已全部保存</span>
+    <button class="btn">保存草稿</button>
+    <button class="btn generate-btn">✦ 开始生成</button>
+  </div>
+
+  <!-- 主体 -->
+  <div class="wrap">
+    <!-- 画布区 -->
+    <div class="canvas-area" id="canvasArea">
+
+      <!-- 左侧暗色工具栏 -->
+      <div class="left-toolbar" id="leftToolbar">
+        <button class="lt-btn add-btn" id="addNodeBtn" title="新建节点">+</button>
+        <div class="lt-divider"></div>
+        <button class="lt-btn" data-type="text" title="文本节点">T</button>
+        <button class="lt-btn" data-type="note" title="Note 节点">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        </button>
+        <button class="lt-btn" data-type="image" title="图片节点">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        </button>
+        <button class="lt-btn" data-type="video" title="视频节点">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+        </button>
+        <button class="lt-btn" data-type="audio" title="音频节点">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+        </button>
+      </div>
+
+      <!-- 节点选择弹窗 -->
+      <div class="node-picker-overlay" id="nodePickerOverlay">
+        <div class="node-picker" id="nodePicker">
+          <div class="np-item" data-type="text">
+            <div class="np-icon">T</div>
+            <div class="np-label">文本节点</div>
+          </div>
+          <div class="np-item" data-type="note">
+            <div class="np-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            </div>
+            <div class="np-label">Note 节点</div>
+          </div>
+          <div class="np-item" data-type="image">
+            <div class="np-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            </div>
+            <div class="np-label">图片节点</div>
+          </div>
+          <div class="np-item" data-type="video">
+            <div class="np-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+            </div>
+            <div class="np-label">视频节点</div>
+          </div>
+          <div class="np-item" data-type="audio">
+            <div class="np-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+            </div>
+            <div class="np-label">音频节点</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="empty-card" id="emptyCard">
+        <h2>从自由布局的 AI 画布开始</h2>
+        <p>点击左侧工具栏的 + 按钮选择节点类型，或在画布上双击快速添加文本节点。</p>
+        <div class="file-row"><span class="file"> 文件</span></div>
+      </div>
+      <div class="hint" id="hintBar">点击左侧 + 按钮添加节点，或双击画布添加文本节点</div>
+
+      <!-- 浮动缩放器 -->
+      <div class="zoom">
+        <button class="btn icon">−</button>
+        <div style="flex:1;display:flex;align-items:center;gap:7px">
+          <input type="range" min="10" max="200" value="100">
+          <span>100 %</span>
+        </div>
+        <button class="btn icon">＋</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+(function(){
+  const canvasArea = document.getElementById('canvasArea');
+  const emptyCard = document.getElementById('emptyCard');
+  const hintBar = document.getElementById('hintBar');
+  const addNodeBtn = document.getElementById('addNodeBtn');
+  const nodePickerOverlay = document.getElementById('nodePickerOverlay');
+  let nodeCount = 0;
+  let pickerOpen = false;
+
+  const nodeConfig = {
+    text:  { icon:'T', title:'文本节点', placeholder:'双击即可编写或编辑这个文本节点。', prompt:'描述这个文本节点应当写什么、总结什么，或如何改写内容。' },
+    note:  { icon:'', title:'Note 节点', placeholder:'双击即可编写笔记内容。', prompt:'描述这个笔记节点的主题或要点。' },
+    image: { icon:'▣', title:'图片节点', placeholder:'双击即可上传或生成图片。', prompt:'描述你想生成的图片内容、风格或参考。', accept:'image/*' },
+    video: { icon:'▶', title:'视频节点', placeholder:'双击即可上传或生成视频。', prompt:'描述你想生成的视频内容、镜头或风格。', accept:'video/*' },
+    audio: { icon:'♪', title:'音频节点', placeholder:'双击即可上传或生成音频。', prompt:'描述你想生成的音频内容、语调或风格。', accept:'audio/*' }
+  };
+
+  const mockAssets = {
+    text:  ['文案片段 01', '文案片段 02', '文案片段 03'],
+    note:  ['笔记片段 01', '笔记片段 02'],
+    image: ['素材图片 01', '素材图片 02', '素材图片 03'],
+    video: ['素材视频 01', '素材视频 02'],
+    audio: ['素材音频 01', '素材音频 02']
+  };
+
+  function assetItemsHtml(type, cfg){
+    const list = mockAssets[type] || [];
+    if(!list.length) return '<div class="asset-empty">暂无可用资产</div>';
+    return list.map(name => `<button class="asset-item" data-asset="${name}"><i class="asset-icon">${cfg.icon}</i><span>${name}</span></button>`).join('');
+  }
+
+  function createNode(type, x, y){
+    const cfg = nodeConfig[type] || nodeConfig.text;
+    nodeCount++;
+    const id = 'node-' + nodeCount;
+
+    const el = document.createElement('div');
+    el.className = 'canvas-node';
+    el.id = id;
+    el.style.left = x + 'px';
+    el.style.top = y + 'px';
+
+    el.innerHTML = `
+      <div class="node-card">
+        <div class="node-connector left"></div>
+        <div class="node-connector right"></div>
+        <div class="node-more-btn" title="更多操作">⋯</div>
+        <div class="node-more-menu">
+          <div class="menu-item" data-action="copy">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            <span>复制节点</span>
+          </div>
+          <div class="menu-item danger" data-action="delete">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            <span>删除节点</span>
+          </div>
+        </div>
+        <div class="node-header">
+          <div class="node-icon">${cfg.icon}</div>
+          <div class="node-title">${cfg.title}</div>
+        </div>
+        <div class="node-content">
+          <div class="node-content-text">${cfg.placeholder}</div>
+        </div>
+      </div>
+      <div class="node-panel">
+        <div class="panel-tabs">
+          ${cfg.accept ? '<button class="panel-tab" data-tab="upload">上传</button>' : ''}
+          <button class="panel-tab active" data-tab="generate">生成</button>
+          <button class="panel-tab" data-tab="asset">资产</button>
+        </div>
+        ${cfg.accept ? `
+        <div class="panel-tab-content" data-tab-content="upload">
+          <input type="file" class="upload-input" accept="${cfg.accept}" hidden>
+          <button class="upload-btn" title="上传文件">
+            <svg class="upload-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+            <span class="upload-label">选择文件上传</span>
+          </button>
+        </div>` : ''}
+        <div class="panel-tab-content" data-tab-content="generate">
+          <textarea placeholder="${cfg.prompt}"></textarea>
+          <div class="panel-actions">
+            <button class="generate-btn"><span class="sparkle">✦</span> 开始生成</button>
+          </div>
+        </div>
+        <div class="panel-tab-content" data-tab-content="asset">
+          <div class="asset-list">${assetItemsHtml(type, cfg)}</div>
+        </div>
+      </div>
+    `;
+
+    canvasArea.appendChild(el);
+    emptyCard.classList.add('hidden');
+    hintBar.classList.add('hidden');
+    makeDraggable(el);
+    bindNodeMenu(el);
+    bindNodeUpload(el, cfg, type);
+  }
+
+  // 绑定节点上传逻辑（仅图片/视频/音频）
+  function bindNodeUpload(el, cfg, type){
+    const input = el.querySelector('.upload-input');
+    const uploadBtn = el.querySelector('.upload-btn');
+    const label = el.querySelector('.upload-label');
+    const contentText = el.querySelector('.node-content-text');
+
+    // 上传 / 生成 / 资产 标签切换
+    const tabs = el.querySelectorAll('.panel-tab');
+    tabs.forEach(tab => {
+      tab.addEventListener('click', function(e){
+        e.stopPropagation();
+        tabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        el.querySelectorAll('[data-tab-content]').forEach(c => {
+          c.style.display = (c.dataset.tabContent === tab.dataset.tab) ? '' : 'none';
+        });
+      });
+    });
+
+    if(uploadBtn && input){
+      uploadBtn.addEventListener('click', function(e){
+        e.stopPropagation();
+        input.click();
+      });
+
+      input.addEventListener('change', function(){
+        const file = input.files && input.files[0];
+        if(!file) return;
+        const url = URL.createObjectURL(file);
+        // 更新文件名标签
+        label.textContent = file.name.length > 12 ? file.name.slice(0,12) + '…' : file.name;
+        // 生成对应类型预览
+        if(type === 'image'){
+          contentText.innerHTML = `<img class="node-upload-preview" src="${url}" alt="上传图片">`;
+        } else if(type === 'video'){
+          contentText.innerHTML = `<video class="node-upload-preview" src="${url}" controls></video>`;
+        } else if(type === 'audio'){
+          contentText.innerHTML = `<div class="node-audio-preview"><span class="music-icon">♪</span><span class="fname">${file.name}</span><audio src="${url}" controls></audio></div>`;
+        }
+        label.classList.add('has-file');
+      });
+    }
+
+    // 从资产中选择
+    el.querySelectorAll('.asset-item').forEach(item => {
+      item.addEventListener('click', function(e){
+        e.stopPropagation();
+        const name = item.dataset.asset;
+        if(type === 'text' || type === 'note'){
+          const ta = el.querySelector('[data-tab-content="generate"] textarea');
+          if(ta) ta.value = name;
+          contentText.textContent = '已选择资产：' + name;
+        } else if(type === 'audio'){
+          contentText.innerHTML = `<div class="node-audio-preview"><span class="music-icon">${cfg.icon}</span><span class="fname">${name}</span></div>`;
+        } else {
+          contentText.innerHTML = `<div class="node-asset-selected"><i>${cfg.icon}</i><span>${name}</span></div>`;
+        }
+      });
+    });
+  }
+
+  // 绑定节点菜单事件
+  function bindNodeMenu(nodeEl){
+    const moreBtn = nodeEl.querySelector('.node-more-btn');
+    const menu = nodeEl.querySelector('.node-more-menu');
+    const copyItem = menu.querySelector('[data-action="copy"]');
+    const deleteItem = menu.querySelector('[data-action="delete"]');
+
+    // 点击三个点按钮，切换菜单
+    moreBtn.addEventListener('click', function(e){
+      e.stopPropagation();
+      // 关闭其他节点的菜单
+      document.querySelectorAll('.node-more-menu.show').forEach(m => {
+        if(m !== menu) m.classList.remove('show');
+      });
+      menu.classList.toggle('show');
+    });
+
+    // 复制节点
+    copyItem.addEventListener('click', function(e){
+      e.stopPropagation();
+      const type = nodeEl.querySelector('.node-title').textContent;
+      let nodeType = 'text';
+      for(let key in nodeConfig){
+        if(nodeConfig[key].title === type){ nodeType = key; break; }
+      }
+      const x = parseInt(nodeEl.style.left) + 30;
+      const y = parseInt(nodeEl.style.top) + 30;
+      createNode(nodeType, x, y);
+      menu.classList.remove('show');
+    });
+
+    // 删除节点
+    deleteItem.addEventListener('click', function(e){
+      e.stopPropagation();
+      nodeEl.remove();
+      // 如果没有节点了，显示空状态
+      if(!document.querySelector('.canvas-node')){
+        emptyCard.classList.remove('hidden');
+        hintBar.classList.remove('hidden');
+      }
+    });
+  }
+
+  // 点击其他地方关闭菜单
+  document.addEventListener('click', function(){
+    document.querySelectorAll('.node-more-menu.show').forEach(m => m.classList.remove('show'));
+  });
+
+  function makeDraggable(el){
+    let startX, startY, origX, origY, dragging = false;
+    el.addEventListener('mousedown', function(e){
+      // 排除输入元素和菜单按钮
+      if(e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT' || e.target.tagName === 'BUTTON') return;
+      if(e.target.closest('.node-more-btn') || e.target.closest('.node-more-menu')) return;
+      dragging = true;
+      startX = e.clientX; startY = e.clientY;
+      origX = parseInt(el.style.left); origY = parseInt(el.style.top);
+      e.preventDefault();
+    });
+    document.addEventListener('mousemove', function(e){
+      if(!dragging) return;
+      el.style.left = (origX + e.clientX - startX) + 'px';
+      el.style.top = (origY + e.clientY - startY) + 'px';
+    });
+    document.addEventListener('mouseup', function(){ dragging = false; });
+  }
+
+  function togglePicker(){
+    pickerOpen = !pickerOpen;
+    nodePickerOverlay.classList.toggle('active', pickerOpen);
+  }
+
+  function closePicker(){
+    pickerOpen = false;
+    nodePickerOverlay.classList.remove('active');
+  }
+
+  // "+" 按钮 → 弹出/关闭节点选择弹窗
+  addNodeBtn.addEventListener('click', function(e){
+    e.stopPropagation();
+    togglePicker();
+  });
+
+  // 弹窗中选择节点类型
+  document.querySelectorAll('.np-item').forEach(function(item){
+    item.addEventListener('click', function(){
+      const type = item.dataset.type;
+      const rect = canvasArea.getBoundingClientRect();
+      const x = rect.width / 2 - 110 + (Math.random()*80 - 40);
+      const y = rect.height / 2 - 120 + (Math.random()*80 - 40);
+      createNode(type, x, y);
+      closePicker();
+    });
+  });
+
+  // 点击弹窗外部关闭
+  nodePickerOverlay.addEventListener('click', function(e){
+    if(e.target === nodePickerOverlay) closePicker();
+  });
+
+  // 左侧工具栏快捷按钮直接添加节点
+  document.querySelectorAll('.left-toolbar .lt-btn[data-type]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      const type = btn.dataset.type;
+      const rect = canvasArea.getBoundingClientRect();
+      const x = rect.width / 2 - 110 + (Math.random()*80 - 40);
+      const y = rect.height / 2 - 120 + (Math.random()*80 - 40);
+      createNode(type, x, y);
+    });
+  });
+
+  // 双击画布添加文本节点
+  canvasArea.addEventListener('dblclick', function(e){
+    if(e.target.closest('.canvas-node') || e.target.closest('.left-toolbar') || e.target.closest('.node-picker')) return;
+    const rect = canvasArea.getBoundingClientRect();
+    const x = e.clientX - rect.left - 110;
+    const y = e.clientY - rect.top - 100;
+    createNode('text', Math.max(0, x), Math.max(0, y));
+  });
+})();
+</script>
+
+</body>
+</html>
