@@ -17,6 +17,9 @@ function initLogin() {
   const currentUsernameEl = document.getElementById('current-username');
   const logoutBtn      = document.getElementById('logout-btn');
 
+  loginUsername.value = 'admin';
+  loginPassword.value = 'admin123';
+
   function doLogin() {
     const name = loginUsername.value.trim();
     const pwd  = loginPassword.value;
@@ -34,6 +37,8 @@ function initLogin() {
     loginOverlay.style.display = 'none';
     userArea.style.display = 'flex';
     currentUsernameEl.textContent = account.username;
+    const landingPage = document.getElementById('landing-page');
+    if (landingPage) landingPage.style.display = 'block';
     loginError.textContent = '';
     loginPassword.value = '';
   }
@@ -42,6 +47,8 @@ function initLogin() {
     currentUser = null;
     loginOverlay.style.display = 'flex';
     userArea.style.display = 'none';
+    const landingPage = document.getElementById('landing-page');
+    if (landingPage) landingPage.style.display = 'none';
     loginUsername.value = '';
     loginPassword.value = '';
     loginError.textContent = '';
@@ -82,17 +89,21 @@ function renderStep(step) {
     el.classList.toggle('done', i + 1 < step);
   });
 
-  document.getElementById('step-current').textContent = step;
-  document.getElementById('prev-step').disabled = step === 1;
+  const stepCurrentEl = document.getElementById('step-current');
+  if (stepCurrentEl) stepCurrentEl.textContent = step;
+  const prevStepEl = document.getElementById('prev-step');
+  if (prevStepEl) prevStepEl.disabled = step === 1;
 
   const nextBtn = document.getElementById('next-step');
-  if (step === TOTAL_STEPS) {
-    nextBtn.style.display = 'none';
-  } else {
-    nextBtn.style.display = 'flex';
-    nextBtn.innerHTML = step === TOTAL_STEPS - 1
-      ? '前往生成 <i class="fas fa-arrow-right ml-1"></i>'
-      : '下一步 <i class="fas fa-arrow-right ml-1"></i>';
+  if (nextBtn) {
+    if (step === TOTAL_STEPS) {
+      nextBtn.style.display = 'none';
+    } else {
+      nextBtn.style.display = 'flex';
+      nextBtn.innerHTML = step === TOTAL_STEPS - 1
+        ? '前往生成 <i class="fas fa-arrow-right ml-1"></i>'
+        : '下一步 <i class="fas fa-arrow-right ml-1"></i>';
+    }
   }
 
   requestAnimationFrame(() => {
@@ -102,17 +113,110 @@ function renderStep(step) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-document.querySelectorAll('.top-nav-item').forEach(item => {
+document.querySelectorAll('.sidebar-item').forEach(item => {
   item.addEventListener('click', function() {
     const target = this.dataset.view;
-    document.querySelectorAll('.top-nav-item').forEach(n => n.classList.toggle('active', n === this));
+    const landingPage = document.getElementById('landing-page');
+
+    // 创作中心：显示顶部导航
+    if (target === 'short-video') {
+      if (landingPage) landingPage.style.display = 'none';
+      document.querySelectorAll('.sidebar-item').forEach(n => n.classList.toggle('active', n === this));
+      const createTopNav = document.getElementById('createTopNav');
+      if (createTopNav) createTopNav.classList.add('visible');
+      // 显示短视频面板
+      document.querySelectorAll('.view-panel').forEach(p => {
+        p.classList.toggle('active', p.dataset.viewPanel === 'short-video');
+      });
+      // 隐藏资产库 Tab
+      const assetTabs = document.getElementById('assetTabs');
+      if (assetTabs) assetTabs.classList.remove('visible');
+      return;
+    }
+
+    // 资产库：显示顶部 Tab 导航
+    if (target === 'asset-library') {
+      if (landingPage) landingPage.style.display = 'none';
+      document.querySelectorAll('.sidebar-item').forEach(n => n.classList.toggle('active', n === this));
+      const assetTabs = document.getElementById('assetTabs');
+      if (assetTabs) assetTabs.classList.add('visible');
+      // 默认激活"创作资产"
+      document.querySelectorAll('[data-asset-tab]').forEach(t => t.classList.toggle('active', t.dataset.assetTab === 'project'));
+      document.querySelectorAll('.view-panel').forEach(p => {
+        p.classList.toggle('active', p.dataset.viewPanel === 'project');
+      });
+      // 隐藏创作中心顶部导航
+      const createTopNav = document.getElementById('createTopNav');
+      if (createTopNav) createTopNav.classList.remove('visible');
+      return;
+    }
+
+    // 其他菜单隐藏所有顶部导航
+    const createTopNav = document.getElementById('createTopNav');
+    if (createTopNav) createTopNav.classList.remove('visible');
+    const assetTabs = document.getElementById('assetTabs');
+    if (assetTabs) assetTabs.classList.remove('visible');
+
+    document.querySelectorAll('.sidebar-item').forEach(n => n.classList.toggle('active', n === this));
+
+    // 首页：回到落地页
+    if (target === 'home') {
+      if (landingPage) landingPage.style.display = 'block';
+      document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
+      return;
+    }
+
+    if (landingPage) landingPage.style.display = 'none';
     document.querySelectorAll('.view-panel').forEach(p => {
-      p.classList.toggle('active', p.dataset.viewPanel === target);
+      if (p.dataset.viewPanel === target) p.classList.add('active');
+      else p.classList.remove('active');
     });
   });
 });
 
 // AI 短视频视图内的模块切换（快速创作 / 自定义素材）
+// 一级菜单(视频生成 / 图片生成):切换并展示对应二级子菜单,默认选中该组第一个
+(function initCreationMenu() {
+  const nav = document.getElementById('module-nav');
+  if (!nav) return;
+  const sub = nav.querySelector('.module-nav-sub');
+
+  function activateModule(target) {
+    document.querySelectorAll('#module-nav .module-nav-item').forEach(n => n.classList.toggle('active', n.dataset.module === target));
+    document.querySelectorAll('[data-view-panel="short-video"] .module-content').forEach(p => {
+      p.classList.toggle('active', p.dataset.moduleContent === target);
+    });
+  }
+
+  function showMenu(menu) {
+    nav.querySelectorAll('.module-title-item').forEach(t => t.classList.toggle('active', t.dataset.menu === menu));
+    sub.querySelectorAll('.module-nav-item').forEach(it => {
+      it.style.display = (it.dataset.menu === menu) ? '' : 'none';
+    });
+    const first = sub.querySelector('.module-nav-item[data-menu="' + menu + '"]');
+    if (first) activateModule(first.dataset.module);
+  }
+
+  nav.querySelectorAll('.module-title-item').forEach(t => {
+    t.addEventListener('click', function() {
+      showMenu(this.dataset.menu);
+    });
+  });
+
+  // 初始化:默认只显示"视频生成"组
+  showMenu('video');
+
+  // 修复:确保每个模块的预览面板作为 module-split 的第二子(避免孤儿预览框跑到页面下方)
+  document.querySelectorAll('[data-view-panel="short-video"] .module-content').forEach(function(mc) {
+    var ms = mc.querySelector(':scope > .module-split');
+    if (!ms) return;
+    var prev = mc.querySelector(':scope > .module-preview-panel') || mc.querySelector('.module-preview-panel');
+    if (prev && prev.parentElement !== ms) {
+      ms.appendChild(prev);
+    }
+  });
+})();
+
 document.querySelectorAll('#module-nav .module-nav-item').forEach(item => {
   item.addEventListener('click', function() {
     const target = this.dataset.module;
@@ -123,16 +227,138 @@ document.querySelectorAll('#module-nav .module-nav-item').forEach(item => {
   });
 });
 
-// 数字人视图内的子模块切换（数字人口播 / 动作迁移）
-document.querySelectorAll('#dh-module-nav .module-nav-item').forEach(item => {
-  item.addEventListener('click', function() {
-    const target = this.dataset.dhModule;
-    document.querySelectorAll('#dh-module-nav .module-nav-item').forEach(n => n.classList.toggle('active', n === this));
-    document.querySelectorAll('[data-view-panel="digital-human"] .module-content').forEach(p => {
-      p.classList.toggle('active', p.dataset.moduleContent === target);
+// ===== 生成工具 Tab 切换 =====
+(function initGenToolsMenu() {
+  const nav = document.getElementById('gen-tools-nav');
+  if (!nav) return;
+
+  function showGenMenu(menu) {
+    nav.querySelectorAll('.module-title-item').forEach(t => t.classList.toggle('active', t.dataset.genMenu === menu));
+    document.querySelectorAll('[data-view-panel="gen-tools"] .module-content').forEach(p => {
+      p.classList.toggle('active', p.dataset.genContent === menu);
+    });
+  }
+
+  nav.querySelectorAll('.module-title-item').forEach(t => {
+    t.addEventListener('click', function() {
+      showGenMenu(this.dataset.genMenu);
     });
   });
-});
+
+  // 初始化默认显示角色生成
+  showGenMenu('character');
+})();
+
+// ===== 生成工具详情页交互（主视图 → 多视图） =====
+(function initGenDetail() {
+  function renderMock(stage, label) {
+    stage.classList.add('has-result');
+    stage.innerHTML =
+      '<div class="gen-result">' +
+      '<i class="fas fa-check-circle gen-result-icon"></i>' +
+      '<div class="gen-result-label">' + label + ' 已生成</div>' +
+      '</div>';
+  }
+
+  function bindDetail(container) {
+    // 名称字数统计
+    const nameInput = container.querySelector('.name-input');
+    const charCount = container.querySelector('.char-count');
+    if (nameInput && charCount) {
+      nameInput.addEventListener('input', function() {
+        charCount.textContent = nameInput.value.length + '/20';
+      });
+    }
+
+    const primaryBtn = container.querySelector('.gen-primary-btn');
+    const secondaryBtn = container.querySelector('.gen-secondary-btn');
+    const mainStage = container.querySelector('.gen-view-stage.main');
+    const subStage = container.querySelector('.gen-view-stage.sub');
+    if (!primaryBtn || !mainStage) return;
+
+    // 生成主视图
+    primaryBtn.addEventListener('click', function() {
+      primaryBtn.disabled = true;
+      primaryBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 生成中...';
+      setTimeout(function() {
+        renderMock(mainStage, primaryBtn.dataset.mainLabel || '主视图');
+        primaryBtn.innerHTML = '<i class="fas fa-wand-magic-sparkles"></i> ' + (primaryBtn.dataset.genLabel || '生成主视图');
+        primaryBtn.disabled = false;
+        if (secondaryBtn) secondaryBtn.disabled = false;
+      }, 1200);
+    });
+
+    // 创作三视图 / 多视图（依赖主视图生成后启用）
+    if (secondaryBtn && subStage) {
+      secondaryBtn.addEventListener('click', function() {
+        secondaryBtn.disabled = true;
+        secondaryBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 生成中...';
+        setTimeout(function() {
+          renderMock(subStage, secondaryBtn.dataset.subLabel || '多视图');
+          secondaryBtn.innerHTML = '<i class="fas fa-wand-magic-sparkles"></i> ' + (secondaryBtn.dataset.genLabel || '创作多视图');
+          secondaryBtn.disabled = false;
+        }, 1200);
+      });
+    }
+  }
+
+  document.querySelectorAll('[data-view-panel="gen-tools"] .module-content[data-gen-content]').forEach(bindDetail);
+})();
+
+// ===== 顶部 Tab 切换（创作中心 + 资产库） =====
+(function initTopTabs() {
+  document.querySelectorAll('.asset-tab').forEach(tab => {
+    tab.addEventListener('click', function() {
+      const target = this.dataset.assetTab;
+      const group = this.closest('.asset-tabs');
+      if (group) group.querySelectorAll('.asset-tab').forEach(t => t.classList.toggle('active', t === this));
+      document.querySelectorAll('.view-panel').forEach(p => {
+        p.classList.toggle('active', p.dataset.viewPanel === target);
+      });
+    });
+  });
+})();
+
+// ===== 创作中心顶部导航（视频生成/图片生成 + 子菜单） =====
+(function initCreateTopNav() {
+  const nav = document.getElementById('createTopNav');
+  if (!nav) return;
+
+  // 一级菜单切换
+  nav.querySelectorAll('.create-top-tab').forEach(tab => {
+    tab.addEventListener('click', function() {
+      const menu = this.dataset.createMenu;
+      // 激活当前一级 Tab
+      nav.querySelectorAll('.create-top-tab').forEach(t => t.classList.toggle('active', t === this));
+      // 显示/隐藏对应的二级菜单项
+      nav.querySelectorAll('.create-top-sub-item').forEach(item => {
+        const show = item.dataset.menu === menu;
+        item.style.display = show ? '' : 'none';
+      });
+      // 激活该组的第一个子菜单
+      const first = nav.querySelector('.create-top-sub-item[data-menu="' + menu + '"]');
+      if (first) {
+        nav.querySelectorAll('.create-top-sub-item').forEach(i => i.classList.toggle('active', i === first));
+        activateModule(first.dataset.createModule);
+      }
+    });
+  });
+
+  // 二级菜单切换
+  nav.querySelectorAll('.create-top-sub-item').forEach(item => {
+    item.addEventListener('click', function() {
+      nav.querySelectorAll('.create-top-sub-item').forEach(i => i.classList.toggle('active', i === this));
+      activateModule(this.dataset.createModule);
+    });
+  });
+
+  function activateModule(target) {
+    // 激活对应的模块内容
+    document.querySelectorAll('[data-view-panel="short-video"] .module-content').forEach(p => {
+      p.classList.toggle('active', p.dataset.moduleContent === target);
+    });
+  }
+})();
 
 // ===== 项目管理 - 筛选 / 状态 / 搜索 =====
 (function initProjectManager() {
@@ -181,7 +407,6 @@ document.querySelectorAll('#dh-module-nav .module-nav-item').forEach(item => {
   const viewByType = {
     'short-video': 'short-video',
     'short-drama': 'short-drama',
-    'digital-human': 'digital-human',
     'image-to-video': 'image-to-video',
   };
   grid.addEventListener('click', (ev) => {
@@ -190,14 +415,14 @@ document.querySelectorAll('#dh-module-nav .module-nav-item').forEach(item => {
     if (!card) return;
     const view = viewByType[card.dataset.pmType];
     if (!view) return;
-    const navItem = document.querySelector(`.top-nav-item[data-view="${view}"]`);
+    const navItem = document.querySelector(`.sidebar-item[data-view="${view}"]`);
     if (navItem) navItem.click();
   });
 
   const newBtn = document.getElementById('pm-new-project-btn');
   if (newBtn) {
     newBtn.addEventListener('click', () => {
-      const shortVideoNav = document.querySelector('.top-nav-item[data-view="short-video"]');
+      const shortVideoNav = document.querySelector('.sidebar-item[data-view="short-video"]');
       if (shortVideoNav) shortVideoNav.click();
     });
   }
@@ -252,17 +477,21 @@ function renderCmStep(step) {
     el.classList.toggle('done', i + 1 < step);
   });
 
-  document.getElementById('cm-step-current').textContent = step;
-  document.getElementById('cm-prev-step').disabled = step === 1;
+  const cmStepCurrentEl = document.getElementById('cm-step-current');
+  if (cmStepCurrentEl) cmStepCurrentEl.textContent = step;
+  const cmPrevStepEl = document.getElementById('cm-prev-step');
+  if (cmPrevStepEl) cmPrevStepEl.disabled = step === 1;
 
   const nextBtn = document.getElementById('cm-next-step');
-  if (step === CM_TOTAL_STEPS) {
-    nextBtn.style.display = 'none';
-  } else {
-    nextBtn.style.display = 'flex';
-    nextBtn.innerHTML = step === CM_TOTAL_STEPS - 1
-      ? '前往生成 <i class="fas fa-arrow-right ml-1"></i>'
-      : '下一步 <i class="fas fa-arrow-right ml-1"></i>';
+  if (nextBtn) {
+    if (step === CM_TOTAL_STEPS) {
+      nextBtn.style.display = 'none';
+    } else {
+      nextBtn.style.display = 'flex';
+      nextBtn.innerHTML = step === CM_TOTAL_STEPS - 1
+        ? '前往生成 <i class="fas fa-arrow-right ml-1"></i>'
+        : '下一步 <i class="fas fa-arrow-right ml-1"></i>';
+    }
   }
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -410,226 +639,89 @@ document.querySelectorAll('[data-cm-step]').forEach(item => {
   }
 })();
 
-// ===== 数字人口播模块 =====
-const DA_TOTAL_STEPS = 4;
-let daCurrentStep = 1;
+// ===== 文生视频：剧本/脚本/小说上传 =====
+(function initScriptUpload() {
+  const zone = document.getElementById('qv-script-upload-zone');
+  const fileBox = document.getElementById('qv-script-file');
+  const textarea = document.getElementById('qv-script-input');
+  if (!zone) return;
 
-function renderDaStep(step) {
-  daCurrentStep = step;
-  document.querySelectorAll('.da-step-panel').forEach(p => {
-    p.classList.toggle('active', p.dataset.daPanel === String(step));
-  });
-
-  const stepItems = document.querySelectorAll('[data-da-step]');
-  const dividers = document.querySelectorAll('#da-stepper .step-divider');
-  stepItems.forEach(el => {
-    const idx = Number(el.dataset.daStep);
-    el.classList.toggle('active', idx === step);
-    el.classList.toggle('done', idx < step);
-  });
-  dividers.forEach((el, i) => {
-    el.classList.toggle('done', i + 1 < step);
-  });
-
-  document.getElementById('da-step-current').textContent = step;
-  document.getElementById('da-prev-step').disabled = step === 1;
-
-  const nextBtn = document.getElementById('da-next-step');
-  if (step === DA_TOTAL_STEPS) {
-    nextBtn.style.display = 'none';
-  } else {
-    nextBtn.style.display = 'flex';
+  function showFile(name) {
+    if (!fileBox) return;
+    fileBox.style.display = 'flex';
+    fileBox.innerHTML =
+      '<i class="fas fa-file-alt text-blue-500"></i>' +
+      '<span class="qv-script-file-name"></span>' +
+      '<button class="qv-script-file-remove" title="移除"><i class="fas fa-times"></i></button>';
+    fileBox.querySelector('.qv-script-file-name').textContent = name;
+    fileBox.querySelector('.qv-script-file-remove').addEventListener('click', (e) => {
+      e.stopPropagation();
+      fileBox.style.display = 'none';
+      fileBox.innerHTML = '';
+    });
   }
 
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-document.getElementById('da-prev-step')?.addEventListener('click', () => {
-  if (daCurrentStep > 1) renderDaStep(daCurrentStep - 1);
-});
-document.getElementById('da-next-step')?.addEventListener('click', () => {
-  if (daCurrentStep < DA_TOTAL_STEPS) {
-    // 检查余额是否充足
-    if (typeof TokenManager !== 'undefined' && !TokenManager.checkBalance()) {
-      return;
-    }
-    renderDaStep(daCurrentStep + 1);
-    // 模拟Token消耗
-    if (typeof TokenManager !== 'undefined') {
-      const modelSelect = document.getElementById('sd-model-select');
-      const currentModel = modelSelect ? modelSelect.value : 'GPT-4o';
-      const tokenAmount = Math.floor(Math.random() * 7000) + 3000;
-      TokenManager.recordUsage(currentModel, '数字人', tokenAmount);
+  function handleFile(file) {
+    if (!file) return;
+    showFile(file.name);
+    if (/\.txt$/i.test(file.name)) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (textarea) textarea.value = String(reader.result || '');
+      };
+      reader.readAsText(file);
     }
   }
-});
-document.querySelectorAll('[data-da-step]').forEach(item => {
-  item.addEventListener('click', () => {
-    renderDaStep(Number(item.dataset.daStep));
-  });
-});
 
-(function initDigitalAvatar() {
-  const avatarList = document.getElementById('da-avatar-list');
-  const avatarUpload = document.getElementById('da-avatar-upload');
-
-  if (avatarList) {
-    avatarList.addEventListener('click', e => {
-      const card = e.target.closest('.da-avatar-card');
-      if (!card) return;
-      avatarList.querySelectorAll('.da-avatar-card').forEach(c => c.classList.remove('selected'));
-      card.classList.add('selected');
-    });
-  }
-
-  if (avatarUpload) {
-    avatarUpload.addEventListener('dragover', e => { e.preventDefault(); avatarUpload.classList.add('dragover'); });
-    avatarUpload.addEventListener('dragleave', () => avatarUpload.classList.remove('dragover'));
-    avatarUpload.addEventListener('drop', e => {
-      e.preventDefault();
-      avatarUpload.classList.remove('dragover');
-      Array.from(e.dataTransfer.files || []).forEach(addAvatarCard);
-    });
-    avatarUpload.addEventListener('click', () => {
-      const input = document.createElement('input');
-      input.type = 'file';
-      input.accept = 'image/jpeg,image/png,image/webp';
-      input.multiple = true;
-      input.addEventListener('change', () => {
-        Array.from(input.files || []).forEach(addAvatarCard);
-      });
-      input.click();
-    });
-  }
-
-  function addAvatarCard(file) {
-    if (!avatarList || !file.type.startsWith('image/')) return;
-    const url = URL.createObjectURL(file);
-    const card = document.createElement('div');
-    card.className = 'da-avatar-card';
-    card.innerHTML = `
-      <div class="da-avatar-preview">
-        <img src="${url}" alt="${file.name}" />
-        <div class="da-avatar-check"><i class="fas fa-check"></i></div>
-      </div>
-      <div class="da-avatar-name">${file.name}</div>
-    `;
-    avatarList.appendChild(card);
-  }
-
-  const speedSlider = document.getElementById('da-speed');
-  const speedBubble = document.getElementById('da-speed-bubble');
-  function positionSpeedBubble() {
-    if (!speedSlider || !speedBubble) return;
-    const min = Number(speedSlider.min);
-    const max = Number(speedSlider.max);
-    const value = Number(speedSlider.value);
-    const ratio = (value - min) / (max - min);
-    speedBubble.style.left = (ratio * speedSlider.offsetWidth) + 'px';
-    speedBubble.textContent = value.toFixed(1) + 'x';
-  }
-  if (speedSlider) {
-    speedSlider.addEventListener('input', positionSpeedBubble);
-    window.addEventListener('resize', positionSpeedBubble);
-    requestAnimationFrame(positionSpeedBubble);
-  }
-
-  document.querySelectorAll('.da-mode-card').forEach(card => {
-    card.addEventListener('click', function() {
-      const target = this.dataset.daMode;
-      document.querySelectorAll('.da-mode-card').forEach(c => c.classList.toggle('active', c === this));
-      document.querySelectorAll('.da-mode-content').forEach(p => {
-        p.classList.toggle('active', p.dataset.daModeContent === target);
-      });
-    });
+  zone.addEventListener('click', () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.txt,.doc,.docx,.pdf';
+    input.addEventListener('change', () => handleFile(input.files[0]));
+    input.click();
   });
 
-  const daCustomUpload = document.getElementById('da-custom-upload');
-  const daMaterialList = document.getElementById('da-material-list');
-  if (daCustomUpload) {
-    daCustomUpload.addEventListener('dragover', e => {
-      e.preventDefault();
-      daCustomUpload.classList.add('dragover');
+  zone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    zone.classList.add('dragover');
+  });
+  zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+  zone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    zone.classList.remove('dragover');
+    handleFile((e.dataTransfer.files || [])[0]);
+  });
+})();
+
+// ===== 创作资产：上传入口 =====
+(function initPmUpload() {
+  const entry = document.getElementById('pm-upload-entry');
+  if (!entry) return;
+
+  function pick() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*,video/*,audio/*';
+    input.multiple = true;
+    input.addEventListener('change', () => {
+      const n = input.files ? input.files.length : 0;
+      if (n) alert('已选择 ' + n + ' 个文件（演示上传）');
     });
-    daCustomUpload.addEventListener('dragleave', () => daCustomUpload.classList.remove('dragover'));
-    daCustomUpload.addEventListener('drop', e => {
-      e.preventDefault();
-      daCustomUpload.classList.remove('dragover');
-      Array.from(e.dataTransfer.files || []).forEach(addDaMaterial);
-    });
-    daCustomUpload.addEventListener('click', () => {
-      const input = document.createElement('input');
-      input.type = 'file';
-      input.accept = 'image/jpeg,image/png,image/webp';
-      input.multiple = true;
-      input.addEventListener('change', () => {
-        Array.from(input.files || []).forEach(addDaMaterial);
-      });
-      input.click();
-    });
+    input.click();
   }
 
-  function addDaMaterial(file) {
-    if (!daMaterialList || !file.type.startsWith('image/')) return;
-    const url = URL.createObjectURL(file);
-    const item = document.createElement('div');
-    item.className = 'cm-material-item';
-    item.innerHTML = `
-      <div class="cm-material-thumb"><img src="${url}" alt="${file.name}" /></div>
-      <div class="cm-material-info">
-        <div class="cm-material-name"><i class="fas fa-image text-pink-500"></i> ${file.name}</div>
-        <div class="cm-material-meta">${(file.size / 1024).toFixed(1)} KB</div>
-      </div>
-      <button class="cm-material-remove" title="删除"><i class="fas fa-times"></i></button>
-    `;
-    daMaterialList.appendChild(item);
-  }
-
-  if (daMaterialList) {
-    daMaterialList.addEventListener('click', e => {
-      const btn = e.target.closest('.cm-material-remove');
-      if (btn) btn.closest('.cm-material-item').remove();
-    });
-  }
-
-  const aiNarrateBtn = document.getElementById('da-ai-narrate');
-  const narrationTextarea = document.getElementById('da-narration');
-  if (aiNarrateBtn && narrationTextarea) {
-    aiNarrateBtn.addEventListener('click', () => {
-      aiNarrateBtn.innerHTML = '<i class="fas fa-spinner fa-spin text-orange-500 mr-1"></i> 生成中...';
-      aiNarrateBtn.disabled = true;
-      setTimeout(() => {
-        narrationTextarea.value = '大家好，欢迎来到我的直播间！今天为大家介绍一款超值好物，它不仅品质出众，更有独特的设计理念，让您在使用过程中感受到与众不同的体验。现在下单还有专属优惠，机会难得，赶紧行动吧！';
-        aiNarrateBtn.innerHTML = '<i class="fas fa-wand-magic-sparkles text-orange-500 mr-1"></i> AI 创作旁白';
-        aiNarrateBtn.disabled = false;
-      }, 1500);
-    });
-  }
-
-  const daGenerateBtn = document.getElementById('da-generate-btn');
-  if (daGenerateBtn) {
-    daGenerateBtn.addEventListener('click', () => {
-      const progress = document.getElementById('da-progress-fill');
-      const messages = document.getElementById('da-generate-messages');
-      if (messages) messages.style.display = 'none';
-      daGenerateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在生成...';
-      daGenerateBtn.disabled = true;
-      progress.style.width = '0%';
-      let p = 0;
-      const interval = setInterval(() => {
-        p += Math.random() * 6;
-        if (p >= 100) {
-          p = 100;
-          clearInterval(interval);
-          daGenerateBtn.innerHTML = '<i class="fas fa-check"></i> 生成完成';
-          daGenerateBtn.disabled = false;
-          daGenerateBtn.style.background = 'linear-gradient(90deg, #45E6D5 0%, #5B8CFF 50%, #8B5CFF 100%)';
-          if (messages) messages.style.display = 'block';
-        }
-        progress.style.width = p + '%';
-      }, 220);
-    });
-  }
+  entry.addEventListener('click', () => pick());
+  entry.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    entry.classList.add('dragover');
+  });
+  entry.addEventListener('dragleave', () => entry.classList.remove('dragover'));
+  entry.addEventListener('drop', (e) => {
+    e.preventDefault();
+    entry.classList.remove('dragover');
+    const n = (e.dataTransfer.files || []).length;
+    if (n) alert('已选择 ' + n + ' 个文件（演示上传）');
+  });
 })();
 
 // ===== 图生视频模块 =====
@@ -653,14 +745,18 @@ function renderI2vStep(step) {
     el.classList.toggle('done', i + 1 < step);
   });
 
-  document.getElementById('i2v-step-current').textContent = step;
-  document.getElementById('i2v-prev-step').disabled = step === 1;
+  const i2vStepCurrentEl = document.getElementById('i2v-step-current');
+  if (i2vStepCurrentEl) i2vStepCurrentEl.textContent = step;
+  const i2vPrevStepEl = document.getElementById('i2v-prev-step');
+  if (i2vPrevStepEl) i2vPrevStepEl.disabled = step === 1;
 
   const nextBtn = document.getElementById('i2v-next-step');
-  if (step === I2V_TOTAL_STEPS) {
-    nextBtn.style.display = 'none';
-  } else {
-    nextBtn.style.display = 'flex';
+  if (nextBtn) {
+    if (step === I2V_TOTAL_STEPS) {
+      nextBtn.style.display = 'none';
+    } else {
+      nextBtn.style.display = 'flex';
+    }
   }
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1186,10 +1282,10 @@ document.getElementById('project-search-input').addEventListener('input', functi
 });
 } // end if (projectList)
 
-document.getElementById('prev-step').addEventListener('click', () => {
+document.getElementById('prev-step')?.addEventListener('click', () => {
   if (currentStep > 1) renderStep(currentStep - 1);
 });
-document.getElementById('next-step').addEventListener('click', () => {
+document.getElementById('next-step')?.addEventListener('click', () => {
   if (currentStep < TOTAL_STEPS) {
     // 检查余额是否充足
     if (typeof TokenManager !== 'undefined' && !TokenManager.checkBalance()) {
@@ -1212,7 +1308,10 @@ document.querySelectorAll('.step-item').forEach(item => {
 });
 
 const modal = document.getElementById('global-config-modal');
-document.getElementById('open-global-config').addEventListener('click', () => modal.classList.add('open'));
+const openGlobalConfigBtn = document.getElementById('open-global-config');
+if (openGlobalConfigBtn) {
+  openGlobalConfigBtn.addEventListener('click', () => modal.classList.add('open'));
+}
 document.getElementById('close-global-config').addEventListener('click', () => modal.classList.remove('open'));
 document.getElementById('cancel-global-config').addEventListener('click', () => modal.classList.remove('open'));
 document.getElementById('save-global-config').addEventListener('click', () => modal.classList.remove('open'));
@@ -2622,7 +2721,7 @@ const SDChatAgent = {
     if (editBtn) {
       editBtn.style.pointerEvents = '';
       editBtn.style.borderColor = '#334155';
-      editBtn.style.color = '#e2e8f0';
+      editBtn.style.color = '#10182D';
       editBtn.style.background = '#162D52';
       editBtn.querySelector('i').className = 'fas fa-edit';
     }
@@ -2651,7 +2750,7 @@ const SDChatAgent = {
     if (editBtn) {
       editBtn.style.pointerEvents = '';
       editBtn.style.borderColor = '#334155';
-      editBtn.style.color = '#e2e8f0';
+      editBtn.style.color = '#10182D';
       editBtn.style.background = '#162D52';
       editBtn.querySelector('i').className = 'fas fa-edit';
     }
@@ -4241,7 +4340,7 @@ const AKZChatAgent = {
     if (editBtn) {
       editBtn.style.pointerEvents = '';
       editBtn.style.borderColor = '#334155';
-      editBtn.style.color = '#e2e8f0';
+      editBtn.style.color = '#10182D';
       editBtn.style.background = '#162D52';
       editBtn.querySelector('i').className = 'fas fa-edit';
     }
@@ -4267,7 +4366,7 @@ const AKZChatAgent = {
     if (editBtn) {
       editBtn.style.pointerEvents = '';
       editBtn.style.borderColor = '#334155';
-      editBtn.style.color = '#e2e8f0';
+      editBtn.style.color = '#10182D';
       editBtn.style.background = '#162D52';
       editBtn.querySelector('i').className = 'fas fa-edit';
     }
@@ -5176,8 +5275,74 @@ const TokenManager = {
   }
 };
 
+// ===== 落地页 =====
+function openGalleryLightbox(item) {
+  const img = item.querySelector('img');
+  const lightbox = document.getElementById('gallery-lightbox');
+  const lightboxImg = document.getElementById('gallery-lightbox-img');
+  const caption = document.getElementById('gallery-lightbox-caption');
+  if (!lightbox || !lightboxImg) return;
+  lightboxImg.src = img ? img.src : '';
+  lightboxImg.alt = img ? img.alt : '';
+  if (caption) caption.textContent = img ? img.alt : '';
+  lightbox.classList.add('open');
+}
+
+function closeGalleryLightbox() {
+  const lightbox = document.getElementById('gallery-lightbox');
+  if (lightbox) lightbox.classList.remove('open');
+}
+
+function initLanding() {
+  const landingPage = document.getElementById('landing-page');
+  if (!landingPage) return;
+
+  landingPage.addEventListener('click', e => {
+    const gallery = e.target.closest('.lp-template-card');
+    if (gallery) {
+      openGalleryLightbox(gallery);
+    }
+  });
+
+  // 首页快捷入口：跳转到对应菜单
+  landingPage.addEventListener('click', e => {
+    const entry = e.target.closest('.lp-entry');
+    if (!entry) return;
+    const view = entry.dataset.lpView;
+    const navItem = document.querySelector(`.sidebar-item[data-view="${view}"]`);
+    if (navItem) navItem.click();
+    const tab = entry.dataset.lpTab;
+    if (tab) {
+      const tabEl = document.querySelector(`.asset-tab[data-asset-tab="${tab}"]`);
+      if (tabEl) tabEl.click();
+    }
+    const menu = entry.dataset.lpMenu;
+    if (menu) {
+      const menuEl = document.querySelector(`.create-top-tab[data-create-menu="${menu}"]`);
+      if (menuEl) menuEl.click();
+    }
+  });
+
+  const closeBtn = document.getElementById('gallery-lightbox-close');
+  const backdrop = document.getElementById('gallery-lightbox-backdrop');
+  if (closeBtn) closeBtn.addEventListener('click', closeGalleryLightbox);
+  if (backdrop) backdrop.addEventListener('click', closeGalleryLightbox);
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeGalleryLightbox();
+  });
+}
+
+// 开放平台入口（跳转页暂未开发）
+const openPlatformBtn = document.getElementById('open-platform-btn');
+if (openPlatformBtn) {
+  openPlatformBtn.addEventListener('click', () => {
+    alert('开放平台正在建设中，敬请期待');
+  });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   initLogin();
+  initLanding();
   DesignSpec.init();
   SDChatAgent.init();
   AKZChatAgent.init();
