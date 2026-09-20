@@ -1,42 +1,94 @@
-// ===== 登录模块 =====
-const MOCK_ACCOUNTS = [
-  { username: 'admin', password: 'admin123', role: '管理员' },
-  { username: 'user1', password: '123456',  role: '普通用户' },
-  { username: 'demo',  password: 'demo',    role: '演示账号' }
+// ===== 登录/注册模块 =====
+const DEFAULT_ACCOUNTS = [
+  { email: 'admin@yimirror.com', password: 'admin123', role: '管理员' },
+  { email: 'user1@yimirror.com', password: '123456',  role: '普通用户' },
+  { email: 'demo@yimirror.com',  password: 'demo',    role: '演示账号' }
 ];
 
+const USERS_STORAGE_KEY = 'yimirror_users';
+
+function getAccounts() {
+  let extra = [];
+  try {
+    const stored = localStorage.getItem(USERS_STORAGE_KEY);
+    if (stored) extra = JSON.parse(stored);
+  } catch (e) {
+    extra = [];
+  }
+  return [...extra, ...DEFAULT_ACCOUNTS];
+}
+
+function saveAccounts(accounts) {
+  const defaultEmails = new Set(DEFAULT_ACCOUNTS.map(a => a.email));
+  const extra = accounts.filter(a => !defaultEmails.has(a.email));
+  localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(extra));
+}
+
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
 let currentUser = null;
+let registerCode = null;
+let codeTimer = null;
 
 function initLogin() {
-  const loginOverlay   = document.getElementById('login-overlay');
-  const loginUsername  = document.getElementById('login-username');
-  const loginPassword  = document.getElementById('login-password');
-  const loginError     = document.getElementById('login-error');
-  const loginBtn       = document.getElementById('login-btn');
-  const userArea       = document.getElementById('user-area');
-  const currentUsernameEl = document.getElementById('current-username');
-  const logoutBtn      = document.getElementById('logout-btn');
+  const loginOverlay    = document.getElementById('login-overlay');
+  const tabLogin        = document.getElementById('tab-login');
+  const tabRegister     = document.getElementById('tab-register');
+  const loginPanel      = document.getElementById('login-form-panel');
+  const registerPanel   = document.getElementById('register-form-panel');
 
-  loginUsername.value = 'admin';
+  const loginEmail      = document.getElementById('login-email');
+  const loginPassword   = document.getElementById('login-password');
+  const loginError      = document.getElementById('login-error');
+  const loginBtn        = document.getElementById('login-btn');
+
+  const registerEmail   = document.getElementById('register-email');
+  const registerCodeEl  = document.getElementById('register-code');
+  const registerPassword= document.getElementById('register-password');
+  const registerError   = document.getElementById('register-error');
+  const registerBtn     = document.getElementById('register-btn');
+  const sendCodeBtn     = document.getElementById('send-code-btn');
+  const codeHint        = document.getElementById('code-hint');
+
+  const userArea        = document.getElementById('user-area');
+  const currentUsernameEl = document.getElementById('current-username');
+  const logoutBtn       = document.getElementById('logout-btn');
+  const footerHint      = document.getElementById('login-footer-hint');
+
+  loginEmail.value = 'admin@yimirror.com';
   loginPassword.value = 'admin123';
 
+  function switchMode(mode) {
+    const isLogin = mode === 'login';
+    tabLogin.classList.toggle('active', isLogin);
+    tabRegister.classList.toggle('active', !isLogin);
+    loginPanel.style.display = isLogin ? 'block' : 'none';
+    registerPanel.style.display = isLogin ? 'none' : 'block';
+    loginError.textContent = '';
+    registerError.textContent = '';
+    footerHint.textContent = isLogin ? '演示账号：admin@yimirror.com / admin123' : '注册成功后即可使用邮箱登录';
+    if (isLogin) loginEmail.focus(); else registerEmail.focus();
+  }
+
   function doLogin() {
-    const name = loginUsername.value.trim();
-    const pwd  = loginPassword.value;
-    if (!name || !pwd) {
-      loginError.textContent = '请输入用户名和密码';
+    const email = loginEmail.value.trim().toLowerCase();
+    const pwd   = loginPassword.value;
+    if (!email || !pwd) {
+      loginError.textContent = '请输入邮箱和密码';
       return;
     }
-    const account = MOCK_ACCOUNTS.find(a => a.username === name && a.password === pwd);
+    const account = getAccounts().find(a => a.email === email && a.password === pwd);
     if (!account) {
-      loginError.textContent = '用户名或密码错误';
+      loginError.textContent = '邮箱或密码错误';
       loginPassword.value = '';
       return;
     }
     currentUser = account;
     loginOverlay.style.display = 'none';
     userArea.style.display = 'flex';
-    currentUsernameEl.textContent = account.username;
+    currentUsernameEl.textContent = account.email.split('@')[0];
     const landingPage = document.getElementById('landing-page');
     if (landingPage) landingPage.style.display = 'block';
     loginError.textContent = '';
@@ -49,24 +101,99 @@ function initLogin() {
     userArea.style.display = 'none';
     const landingPage = document.getElementById('landing-page');
     if (landingPage) landingPage.style.display = 'none';
-    loginUsername.value = '';
+    loginEmail.value = '';
     loginPassword.value = '';
     loginError.textContent = '';
-    loginUsername.focus();
+    loginEmail.focus();
   }
 
-  if (loginBtn) {
-    loginBtn.addEventListener('click', doLogin);
+  function resetCodeButton() {
+    if (codeTimer) {
+      clearInterval(codeTimer);
+      codeTimer = null;
+    }
+    sendCodeBtn.disabled = false;
+    sendCodeBtn.textContent = '获取验证码';
   }
-  if (loginPassword) {
-    loginPassword.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+
+  function sendCode() {
+    const email = registerEmail.value.trim().toLowerCase();
+    if (!email) {
+      registerError.textContent = '请先输入邮箱';
+      registerEmail.focus();
+      return;
+    }
+    if (!isValidEmail(email)) {
+      registerError.textContent = '邮箱格式不正确';
+      registerEmail.focus();
+      return;
+    }
+    if (getAccounts().some(a => a.email === email)) {
+      registerError.textContent = '该邮箱已注册，请直接登录';
+      return;
+    }
+    registerError.textContent = '';
+    registerCode = String(Math.floor(100000 + Math.random() * 900000));
+    codeHint.textContent = '验证码已发送（演示环境）：' + registerCode + '，5 分钟内有效';
+    let seconds = 60;
+    sendCodeBtn.disabled = true;
+    sendCodeBtn.textContent = seconds + 's 后重发';
+    codeTimer = setInterval(() => {
+      seconds--;
+      if (seconds <= 0) {
+        resetCodeButton();
+      } else {
+        sendCodeBtn.textContent = seconds + 's 后重发';
+      }
+    }, 1000);
   }
-  if (loginUsername) {
-    loginUsername.addEventListener('keydown', e => { if (e.key === 'Enter') loginPassword.focus(); });
+
+  function doRegister() {
+    const email = registerEmail.value.trim().toLowerCase();
+    const code  = registerCodeEl.value.trim();
+    const pwd   = registerPassword.value;
+    if (!email || !code || !pwd) {
+      registerError.textContent = '请填写邮箱、验证码和密码';
+      return;
+    }
+    if (!isValidEmail(email)) {
+      registerError.textContent = '邮箱格式不正确';
+      return;
+    }
+    if (getAccounts().some(a => a.email === email)) {
+      registerError.textContent = '该邮箱已注册，请直接登录';
+      return;
+    }
+    if (!registerCode || code !== registerCode) {
+      registerError.textContent = '验证码错误';
+      return;
+    }
+    if (pwd.length < 6) {
+      registerError.textContent = '密码至少需要 6 位';
+      return;
+    }
+    const accounts = getAccounts();
+    accounts.push({ email, password: pwd, role: '普通用户' });
+    saveAccounts(accounts);
+    resetCodeButton();
+    registerCode = null;
+    registerCodeEl.value = '';
+    registerPassword.value = '';
+    codeHint.textContent = '';
+    loginEmail.value = email;
+    loginPassword.value = '';
+    switchMode('login');
+    loginError.textContent = '注册成功，请登录';
   }
-  if (logoutBtn) {
-    logoutBtn.addEventListener('click', doLogout);
-  }
+
+  if (tabLogin) tabLogin.addEventListener('click', () => switchMode('login'));
+  if (tabRegister) tabRegister.addEventListener('click', () => switchMode('register'));
+  if (loginBtn) loginBtn.addEventListener('click', doLogin);
+  if (loginPassword) loginPassword.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+  if (loginEmail) loginEmail.addEventListener('keydown', e => { if (e.key === 'Enter') loginPassword.focus(); });
+  if (registerBtn) registerBtn.addEventListener('click', doRegister);
+  if (sendCodeBtn) sendCodeBtn.addEventListener('click', sendCode);
+  if (logoutBtn) logoutBtn.addEventListener('click', doLogout);
 }
 
 const TOTAL_STEPS = 6;
@@ -428,6 +555,241 @@ document.querySelectorAll('#module-nav .module-nav-item').forEach(item => {
   }
 })();
 
+// ===== 资产库：文件夹 + 上传管理 =====
+(function initAssetLibrary() {
+  const folderGrid   = document.getElementById('pm-folder-grid');
+  const newFolderBtn = document.getElementById('pm-new-folder-btn');
+  const uploadGrid   = document.getElementById('pm-upload-grid');
+  const uploadEntry  = document.getElementById('pm-upload-entry');
+  const uploadHint   = document.querySelector('.pm-upload-entry-hint');
+  const breadcrumb   = document.getElementById('pm-breadcrumb');
+  const backBtn      = document.getElementById('pm-back-btn');
+  const crumbPath    = document.getElementById('pm-current-path');
+  const toolbar      = document.getElementById('pm-toolbar');
+  const projectGrid  = document.getElementById('pm-project-grid');
+  if (!folderGrid || !newFolderBtn) return;
+
+  const FOLDER_KEY = 'yimirror_folders';
+  const UPLOAD_KEY = 'yimirror_uploads';
+
+  const load = (key) => {
+    try {
+      const raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      return [];
+    }
+  };
+  const save = (key, val) => localStorage.setItem(key, JSON.stringify(val));
+  const genId = () => 'f' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+
+  let folders = load(FOLDER_KEY);
+  let uploads = load(UPLOAD_KEY);
+  let currentFolderId = null;
+
+  const currentFolder = () => currentFolderId === null ? null : folders.find(f => f.id === currentFolderId);
+
+  const getUniqueName = (list, base) => {
+    const names = new Set(list.map(f => f.name));
+    if (!names.has(base)) return base;
+    let i = 2;
+    while (names.has(`${base} ${i}`)) i++;
+    return `${base} ${i}`;
+  };
+
+  const fileType = (name) => {
+    const ext = (name.split('.').pop() || '').toLowerCase();
+    if (/^(png|jpe?g|gif|webp|bmp|svg|ico)$/.test(ext)) return { icon: 'fa-file-image', cls: 'type-image' };
+    if (/^(mp4|mov|avi|mkv|webm|flv)$/.test(ext)) return { icon: 'fa-file-video', cls: 'type-video' };
+    if (/^(mp3|wav|flac|aac|ogg|m4a)$/.test(ext)) return { icon: 'fa-file-audio', cls: 'type-audio' };
+    return { icon: 'fa-file', cls: 'type-file' };
+  };
+
+  const formatSize = (bytes) => {
+    if (bytes === null || bytes === undefined) return '';
+    const units = ['B', 'KB', 'MB', 'GB'];
+    let i = 0;
+    let v = bytes;
+    while (v >= 1024 && i < units.length - 1) { v /= 1024; i++; }
+    return (v >= 100 || i === 0 ? Math.round(v) : v.toFixed(1)) + ' ' + units[i];
+  };
+
+  function renderFolders() {
+    folderGrid.innerHTML = '';
+    folders.forEach(folder => {
+      const card = document.createElement('div');
+      card.className = 'pm-folder-card';
+      card.dataset.folderId = folder.id;
+      card.innerHTML = `
+        <i class="fas fa-folder folder-icon"></i>
+        <span class="pm-folder-name"></span>
+        <div class="pm-folder-actions">
+          <button class="pm-action-btn" title="重命名" data-folder-rename><i class="fas fa-pen"></i></button>
+        </div>
+      `;
+      card.querySelector('.pm-folder-name').textContent = folder.name;
+      folderGrid.appendChild(card);
+    });
+  }
+
+  function renderUploads() {
+    uploadGrid.innerHTML = '';
+    const list = uploads.filter(u => u.folderId === currentFolderId);
+    if (currentFolderId !== null && list.length === 0) {
+      uploadGrid.innerHTML = '<div class="pm-empty-tip"><i class="fas fa-folder-open"></i><span>该文件夹为空，可将文件拖拽到上方上传区域</span></div>';
+      return;
+    }
+    list.forEach(u => {
+      const t = fileType(u.name);
+      const card = document.createElement('div');
+      card.className = 'pm-file-card';
+      card.dataset.fileId = u.id;
+      card.innerHTML = `
+        <i class="fas ${t.icon} file-icon ${t.cls}"></i>
+        <div class="pm-file-info">
+          <span class="pm-file-name"></span>
+          <span class="pm-file-size"></span>
+        </div>
+        <button class="pm-action-btn danger" title="删除" data-file-delete><i class="fas fa-trash"></i></button>
+      `;
+      card.querySelector('.pm-file-name').textContent = u.name;
+      card.querySelector('.pm-file-size').textContent = formatSize(u.size);
+      uploadGrid.appendChild(card);
+    });
+  }
+
+  function renderAll() {
+    const insideFolder = currentFolderId !== null;
+    const folder = currentFolder();
+    if (breadcrumb) breadcrumb.style.display = insideFolder ? 'flex' : 'none';
+    if (crumbPath) crumbPath.textContent = insideFolder ? '/ ' + folder.name : '';
+    if (toolbar) toolbar.style.display = insideFolder ? 'none' : 'flex';
+    if (projectGrid) projectGrid.style.display = insideFolder ? 'none' : '';
+    folderGrid.style.display = insideFolder ? 'none' : '';
+    if (uploadHint) {
+      uploadHint.textContent = insideFolder
+        ? '点击或拖拽图片 / 视频 / 音频到此处，上传到「' + folder.name + '」'
+        : '点击或拖拽图片 / 视频 / 音频到此处，快速上传到创作资产';
+    }
+    renderFolders();
+    renderUploads();
+  }
+
+  function renameFolder(folder) {
+    const card = folderGrid.querySelector(`.pm-folder-card[data-folder-id="${folder.id}"]`);
+    if (!card) return;
+    const nameEl = card.querySelector('.pm-folder-name');
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'pm-folder-name-input';
+    input.value = folder.name;
+    input.maxLength = 30;
+    nameEl.replaceWith(input);
+    input.focus();
+    input.select();
+
+    let done = false;
+    const commit = () => {
+      if (done) return;
+      done = true;
+      const newName = input.value.trim();
+      if (newName && newName !== folder.name) {
+        folder.name = newName;
+        save(FOLDER_KEY, folders);
+      }
+      renderAll();
+    };
+    const cancel = () => {
+      if (done) return;
+      done = true;
+      renderFolders();
+    };
+
+    input.addEventListener('blur', commit);
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        input.blur();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        cancel();
+      }
+    });
+  }
+
+  function addFiles(fileList) {
+    const files = Array.from(fileList || []);
+    if (!files.length) return;
+    files.forEach(f => uploads.push({ id: genId(), name: f.name, size: f.size, folderId: currentFolderId }));
+    save(UPLOAD_KEY, uploads);
+    renderUploads();
+    const target = currentFolder() ? '「' + currentFolder().name + '」' : '资产库';
+    alert('已上传 ' + files.length + ' 个文件到' + target);
+  }
+
+  function pickFiles() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*,video/*,audio/*';
+    input.multiple = true;
+    input.addEventListener('change', () => addFiles(input.files));
+    input.click();
+  }
+
+  function enterFolder(id) {
+    currentFolderId = id;
+    renderAll();
+  }
+
+  function goRoot() {
+    currentFolderId = null;
+    renderAll();
+  }
+
+  newFolderBtn.addEventListener('click', () => {
+    folders.push({ id: genId(), name: getUniqueName(folders, '新建文件夹') });
+    save(FOLDER_KEY, folders);
+    renderFolders();
+  });
+
+  folderGrid.addEventListener('click', (ev) => {
+    const renameBtn = ev.target.closest('[data-folder-rename]');
+    const card = ev.target.closest('.pm-folder-card');
+    if (!card) return;
+    const folder = folders.find(f => f.id === card.dataset.folderId);
+    if (!folder) return;
+    if (renameBtn) renameFolder(folder);
+    else enterFolder(folder.id);
+  });
+
+  uploadGrid.addEventListener('click', (ev) => {
+    const delBtn = ev.target.closest('[data-file-delete]');
+    if (!delBtn) return;
+    const card = delBtn.closest('.pm-file-card');
+    uploads = uploads.filter(u => u.id !== card.dataset.fileId);
+    save(UPLOAD_KEY, uploads);
+    renderUploads();
+  });
+
+  if (backBtn) backBtn.addEventListener('click', goRoot);
+
+  if (uploadEntry) {
+    uploadEntry.addEventListener('click', () => pickFiles());
+    uploadEntry.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      uploadEntry.classList.add('dragover');
+    });
+    uploadEntry.addEventListener('dragleave', () => uploadEntry.classList.remove('dragover'));
+    uploadEntry.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadEntry.classList.remove('dragover');
+      addFiles(e.dataTransfer.files);
+    });
+  }
+
+  renderAll();
+})();
+
 // ===== 快速创作 - 生成预览风格 =====
 const generatePreviewBtn = document.getElementById('generate-preview-btn');
 const stylePromptInput = document.getElementById('style-prompt');
@@ -690,37 +1052,6 @@ document.querySelectorAll('[data-cm-step]').forEach(item => {
     e.preventDefault();
     zone.classList.remove('dragover');
     handleFile((e.dataTransfer.files || [])[0]);
-  });
-})();
-
-// ===== 创作资产：上传入口 =====
-(function initPmUpload() {
-  const entry = document.getElementById('pm-upload-entry');
-  if (!entry) return;
-
-  function pick() {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*,video/*,audio/*';
-    input.multiple = true;
-    input.addEventListener('change', () => {
-      const n = input.files ? input.files.length : 0;
-      if (n) alert('已选择 ' + n + ' 个文件（演示上传）');
-    });
-    input.click();
-  }
-
-  entry.addEventListener('click', () => pick());
-  entry.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    entry.classList.add('dragover');
-  });
-  entry.addEventListener('dragleave', () => entry.classList.remove('dragover'));
-  entry.addEventListener('drop', (e) => {
-    e.preventDefault();
-    entry.classList.remove('dragover');
-    const n = (e.dataTransfer.files || []).length;
-    if (n) alert('已选择 ' + n + ' 个文件（演示上传）');
   });
 })();
 
