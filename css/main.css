@@ -1625,6 +1625,36 @@ main {
   min-width: 0;
 }
 
+/* 创作中心：左右两侧独立滚动，互不影响 */
+[data-view-panel="short-video"] .module-split {
+  height: calc(100vh - 170px);
+  align-items: stretch;
+}
+[data-view-panel="short-video"] .module-input-panel,
+[data-view-panel="short-video"] .module-preview-panel {
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  position: sticky;
+  top: 0;
+}
+[data-view-panel="short-video"] .module-input-panel::-webkit-scrollbar,
+[data-view-panel="short-video"] .module-preview-panel::-webkit-scrollbar {
+  width: 6px;
+}
+[data-view-panel="short-video"] .module-input-panel::-webkit-scrollbar-thumb,
+[data-view-panel="short-video"] .module-preview-panel::-webkit-scrollbar-thumb {
+  background: #2C2D32;
+  border-radius: 3px;
+}
+[data-view-panel="short-video"] .module-preview-panel {
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+[data-view-panel="short-video"] .module-preview-panel > .preview-work-list {
+  max-height: none;
+}
+
 .module-preview-panel {
   min-width: 0;
   display: flex;
@@ -7536,4 +7566,455 @@ main {
   align-items: center;
   font-size: 12px;
   color: #A8A9B0;
+}
+
+/* ===== 预览面板 - 作品列表样式 ===== */
+.preview-filter-tabs {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #2C2D32;
+  flex-wrap: wrap;
+}
+.preview-filter-tab {
+  background: #1E1F24;
+  border: 1px solid #2C2D32;
+  color: #A8A9B0;
+  padding: 6px 14px;
+  border-radius: 16px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.preview-filter-tab:hover {
+  background: #2A2B30;
+  color: #E4E5EA;
+}
+.preview-filter-tab.active {
+  background: #7B5CF5;
+  border-color: #7B5CF5;
+  color: #fff;
+}
+.preview-work-list {
+  padding: 16px;
+  overflow-y: auto;
+  max-height: calc(100vh - 200px);
+}
+.preview-work-item {
+  margin-bottom: 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #2C2D32;
+}
+.preview-work-item:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+.preview-work-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.preview-work-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.preview-work-type {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  color: #E4E5EA;
+  font-weight: 500;
+}
+.preview-work-type i {
+  color: #7B5CF5;
+  font-size: 12px;
+}
+.preview-work-thumb {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  object-fit: cover;
+  border: 1px solid #2C2D32;
+}
+.preview-work-model {
+  background: #1E1F24;
+  border: 1px solid #2C2D32;
+  color: #A8A9B0;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+}
+.preview-work-res,
+.preview-work-ratio {
+  background: #1E1F24;
+  border: 1px solid #2C2D32;
+  color: #A8A9B0;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+}
+.preview-work-actions {
+  display: flex;
+  gap: 6px;
+}
+.preview-action-btn {
+  background: transparent;
+  border: 1px solid #2C2D32;
+  color: #A8A9B0;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+.preview-action-btn:hover {
+  background: #2A2B30;
+  color: #E4E5EA;
+  border-color: #7B5CF5;
+}
+.preview-work-prompt {
+  font-size: 13px;
+  color: #A8A9B0;
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+.preview-work-media {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #1E1F24;
+}
+.preview-work-media img {
+  width: 100%;
+  display: block;
+  border-radius: 8px;
+}
+.preview-ai-badge {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #A8A9B0;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  backdrop-filter: blur(4px);
+}
+
+/* ===== 创作中心：全局独立预览区（不与左侧操作联动） ===== */
+/* 隐藏各模块内嵌的预览面板，右侧统一由全局组件承载 */
+[data-view-panel="short-video"] .module-content .module-preview-panel {
+  display: none;
+}
+/* module-content-wrapper 内部左右并列：左侧操作模块(固定宽度)，右侧全局预览房间(占满剩余) */
+/* 给定确定视口高度，防止右侧预览长内容把左侧操作面板拉伸到底部 */
+[data-view-panel="short-video"] .module-content-wrapper {
+  flex: 1;
+  min-width: 0;
+  height: calc(100vh - 170px);
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 12px;
+  overflow: hidden;
+}
+/* 仅显示的 active 操作模块固定为操作面板宽度，独立纵向滚动 */
+[data-view-panel="short-video"] .module-content.active {
+  flex: none;
+  width: 420px;
+  min-width: 0;
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+}
+/* 模块内：仅显示操作面板，操作列固定 420px */
+[data-view-panel="short-video"] .module-content .module-split {
+  grid-template-columns: minmax(0, 420px);
+  height: 100%;
+}
+[data-view-panel="short-video"] .module-content .module-input-panel {
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+}
+[data-view-panel="short-video"] .module-content .module-input-panel > * {
+  height: 100%;
+}
+
+/* 全局预览房间容器(注入 module-content-wrapper 内末尾) */
+.create-preview-room {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: row;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  gap: 12px;
+}
+.create-preview-room > .create-preview-stage {
+  flex: 1;
+  min-width: 0;
+  background: #1A1B20;
+  border: 1px solid #2C2D32;
+  border-radius: 12px;
+  overflow-y: auto;
+  padding: 16px;
+}
+/* 中栏筛选标签 */
+.create-preview-stage .preview-stage-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #2C2D32;
+}
+.create-preview-stage .preview-stage-tab {
+  background: transparent;
+  border: 1px solid #2C2D32;
+  color: #A8A9B0;
+  padding: 5px 14px;
+  border-radius: 15px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.create-preview-stage .preview-stage-tab:hover {
+  border-color: #7B5CF5;
+  color: #E4E5EA;
+}
+.create-preview-stage .preview-stage-tab.active {
+  background: #7B5CF5;
+  border-color: #7B5CF5;
+  color: #fff;
+}
+/* 大图作品卡片 */
+.create-preview-list {
+  position: relative;
+}
+.pv-item {
+  margin-bottom: 22px;
+}
+.pv-item.video .pv-item-media {
+  aspect-ratio: 16 / 9;
+}
+.pv-item.image .pv-item-media {
+  aspect-ratio: 4 / 5;
+}
+.pv-item-media {
+  position: relative;
+  background: #22232A;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+}
+.pv-item-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.pv-item-media .pv-item-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  background: #22232A;
+}
+/* hover 浮层操作按钮 - 定位于视频框右上角 */
+.pv-item-actions {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 0.22s, transform 0.22s;
+  z-index: 3;
+}
+.pv-item:hover .pv-item-actions,
+.pv-item-actions:focus-within {
+  opacity: 1;
+  transform: translateY(0);
+}
+.pv-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(30, 31, 36, 0.9);
+  border: 1px solid rgba(255,255,255,0.16);
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.pv-action-btn:hover {
+  background: #7B5CF5;
+  border-color: #7B5CF5;
+}
+.pv-action-btn.danger:hover {
+  background: #E5484D;
+  border-color: #E5484D;
+}
+/* 大图卡片信息 */
+.pv-item-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+.pv-item-title {
+  font-size: 13px;
+  color: #E4E5EA;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.pv-item-title i {
+  color: #7B5CF5;
+  font-size: 12px;
+}
+.pv-item-tag {
+  background: #1E1F24;
+  border: 1px solid #2C2D32;
+  color: #A8A9B0;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+}
+.pv-item-info .pv-ai-badge {
+  background: rgba(0,0,0,0.55);
+  color: #A8A9B0;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+}
+.pv-item-prompt {
+  font-size: 12px;
+  color: #A8A9B0;
+  margin-top: 8px;
+  line-height: 1.5;
+}
+
+/* 最右缩略图导航列 */
+.create-preview-room > .create-preview-nav {
+  width: 76px;
+  flex: none;
+  background: #1A1B20;
+  border: 1px solid #2C2D32;
+  border-radius: 12px;
+  overflow-y: auto;
+  padding: 10px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.create-preview-nav .pv-nav-thumb {
+  width: 60px;
+  height: 60px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 2px solid transparent;
+  cursor: pointer;
+  flex: none;
+  transition: all 0.2s;
+  background: #22232A;
+}
+.create-preview-nav .pv-nav-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.create-preview-nav .pv-nav-thumb:hover {
+  border-color: rgba(123, 92, 245, 0.6);
+}
+.create-preview-nav .pv-nav-thumb.active {
+  border-color: #7B5CF5;
+}
+.create-preview-nav::-webkit-scrollbar {
+  width: 4px;
+}
+.create-preview-nav::-webkit-scrollbar-thumb {
+  background: #2C2D32;
+  border-radius: 2px;
+}
+.create-preview-stage::-webkit-scrollbar {
+  width: 6px;
+}
+.create-preview-stage::-webkit-scrollbar-thumb {
+  background: #2C2D32;
+  border-radius: 3px;
+}
+
+/* ===== 强约束：创作中心左右两栏固定视口高度，禁止内容互相撑开 ===== */
+[data-view-panel="short-video"] .module-content-wrapper {
+  height: calc(100vh - 170px) !important;
+  min-height: 0 !important;
+  max-height: calc(100vh - 170px) !important;
+  overflow: hidden !important;
+  display: grid !important;
+  grid-template-columns: 420px 1fr !important;
+  grid-auto-rows: minmax(0, 1fr) !important;
+  gap: 12px !important;
+  align-items: start !important;
+  align-content: start !important;
+  justify-content: start !important;
+}
+/* 非激活的模块彻底隐藏，不占任何轨道 */
+[data-view-panel="short-video"] .module-content:not(.active) {
+  display: none !important;
+}
+/* 左侧仅激活的操作模块：固定第一列，独立纵向滚动 */
+[data-view-panel="short-video"] .module-content.active {
+  grid-column: 1 !important;
+  grid-row: 1 !important;
+  align-self: start !important;
+  justify-self: stretch !important;
+  width: 420px !important;
+  min-width: 0 !important;
+  max-height: 100% !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  position: relative !important;
+  top: 0 !important;
+}
+[data-view-panel="short-video"] .module-content.active .module-split {
+  height: auto !important;
+  min-height: 0 !important;
+}
+[data-view-panel="short-video"] .module-content.active .module-input-panel {
+  min-height: 0 !important;
+}
+[data-view-panel="short-video"] .module-content .module-preview-panel {
+  display: none !important;
+}
+/* 右侧全局预览房间：第二列，高度被限制在视口内，内容在其内部滚动 */
+[data-view-panel="short-video"] .create-preview-room {
+  grid-column: 2 !important;
+  grid-row: 1 !important;
+  align-self: stretch !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  max-height: 100% !important;
+  overflow: hidden !important;
+}
+[data-view-panel="short-video"] .create-preview-room > .create-preview-stage,
+[data-view-panel="short-video"] .create-preview-room > .create-preview-nav {
+  min-height: 0 !important;
+  max-height: 100% !important;
+  overflow-y: auto !important;
 }

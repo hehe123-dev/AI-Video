@@ -483,6 +483,7 @@ document.querySelectorAll('#module-nav .module-nav-item').forEach(item => {
     document.querySelectorAll('[data-view-panel="short-video"] .module-content').forEach(p => {
       p.classList.toggle('active', p.dataset.moduleContent === target);
     });
+    if (typeof applyCreateLayout === 'function') applyCreateLayout();
   });
 });
 
@@ -616,6 +617,8 @@ document.querySelectorAll('#module-nav .module-nav-item').forEach(item => {
     document.querySelectorAll('[data-view-panel="short-video"] .module-content').forEach(p => {
       p.classList.toggle('active', p.dataset.moduleContent === target);
     });
+    // 切换后重排左右两栏，确保新激活模块与右侧预览房间顶部对齐
+    if (typeof applyCreateLayout === 'function') applyCreateLayout();
   }
 })();
 
@@ -5976,4 +5979,328 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ===== 图生图交互 =====
   bindCategorySelector('[data-module-content="img-to-img"]', 'i2i-prompt');
+
+  // ===== 预览面板筛选标签交互 =====
+  document.querySelectorAll('.preview-filter-tab').forEach(tab => {
+    tab.addEventListener('click', function() {
+      const tabs = this.parentElement.querySelectorAll('.preview-filter-tab');
+      tabs.forEach(t => t.classList.remove('active'));
+      this.classList.add('active');
+    });
+  });
+
+  // ===== 创作中心：注入全局独立预览面板（不与左侧操作联动） =====
+  initCreatePreviewRoom();
 });
+
+/**
+ * 创作中心全局独立预览面板：
+ * 注入到 module-content-wrapper 内末尾（始终显示，不与左侧模块切换联动）。
+ * 中栏为大图作品列表(hover 显示 下载/重新编辑/删除)，最右为缩略图导航(点击滚动定位)。
+ */
+function initCreatePreviewRoom() {
+  var wrapper = document.querySelector('[data-view-panel="short-video"] .module-content-wrapper');
+  if (!wrapper) return;
+
+  // 修复：四个模块内容因历史编辑导致游离在 module-content-wrapper 之外，
+  // 将它们移回 wrapper 内，保证与右侧预览房间处于同一网格、顶部对齐。
+  ['custom-material', 'image-to-video', 'text-to-image', 'img-to-img'].forEach(function (key) {
+    var mc = document.querySelector('[data-view-panel="short-video"] .module-content[data-module-content="' + key + '"]');
+    if (mc && mc.parentElement !== wrapper) {
+      wrapper.appendChild(mc);
+    }
+  });
+
+  if (wrapper.querySelector('.create-preview-room')) return;
+
+  var demoWorks = [
+    {
+      kind: 'video', title: '图生视频', model: 'Wan 3.0 Prime', res: '480P', ratio: '16:9',
+      prompt: '大院刚开始养了一个小狗，后来又养了一个猫咪，它们在院子里追逐玩耍。',
+      thumb: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Cute%20puppy%20dog%20closeup%20photo&image_size=square',
+      big: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Cute%20puppy%20playing%20in%20courtyard%20cinematic%20lighting&image_size=landscape_16_9',
+      video: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
+      ai: true
+    },
+    {
+      kind: 'video', title: '参考生视频', model: 'Wan 3.0 Prime', res: '480P', ratio: '9:16',
+      prompt: '@图片1 @图片2 小狗和小猫是好朋友，他们一起抓老鼠。',
+      thumb: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Orange%20tabby%20cat%20closeup%20photo&image_size=square',
+      big: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Cat%20and%20dog%20playing%20together%20cinematic%20scene&image_size=landscape_16_9',
+      video: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
+      ai: true
+    },
+    {
+      kind: 'image', title: '文生图', model: 'Wan 3.0 Prime', res: '480P', ratio: '1:1',
+      prompt: '一座未来主义城市天际线，暮色降临，霓虹灯倒映在雨后街道。',
+      thumb: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Futuristic%20city%20skyline%20neon%20rainy%20street&image_size=square',
+      big: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Futuristic%20city%20skyline%20neon%20lights%20rainy%20street%20reflection&image_size=landscape_4_3',
+      ai: true
+    },
+    {
+      kind: 'image', title: '图生图', model: 'Wan 3.0 Prime', res: '480P', ratio: '4:3',
+      prompt: '保留首帧人物形象，将背景更换为春天盛开的樱花林。',
+      thumb: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Cherry%20blossom%20park%20portrait%20spring&image_size=square',
+      big: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Portrait%20cherry%20blossom%20park%20spring%20sunlight&image_size=portrait_4_3',
+      ai: true
+    },
+    {
+      kind: 'video', title: '文生视频', model: 'Wan 3.0 Prime', res: '1080P', ratio: '16:9',
+      prompt: '一列高铁穿过雪山与森林，镜头跟随飞驰的列车穿过隧道。',
+      thumb: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=High%20speed%20train%20snowy%20mountain%20forest%20aerial&image_size=square',
+      big: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=High%20speed%20train%20passing%20through%20snowy%20mountains%20cinematic&image_size=landscape_16_9',
+      video: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+      ai: false
+    }
+  ];
+
+  var room = document.createElement('div');
+  room.className = 'create-preview-room';
+
+  // 中栏：大图作品 + 筛选标签
+  var stage = document.createElement('div');
+  stage.className = 'create-preview-stage';
+
+  var tabs = document.createElement('div');
+  tabs.className = 'preview-stage-tabs';
+  var tabsDef = [
+    { k: 'all', label: '全部' }, { k: 'video', label: '视频' },
+    { k: 'image', label: '图片' }, { k: 'ai', label: 'AI生成' }, { k: 'mine', label: '我创建的' }
+  ];
+  tabsDef.forEach(function(t, idx) {
+    var b = document.createElement('button');
+    b.className = 'preview-stage-tab' + (idx === 0 ? ' active' : '');
+    b.dataset.filter = t.k;
+    b.textContent = t.label;
+    tabs.appendChild(b);
+  });
+  stage.appendChild(tabs);
+
+  var list = document.createElement('div');
+  list.className = 'create-preview-list';
+  demoWorks.forEach(function(w) {
+    var item = document.createElement('div');
+    item.className = 'pv-item ' + w.kind;
+    item.dataset.ai = w.ai ? '1' : '0';
+
+    var media = document.createElement('div');
+    media.className = 'pv-item-media';
+
+    // 视频作品:用 video 元素,鼠标移入自动播放
+    var player = null;
+    if (w.kind === 'video' && w.video) {
+      player = document.createElement('video');
+      player.className = 'pv-item-video';
+      player.src = w.video;
+      player.poster = w.big;
+      player.muted = true;
+      player.loop = true;
+      player.playsInline = true;
+      player.preload = 'metadata';
+      player.setAttribute('muted', '');
+      player.setAttribute('playsinline', '');
+      // 视频源加载失败时回退显示封面大图
+      player.addEventListener('error', function() {
+        if (!media.querySelector('img')) {
+          var fb = document.createElement('img');
+          fb.src = w.big;
+          fb.alt = w.prompt;
+          media.appendChild(fb);
+        }
+      });
+      media.appendChild(player);
+    } else {
+      var img = document.createElement('img');
+      img.src = w.big;
+      img.alt = w.prompt;
+      media.appendChild(img);
+    }
+
+    var actions = document.createElement('div');
+    actions.className = 'pv-item-actions';
+    var btnDefs = [
+      { label: '下载', icon: 'fas fa-download' },
+      { label: '重新编辑', icon: 'fas fa-pen' },
+      { label: '删除', icon: 'fas fa-trash-alt', danger: true }
+    ];
+    btnDefs.forEach(function(bd) {
+      var btn = document.createElement('button');
+      btn.className = 'pv-action-btn' + (bd.danger ? ' danger' : '');
+      btn.innerHTML = '<i class="' + bd.icon + '"></i>' + bd.label;
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        if (bd.label === '删除') { item.style.display = 'none'; }
+        else { alert('已触发操作：' + bd.label); }
+      });
+      actions.appendChild(btn);
+    });
+    media.appendChild(actions);
+
+    // 鼠标移入视频自动播放,移出暂停
+    if (player) {
+      media.addEventListener('mouseenter', function() {
+        player.muted = true;
+        var p = player.play();
+        if (p && p.catch) p.catch(function(){});
+      });
+      media.addEventListener('mouseleave', function() {
+        player.pause();
+      });
+      item.addEventListener('mouseenter', function() {
+        player.muted = true;
+        var p = player.play();
+        if (p && p.catch) p.catch(function(){});
+      });
+      item.addEventListener('mouseleave', function() {
+        player.pause();
+      });
+    }
+
+    var info = document.createElement('div');
+    info.className = 'pv-item-info';
+    info.innerHTML =
+      '<span class="pv-item-title"><i class="fas ' + (w.kind === 'video' ? 'fa-film' : 'fa-image') + '"></i>' + w.title + '</span>' +
+      '<span class="pv-item-tag">' + w.model + '</span>' +
+      '<span class="pv-item-tag">' + w.res + '</span>' +
+      '<span class="pv-item-tag">' + w.ratio + '</span>';
+    var prompt = document.createElement('div');
+    prompt.className = 'pv-item-prompt';
+    prompt.textContent = w.prompt;
+    if (w.ai) {
+      var aiTag = document.createElement('span');
+      aiTag.className = 'pv-ai-badge';
+      aiTag.textContent = 'AI生成';
+      info.appendChild(aiTag);
+    }
+
+    item.appendChild(media);
+    item.appendChild(info);
+    item.appendChild(prompt);
+    list.appendChild(item);
+  });
+  stage.appendChild(list);
+
+  // 最右：缩略图导航列
+  var nav = document.createElement('div');
+  nav.className = 'create-preview-nav';
+  demoWorks.forEach(function(w, idx) {
+    var t = document.createElement('div');
+    t.className = 'pv-nav-thumb' + (idx === 0 ? ' active' : '');
+    var im = document.createElement('img');
+    im.src = w.thumb;
+    im.alt = w.title;
+    t.appendChild(im);
+    t.addEventListener('click', function() {
+      nav.querySelectorAll('.pv-nav-thumb').forEach(n => n.classList.remove('active'));
+      t.classList.add('active');
+      // 滚动中栏对应作品到可视区域
+      var stageList = stage.querySelectorAll('.pv-item');
+      var target = stageList[idx];
+      if (target) {
+        stage.scrollTo({ top: target.offsetTop - 8, behavior: 'smooth' });
+      }
+    });
+    nav.appendChild(t);
+  });
+
+  room.appendChild(stage);
+  room.appendChild(nav);
+  wrapper.appendChild(room);
+
+  // 中栏筛选标签交互
+  stage.querySelectorAll('.preview-stage-tab').forEach(function(tab) {
+    tab.addEventListener('click', function() {
+      var f = this.dataset.filter;
+      stage.querySelectorAll('.preview-stage-tab').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+      list.querySelectorAll('.pv-item').forEach(function(it) {
+        var show = (f === 'all') ||
+          (f === 'mine') || (f === 'ai' && it.dataset.ai === '1') ||
+          (f === 'video' && it.classList.contains('video')) ||
+          (f === 'image' && it.classList.contains('image'));
+        it.style.display = show ? '' : 'none';
+      });
+    });
+  });
+
+  applyCreateLayout();
+}
+
+/**
+ * 内联强制创作中心左右两栏布局（不依赖外部 CSS 层叠结果）：
+ * 外层 grid 420px + 1fr，左列操作模块，右列预览房间，高度受限于视口，互不撑开。
+ */
+function applyCreateLayout() {
+  var wrap = document.querySelector('[data-view-panel="short-video"] .module-content-wrapper');
+  if (!wrap) return;
+  var st = wrap.style;
+  st.height = 'calc(100vh - 170px)';
+  st.maxHeight = 'calc(100vh - 170px)';
+  st.minHeight = '0';
+  st.overflow = 'hidden';
+  st.display = 'grid';
+  st.gridTemplateColumns = '420px 1fr';
+  st.gap = '12px';
+  st.alignItems = 'start';
+  st.alignContent = 'start';
+  st.justifyContent = 'start';
+  st.padding = '0';
+  Array.prototype.slice.call(wrap.children).forEach(function(ch) {
+    ch.style.boxSizing = 'border-box';
+    if (ch.classList && ch.classList.contains('module-content')) {
+      var prev = ch.querySelector('.module-preview-panel');
+      if (prev) prev.style.display = 'none';
+      var split = ch.querySelector('.module-split');
+      if (split) {
+        split.style.height = 'auto';
+        split.style.minHeight = '0';
+        split.style.gridTemplateColumns = '420px';
+        split.style.alignItems = 'start';
+      }
+      if (ch.classList.contains('active')) {
+        ch.style.display = 'block';
+        ch.style.gridColumn = '1';
+        ch.style.gridRow = '1';
+        ch.style.width = '420px';
+        ch.style.maxWidth = '420px';
+        ch.style.minWidth = '0';
+        ch.style.alignSelf = 'start';
+        ch.style.justifySelf = 'stretch';
+        ch.style.maxHeight = '100%';
+        ch.style.minHeight = '0';
+        ch.style.overflowY = 'auto';
+        ch.style.position = 'relative';
+        ch.style.top = '0';
+        ch.style.marginTop = '0';
+        ch.style.paddingTop = '0';
+        var inp = ch.querySelector('.module-input-panel');
+        if (inp) {
+          inp.style.height = 'auto';
+          inp.style.minHeight = '0';
+          inp.style.alignSelf = 'start';
+          inp.style.justifyContent = 'flex-start';
+          inp.style.alignItems = 'flex-start';
+          inp.style.marginTop = '0';
+          inp.style.paddingTop = '0';
+        }
+        var refCont = ch.querySelector('.ref2vid-container');
+        if (refCont) {
+          refCont.style.alignSelf = 'flex-start';
+          refCont.style.justifyContent = 'flex-start';
+          refCont.style.marginTop = '0';
+        }
+      } else {
+        ch.style.display = 'none';
+      }
+    } else if (ch.classList && ch.classList.contains('create-preview-room')) {
+      ch.style.gridColumn = '2';
+      ch.style.gridRow = '1';
+      ch.style.height = '100%';
+      ch.style.maxHeight = '100%';
+      ch.style.minHeight = '0';
+      ch.style.overflow = 'hidden';
+      ch.style.alignSelf = 'stretch';
+      ch.style.margin = '0';
+    }
+  });
+}
