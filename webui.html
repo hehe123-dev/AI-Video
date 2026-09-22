@@ -64,7 +64,7 @@
         <h1>一梦 YiMirror</h1>
         <p>一站式 AI 视频生产平台</p>
       </div>
-      <div class="login-tabs">
+      <div class="login-tabs" id="login-tabs">
         <button id="tab-login" class="login-tab active" type="button">登 录</button>
         <button id="tab-register" class="login-tab" type="button">注 册</button>
       </div>
@@ -87,6 +87,9 @@
         </div>
         <div id="login-error" class="login-error"></div>
         <button id="login-btn" class="login-btn">登 录</button>
+        <div class="login-form-links">
+          <button id="forgot-password-link" class="login-link" type="button">忘记密码？</button>
+        </div>
       </div>
 
       <!-- 注册表单 -->
@@ -116,6 +119,45 @@
         </div>
         <div id="register-error" class="login-error"></div>
         <button id="register-btn" class="login-btn">注 册</button>
+      </div>
+
+      <!-- 忘记密码表单 -->
+      <div class="login-form" id="forgot-form-panel" style="display:none">
+        <div class="form-row">
+          <label class="form-label">邮箱</label>
+          <div class="login-input-wrap">
+            <i class="fas fa-envelope"></i>
+            <input type="email" id="reset-email" class="login-input" placeholder="请输入注册邮箱" autocomplete="email" />
+          </div>
+        </div>
+        <div class="form-row">
+          <label class="form-label">邮箱验证码</label>
+          <div class="login-input-wrap login-code-wrap">
+            <i class="fas fa-shield-halved"></i>
+            <input type="text" id="reset-code" class="login-input login-code-input" placeholder="请输入验证码" maxlength="6" inputmode="numeric" autocomplete="one-time-code" />
+            <button id="reset-send-code-btn" class="login-code-btn" type="button">获取验证码</button>
+          </div>
+          <div id="reset-code-hint" class="code-hint"></div>
+        </div>
+        <div class="form-row">
+          <label class="form-label">新密码</label>
+          <div class="login-input-wrap">
+            <i class="fas fa-lock"></i>
+            <input type="password" id="reset-password" class="login-input" placeholder="请设置新密码（至少6位）" autocomplete="new-password" />
+          </div>
+        </div>
+        <div class="form-row">
+          <label class="form-label">确认新密码</label>
+          <div class="login-input-wrap">
+            <i class="fas fa-lock"></i>
+            <input type="password" id="reset-password-confirm" class="login-input" placeholder="请再次输入新密码" autocomplete="new-password" />
+          </div>
+        </div>
+        <div id="reset-error" class="login-error"></div>
+        <button id="reset-btn" class="login-btn">重置密码</button>
+        <div class="login-form-links center">
+          <button id="back-to-login-link" class="login-link" type="button">返回登录</button>
+        </div>
       </div>
 
       <div class="login-footer">
@@ -278,6 +320,10 @@
         <i class="fas fa-palette"></i>
         <span>画布</span>
       </div>
+      <div class="sidebar-item" data-view="storyboard">
+        <i class="fas fa-clapperboard"></i>
+        <span>故事板</span>
+      </div>
       <div class="sidebar-item" data-view="asset-library">
         <i class="fas fa-archive"></i>
         <span>资产库</span>
@@ -339,6 +385,15 @@
       <iframe src="canvas-workbench.html" title="画布工作台"
         style="width:100%;height:100%;border:1px solid #e5e7eb;border-radius:12px;background:#fff;display:block"></iframe>
     </div>
+
+    <!-- ===== 故事板（侧边栏"故事板"菜单的内容区，占位） ===== -->
+    <div class="view-panel" data-view-panel="storyboard">
+      <div class="sb-placeholder">
+        <i class="fas fa-clapperboard"></i>
+        <h2>故事板</h2>
+        <p>故事板功能开发中，敬请期待</p>
+      </div>
+    </div>
     <div class="w-full">
 
       <div class="view-panel active" data-view-panel="project">
@@ -377,6 +432,10 @@
                 <option value="image-to-video">图生视频</option>
                 <option value="text-to-image">文生图</option>
                 <option value="image-to-image">图生图</option>
+                <option value="character">角色生成</option>
+                <option value="audio">音频生成</option>
+                <option value="scene">场景生成</option>
+                <option value="prop">道具生成</option>
               </select>
             </div>
             <div class="pm-search">
@@ -776,453 +835,263 @@
             <div class="module-content active" data-module-content="quick-create">
               <div class="module-split">
                 <div class="module-input-panel">
-            
+                  <div class="ref2vid-container">
 
-      
-        <div class="panel">
-          <div class="section-content space-y-4">
-            <div>
-              <label class="block text-xs text-gray-500 mb-2">文字输入</label>
-              <textarea class="input-field textarea-field" id="qv-script-input" placeholder="输入文字内容，或上传剧本、脚本、小说自动生成视频"></textarea>
-            </div>
-
-            <div>
-              <label class="block text-xs text-gray-500 mb-2">上传剧本 / 脚本 / 小说（可选）</label>
-              <div class="cm-upload-zone" id="qv-script-upload-zone">
-                <i class="fas fa-file-upload"></i>
-                <div class="cm-upload-title">点击或拖拽文件到此处</div>
-                <div class="cm-upload-hint">支持 TXT / DOC / DOCX / PDF 格式</div>
-                <button class="btn-primary" style="padding: 8px 20px; margin-top: 12px;">
-                  <i class="fas fa-folder-open"></i> 选择文件
-                </button>
-              </div>
-              <div id="qv-script-file" class="qv-script-file" style="display:none;"></div>
-            </div>
-
-            <div>
-              <label class="block text-xs text-gray-500 mb-2">标题（可选）</label>
-              <div class="flex items-center gap-2 text-xs text-gray-400 mb-2">
-                <span>视频标题（留空则自动生成）</span>
-              </div>
-              <input type="text" class="input-field" placeholder="" />
-              <div class="flex items-center justify-between mt-2 gap-4">
-                <span class="text-xs text-gray-400 whitespace-nowrap">分镜数: <span class="text-gray-500">10</span></span>
-                <input type="range" class="param-slider" min="0" max="20" value="10" />
-              </div>
-            </div>
-          </div>
-        </div>
-      
-
-      
-        <div class="panel">
-          <div class="section-title">
-            <i class="fas fa-palette text-pink-500 text-sm"></i>
-            <span>插图生成</span>
-          </div>
-          <div class="section-content space-y-4">
-            <div class="accordion">
-              <div class="accordion-header">
-                <i class="fas fa-chevron-right acc-arrow"></i>
-                <i class="fas fa-lightbulb text-amber-400"></i>
-                <span>功能说明</span>
-              </div>
-              <div class="accordion-body">
-                <p class="text-xs text-gray-500 leading-relaxed">
-                  插图生成模块用于根据文本内容自动生成配图。可选择 RunningHub 云端 Workflow、本地 ComfyUI 或直接调用第三方 API 模型作为生成来源。生成的插图尺寸由所选 Workflow / 模板自动决定。
-                </p>
-              </div>
-            </div>
-
-            <div>
-              <label class="form-label label-with-help">
-                <span>生成来源</span>
-                <i class="fas fa-circle-question help-icon" title="选择插图的生成来源：RunningHub 云端、本地 ComfyUI 或直接使用 API 模型"></i>
-              </label>
-              <div class="radio-group" id="illustration-source">
-                <label class="radio-option">
-                  <input type="radio" name="illustration-source" value="runninghub" checked />
-                  <span>RunningHub</span>
-                </label>
-                <label class="radio-option">
-                  <input type="radio" name="illustration-source" value="comfyui" />
-                  <span>本地 ComfyUI</span>
-                </label>
-                <label class="radio-option">
-                  <input type="radio" name="illustration-source" value="api" />
-                  <span>API 模型</span>
-                </label>
-              </div>
-            </div>
-
-            <div>
-              <label class="form-label label-with-help">
-                <span>Workflow</span>
-                <i class="fas fa-circle-question help-icon" title="选择要使用的 Workflow 文件"></i>
-              </label>
-              <select class="input-field dropdown-field" id="illustration-workflow">
-                <option>image_flux.json - Runninghub</option>
-                <option>image_stable_diffusion.json - Runninghub</option>
-                <option>image_flux_local.json - ComfyUI</option>
-                <option>image_sd_local.json - ComfyUI</option>
-              </select>
-            </div>
-
-            <div class="info-banner">
-              <i class="fas fa-drafting-compass"></i>
-              <span>插图尺寸：<strong>1024 × 1024</strong>（由模板自动决定）</span>
-            </div>
-
-            <div>
-              <label class="form-label label-with-help">
-                <span>提示词前缀</span>
-                <i class="fas fa-circle-question help-icon" title="将追加到每张插图的正向提示词最前面"></i>
-              </label>
-              <textarea class="input-field textarea-field" rows="3">Minimalist black-and-white matchstick figure style illustration, clean lines, simple sketch style</textarea>
-            </div>
-
-            <div class="accordion">
-              <div class="accordion-header">
-                <i class="fas fa-chevron-right acc-arrow"></i>
-                <i class="fas fa-eye text-gray-500"></i>
-                <span>预览风格</span>
-              </div>
-              <div class="accordion-body space-y-3">
-                <div>
-                  <label class="form-label">风格提示词</label>
-                  <textarea class="input-field textarea-field" rows="2" id="style-prompt" placeholder="输入风格描述，例如：水彩画风格、扁平插画、3D卡通等">Minimalist black and white matchstick figure illustration, clean lines, simple sketch style</textarea>
-                </div>
-                <button class="btn-primary w-full" id="generate-preview-btn">
-                  <i class="fas fa-image"></i>
-                  生成预览
-                </button>
-                <div id="preview-result" class="grid grid-cols-4 gap-3" style="display:none;">
-                  <div class="template-card selected">
-                    <img id="preview-image" src="" alt="预览风格" />
-                    <div class="template-card-footer">
-                      <span>预览风格</span>
-                      <button>使用</button>
+                    <!-- 提示词输入区 -->
+                    <div class="ref2vid-prompt-area">
+                      <textarea class="ref2vid-prompt-input" id="qv-script-input" placeholder="请输入要生成视频的文字描述，例如：一只橘猫在夕阳下奔跑"></textarea>
                     </div>
+
+                    <!-- 类别选择器 -->
+                    <div class="i2v-category-selector">
+                      <div class="i2v-category-item" data-category="shot-type">
+                        <button class="i2v-category-btn">景别</button>
+                        <div class="i2v-category-panel">
+                          <button class="i2v-option-btn" data-value="特写">特写</button>
+                          <button class="i2v-option-btn" data-value="近景">近景</button>
+                          <button class="i2v-option-btn" data-value="中景">中景</button>
+                          <button class="i2v-option-btn" data-value="远景">远景</button>
+                          <button class="i2v-option-btn" data-value="全景">全景</button>
+                        </div>
+                      </div>
+                      <div class="i2v-category-item" data-category="composition">
+                        <button class="i2v-category-btn">构图</button>
+                        <div class="i2v-category-panel">
+                          <button class="i2v-option-btn" data-value="三分构图">三分构图</button>
+                          <button class="i2v-option-btn" data-value="中心构图">中心构图</button>
+                          <button class="i2v-option-btn" data-value="对角线构图">对角线构图</button>
+                          <button class="i2v-option-btn" data-value="引导线构图">引导线构图</button>
+                          <button class="i2v-option-btn" data-value="框架式构图">框架式构图</button>
+                        </div>
+                      </div>
+                      <div class="i2v-category-item" data-category="view-angle">
+                        <button class="i2v-category-btn">视角</button>
+                        <div class="i2v-category-panel">
+                          <button class="i2v-option-btn" data-value="平视">平视</button>
+                          <button class="i2v-option-btn" data-value="俯视">俯视</button>
+                          <button class="i2v-option-btn" data-value="仰视">仰视</button>
+                          <button class="i2v-option-btn" data-value="鸟瞰">鸟瞰</button>
+                          <button class="i2v-option-btn" data-value="倾斜">倾斜</button>
+                        </div>
+                      </div>
+                      <div class="i2v-category-item" data-category="lighting">
+                        <button class="i2v-category-btn">光线</button>
+                        <div class="i2v-category-panel">
+                          <button class="i2v-option-btn" data-value="逆光">逆光</button>
+                          <button class="i2v-option-btn" data-value="自然光">自然光</button>
+                          <button class="i2v-option-btn" data-value="柔光">柔光</button>
+                          <button class="i2v-option-btn" data-value="霓虹光">霓虹光</button>
+                          <button class="i2v-option-btn" data-value="戏剧光">戏剧光</button>
+                          <button class="i2v-option-btn" data-value="侧光">侧光</button>
+                        </div>
+                      </div>
+                      <div class="i2v-category-item" data-category="lens-effect">
+                        <button class="i2v-category-btn">镜头特效</button>
+                        <div class="i2v-category-panel">
+                          <button class="i2v-option-btn" data-value="景深虚化">景深虚化</button>
+                          <button class="i2v-option-btn" data-value="升格镜头">升格镜头</button>
+                          <button class="i2v-option-btn" data-value="动态模糊">动态模糊</button>
+                          <button class="i2v-option-btn" data-value="闪回镜头">闪回镜头</button>
+                          <button class="i2v-option-btn" data-value="定格镜头">定格镜头</button>
+                          <button class="i2v-option-btn" data-value="子弹时间">子弹时间</button>
+                          <button class="i2v-option-btn" data-value="移轴镜头">移轴镜头</button>
+                          <button class="i2v-option-btn" data-value="长曝光镜头">长曝光镜头</button>
+                        </div>
+                      </div>
+                      <div class="i2v-category-item" data-category="lens-type">
+                        <button class="i2v-category-btn">镜头类型</button>
+                        <div class="i2v-category-panel">
+                          <button class="i2v-option-btn" data-value="广角">广角</button>
+                          <button class="i2v-option-btn" data-value="长焦">长焦</button>
+                          <button class="i2v-option-btn" data-value="微距">微距</button>
+                          <button class="i2v-option-btn" data-value="鱼眼">鱼眼</button>
+                          <button class="i2v-option-btn" data-value="标准">标准</button>
+                        </div>
+                      </div>
+                      <div class="i2v-category-item" data-category="camera-move">
+                        <button class="i2v-category-btn">运镜</button>
+                        <div class="i2v-category-panel">
+                          <button class="i2v-option-btn" data-value="推镜头">推镜头</button>
+                          <button class="i2v-option-btn" data-value="拉镜头">拉镜头</button>
+                          <button class="i2v-option-btn" data-value="摇镜头">摇镜头</button>
+                          <button class="i2v-option-btn" data-value="移镜头">移镜头</button>
+                          <button class="i2v-option-btn" data-value="环绕镜头">环绕镜头</button>
+                          <button class="i2v-option-btn" data-value="升降镜头">升降镜头</button>
+                          <button class="i2v-option-btn" data-value="变焦镜头">变焦镜头</button>
+                          <button class="i2v-option-btn" data-value="手持镜头">手持镜头</button>
+                        </div>
+                      </div>
+                      <div class="i2v-category-item" data-category="visual-style">
+                        <button class="i2v-category-btn">视觉风格</button>
+                        <div class="i2v-category-panel">
+                          <button class="i2v-option-btn" data-value="写实">写实</button>
+                          <button class="i2v-option-btn" data-value="动漫">动漫</button>
+                          <button class="i2v-option-btn" data-value="电影质感">电影质感</button>
+                          <button class="i2v-option-btn" data-value="赛博朋克">赛博朋克</button>
+                          <button class="i2v-option-btn" data-value="水彩">水彩</button>
+                        </div>
+                      </div>
+                      <div class="i2v-category-item" data-category="mood">
+                        <button class="i2v-category-btn">氛围/情绪</button>
+                        <div class="i2v-category-panel">
+                          <button class="i2v-option-btn" data-value="宁静平和">宁静平和</button>
+                          <button class="i2v-option-btn" data-value="紧张悬疑">紧张悬疑</button>
+                          <button class="i2v-option-btn" data-value="欢快愉悦">欢快愉悦</button>
+                          <button class="i2v-option-btn" data-value="孤独寂寞">孤独寂寞</button>
+                          <button class="i2v-option-btn" data-value="庄严神圣">庄严神圣</button>
+                          <button class="i2v-option-btn" data-value="梦幻朦胧">梦幻朦胧</button>
+                          <button class="i2v-option-btn" data-value="激昂热血">激昂热血</button>
+                          <button class="i2v-option-btn" data-value="幽默诙谐">幽默诙谐</button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- 声音配置 -->
+                    <div class="ref2vid-voice-row">
+                      <span class="ref2vid-voice-label">声音配置</span>
+                      <div class="ref2vid-voice-btns">
+                        <button class="ref2vid-voice-btn active" data-voice="off">声音关闭</button>
+                        <button class="ref2vid-voice-btn" data-voice="auto">自动配音</button>
+                      </div>
+                    </div>
+
+                    <!-- 智能扩写 -->
+                    <div class="ref2vid-expand-row">
+                      <span class="ref2vid-expand-label">智能扩写</span>
+                      <label class="ref2vid-toggle">
+                        <input type="checkbox" checked id="t2v-expand-toggle" />
+                        <span class="ref2vid-toggle-slider"></span>
+                      </label>
+                    </div>
+
+                    <!-- 底部设置栏 -->
+                    <div class="ref2vid-settings-bar">
+                      <div class="ref2vid-setting-item ref2vid-dropdown" data-dropdown="t2v-dd-quality">
+                        <span class="ref2vid-setting-value ref2vid-setting-w" data-label="480P">480P</span>
+                        <i class="fas fa-chevron-down ref2vid-setting-arrow"></i>
+                        <div class="ref2vid-dropdown-menu" id="t2v-dd-quality">
+                          <div class="ref2vid-dd-title">清晰度</div>
+                          <div class="ref2vid-dd-option" data-val="480P">480P</div>
+                          <div class="ref2vid-dd-option" data-val="720P">720P</div>
+                          <div class="ref2vid-dd-option" data-val="1080P">1080P</div>
+                        </div>
+                      </div>
+                      <div class="ref2vid-setting-item ref2vid-dropdown" data-dropdown="t2v-dd-ratio">
+                        <i class="fas fa-mobile-alt ref2vid-setting-icon"></i>
+                        <span class="ref2vid-setting-value ref2vid-setting-w" data-label="16:9">16:9</span>
+                        <i class="fas fa-chevron-down ref2vid-setting-arrow"></i>
+                        <div class="ref2vid-dropdown-menu" id="t2v-dd-ratio">
+                          <div class="ref2vid-dd-title">画面比例</div>
+                          <div class="ref2vid-dd-option" data-val="16:9">16:9</div>
+                          <div class="ref2vid-dd-option" data-val="9:16">9:16</div>
+                          <div class="ref2vid-dd-option" data-val="1:1">1:1</div>
+                          <div class="ref2vid-dd-option" data-val="3:4">3:4</div>
+                          <div class="ref2vid-dd-option" data-val="4:3">4:3</div>
+                        </div>
+                      </div>
+                      <div class="ref2vid-setting-item ref2vid-dropdown" data-dropdown="t2v-dd-duration">
+                        <span class="ref2vid-setting-value ref2vid-setting-w" data-label="5s">5s</span>
+                        <i class="fas fa-chevron-down ref2vid-setting-arrow"></i>
+                        <div class="ref2vid-dropdown-menu" id="t2v-dd-duration">
+                          <div class="ref2vid-dd-title">视频时长</div>
+                          <div class="ref2vid-dd-option" data-val="5s">5 秒</div>
+                          <div class="ref2vid-dd-option" data-val="10s">10 秒</div>
+                          <div class="ref2vid-dd-option" data-val="15s">15 秒</div>
+                          <div class="ref2vid-dd-option" data-val="20s">20 秒</div>
+                          <div class="ref2vid-dd-option" data-val="30s">30 秒</div>
+                        </div>
+                      </div>
+                      <div class="ref2vid-setting-item ref2vid-dropdown" data-dropdown="t2v-dd-count">
+                        <span class="ref2vid-setting-value ref2vid-setting-w" data-label="1个">1个</span>
+                        <i class="fas fa-chevron-down ref2vid-setting-arrow"></i>
+                        <div class="ref2vid-dropdown-menu" id="t2v-dd-count">
+                          <div class="ref2vid-dd-title">生成数量</div>
+                          <div class="ref2vid-dd-option" data-val="1个">1 个</div>
+                          <div class="ref2vid-dd-option" data-val="2个">2 个</div>
+                          <div class="ref2vid-dd-option" data-val="3个">3 个</div>
+                          <div class="ref2vid-dd-option" data-val="4个">4 个</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- 生成按钮 -->
+                    <button class="ref2vid-generate-btn" id="generate-btn">
+                      生成视频
+                    </button>
+
+                    <!-- 底部提示 -->
+                    <div class="ref2vid-footer">
+                      <span class="ref2vid-footer-text">内容由AI生成，禁止利用功能从事违法行为</span>
+                      <span class="ref2vid-footer-watermark">
+                        水印
+                        <label class="ref2vid-toggle ref2vid-toggle-sm">
+                          <input type="checkbox" checked id="t2v-watermark-toggle" />
+                          <span class="ref2vid-toggle-slider"></span>
+                        </label>
+                      </span>
+                    </div>
+
+                    <!-- 生成结果提示 -->
+                    <div id="generate-messages" style="display:none;">
+                      <div class="success-tag">
+                        <i class="fas fa-check-circle"></i>
+                        视频生成成功！
+                      </div>
+                    </div>
+
                   </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      
-
-      
-        <div class="panel">
-          <div class="section-title">
-            <i class="fas fa-microphone text-red-500 text-sm"></i>
-            <span>配音合成</span>
-          </div>
-          <div class="section-content space-y-4">
-            <div class="accordion">
-              <div class="accordion-header">
-                <i class="fas fa-chevron-right acc-arrow"></i>
-                <i class="fas fa-lightbulb text-amber-400"></i>
-                <span>功能说明</span>
-              </div>
-              <div class="accordion-body">
-                <p class="text-xs text-gray-500 leading-relaxed">
-                  配音合成模块将脚本内容转换为语音旁白。支持本地 Edge TTS（免配置，开箱即用）或 ComfyUI 自建 TTS 合成方式，可调整音色与语速。
-                </p>
-              </div>
-            </div>
-
-            <div>
-              <label class="form-label">合成方式</label>
-              <div class="radio-group">
-                <label class="radio-option">
-                  <input type="radio" name="tts-method" value="local" checked />
-                  <span>本地合成</span>
-                </label>
-                <label class="radio-option">
-                  <input type="radio" name="tts-method" value="comfyui" />
-                  <span>ComfyUI 合成</span>
-                </label>
-              </div>
-              <p class="hint-text mt-2 flex items-center gap-1">
-                <i class="fas fa-lightbulb text-amber-400"></i>
-                使用 Edge TTS，无需配置，开箱即用（请确保网络环境可用）
-              </p>
-            </div>
-
-            <div class="grid grid-cols-2 gap-4">
-              <div>
-                <label class="form-label">音色选择</label>
-                <select class="input-field dropdown-field">
-                  <option>男声-专业（云健）</option>
-                  <option>女声-温柔（晓晓）</option>
-                  <option>男声-活力（小刚）</option>
-                  <option>女声-知性（云希）</option>
-                  <option>童声-可爱（小小）</option>
-                </select>
-              </div>
-              <div>
-                <label class="form-label">语速</label>
-                <div class="flex items-center gap-3">
-                  <input type="range" class="param-slider flex-1" min="0" max="2" step="0.1" value="1.2" data-suffix="x" />
-                  <span class="text-sm text-gray-500 font-medium slider-value">1.2x</span>
-                </div>
-                <p class="hint-text text-center">1.2x</p>
-              </div>
-            </div>
-
-            <div class="accordion">
-              <div class="accordion-header">
-                <i class="fas fa-chevron-right acc-arrow"></i>
-                <i class="fas fa-volume-up text-gray-500"></i>
-                <span>预览 TTS</span>
-              </div>
-              <div class="accordion-body">
-                <div class="flex items-center gap-3">
-                  <input type="text" class="input-field flex-1" placeholder="请输入试听文本" value="欢迎使用 一梦 YiMirror，一站式 AI 视频生产平台。" />
-                  <button class="btn-secondary flex items-center gap-2">
-                    <i class="fas fa-play text-green-500"></i>试听
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      
-
-      
-        <div class="panel">
-          <div class="section-title">
-            <i class="fas fa-music text-purple-500 text-sm"></i>
-            <span>背景音乐</span>
-          </div>
-          <div class="section-content space-y-4">
-            <div class="accordion">
-              <div class="accordion-header">
-                <i class="fas fa-chevron-right acc-arrow"></i>
-                <i class="fas fa-lightbulb text-amber-400"></i>
-                <span>功能说明</span>
-              </div>
-              <div class="accordion-body">
-                <p class="text-xs text-gray-500 leading-relaxed">
-                  背景音乐模块为视频添加环境音效，营造氛围。可从预置音乐库中选择音轨，并通过音量滑块调节混音比例。
-                </p>
-              </div>
-            </div>
-
-            <div>
-              <select class="input-field dropdown-field">
-                <option>default.mp3</option>
-                <option>bgm-01.mp3</option>
-                <option>bgm-02.mp3</option>
-                <option>bgm-03.mp3</option>
-              </select>
-            </div>
-
-            <div>
-              <label class="form-label label-with-help">
-                <span>音量</span>
-                <i class="fas fa-circle-question help-icon" title="调整背景音乐与配音的混音比例，范围 0.00 - 1.00"></i>
-              </label>
-              <div class="volume-slider-wrap">
-                <input type="range" class="param-slider" min="0" max="1" step="0.01" value="0.2" data-suffix="" id="bgm-volume" />
-                <span class="volume-bubble" id="bgm-volume-bubble">0.20</span>
-              </div>
-            </div>
-
-            <button class="w-full btn-secondary">
-              <i class="fas fa-play text-gray-500 mr-2"></i>试听音乐
-            </button>
-          </div>
-        </div>
-      
-
-      
-        <div class="panel">
-          <div class="section-title">
-            <i class="fas fa-drafting-compass text-blue-500 text-sm"></i>
-            <span>分镜模板</span>
-          </div>
-          <div class="section-content space-y-4">
-            <div class="accordion">
-              <div class="accordion-header">
-                <i class="fas fa-chevron-right acc-arrow"></i>
-                <i class="fas fa-lightbulb text-amber-400"></i>
-                <span>功能说明</span>
-              </div>
-              <div class="accordion-body">
-                <p class="text-xs text-gray-500 leading-relaxed">
-                  分镜模板决定每个分镜的呈现方式：可选择静态样式（沿用模板自带背景），或让 AI 自动生成配套的插图、动态视频作为分镜画面。
-                </p>
-              </div>
-            </div>
-
-            <div>
-              <label class="form-label">分镜类型</label>
-              <div class="radio-group" id="storyboard-type">
-                <label class="radio-option">
-                  <input type="radio" name="storyboard-type" value="static" checked />
-                  <i class="fas fa-file-alt text-gray-500"></i>
-                  <span>静态样式</span>
-                </label>
-                <label class="radio-option">
-                  <input type="radio" name="storyboard-type" value="image" />
-                  <i class="fas fa-image text-pink-500"></i>
-                  <span>生成插图</span>
-                </label>
-                <label class="radio-option">
-                  <input type="radio" name="storyboard-type" value="video" />
-                  <i class="fas fa-film text-blue-500"></i>
-                  <span>生成视频</span>
-                </label>
-              </div>
-            </div>
-
-            <div class="info-banner" id="storyboard-hint">
-              使用模板自带样式，无需 AI 生成媒体。可在模板中自定义背景图片等参数。
-            </div>
-
-            <div class="accordion">
-              <div class="accordion-header">
-                <i class="fas fa-chevron-right acc-arrow"></i>
-                <i class="fas fa-th text-gray-500"></i>
-                <span>模板库</span>
-              </div>
-              <div class="accordion-body">
-                <div class="grid grid-cols-5 gap-3">
-                  <div class="template-card selected">
-                    <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Minimalist%20black%20and%20white%20matchstick%20figure%20style%20illustration%20with%20mountain%20silhouette%20background%2C%20elegant%20simple%20design%2C%20dark%20theme&image_size=portrait_9_16" alt="模板1" />
-                    <div class="template-card-footer"><span>static_default</span><button>使用</button></div>
-                  </div>
-                  <div class="template-card">
-                    <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Minimalist%20beige%20and%20white%20matchstick%20figure%20style%20illustration%20with%20mountain%20silhouette%2C%20elegant%20simple%20design%2C%20light%20theme&image_size=portrait_9_16" alt="模板2" />
-                    <div class="template-card-footer"><span>模板2</span><button>使用</button></div>
-                  </div>
-                  <div class="template-card">
-                    <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Minimalist%20gray%20matchstick%20figure%20style%20illustration%20with%20mountain%20silhouette%2C%20elegant%20simple%20design%2C%20neutral%20theme&image_size=portrait_9_16" alt="模板3" />
-                    <div class="template-card-footer"><span>模板3</span><button>使用</button></div>
-                  </div>
-                  <div class="template-card">
-                    <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Minimalist%20purple%20matchstick%20figure%20style%20illustration%20with%20mountain%20silhouette%2C%20elegant%20simple%20design%2C%20purple%20theme&image_size=portrait_9_16" alt="模板4" />
-                    <div class="template-card-footer"><span>模板4</span><button>使用</button></div>
-                  </div>
-                  <div class="template-card">
-                    <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Minimalist%20dark%20blue%20matchstick%20figure%20style%20illustration%20with%20mountain%20silhouette%2C%20elegant%20simple%20design%2C%20tech%20theme&image_size=portrait_9_16" alt="模板5" />
-                    <div class="template-card-footer"><span>模板5</span><button>使用</button></div>
-                  </div>
-                  <div class="template-card">
-                    <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=AI%20technology%20theme%20matchstick%20figure%20illustration%20with%20mountain%20silhouette%2C%20dark%20background%2C%20orange%20accent&image_size=portrait_9_16" alt="模板6" />
-                    <div class="template-card-footer"><span>模板6</span><button>使用</button></div>
-                  </div>
-                  <div class="template-card">
-                    <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Luxury%20gold%20theme%20matchstick%20figure%20illustration%20with%20mountain%20silhouette%2C%20dark%20background%2C%20golden%20accent&image_size=portrait_9_16" alt="模板7" />
-                    <div class="template-card-footer"><span>模板7</span><button>使用</button></div>
-                  </div>
-                  <div class="template-card">
-                    <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Clean%20white%20minimalist%20matchstick%20figure%20illustration%20with%20mountain%20silhouette%2C%20pure%20white%20background&image_size=portrait_9_16" alt="模板8" />
-                    <div class="template-card-footer"><span>模板8</span><button>使用</button></div>
-                  </div>
-                  <div class="template-card">
-                    <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Modern%20black%20white%20contrast%20matchstick%20figure%20illustration%20with%20mountain%20silhouette%2C%20bold%20design&image_size=portrait_9_16" alt="模板9" />
-                    <div class="template-card-footer"><span>模板9</span><button>使用</button></div>
-                  </div>
-                  <div class="template-card">
-                    <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Creative%20asymmetric%20matchstick%20figure%20illustration%20with%20mountain%20silhouette%2C%20dark%20theme%2C%20unique%20layout&image_size=portrait_9_16" alt="模板10" />
-                    <div class="template-card-footer"><span>模板10</span><button>使用</button></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="info-banner">
-              <i class="fas fa-file-lines"></i>
-              <span>当前模板：<strong id="current-template-name">static_default.html</strong></span>
-            </div>
-
-            <div class="text-xs text-gray-400">最终视频尺寸：1080 × 1920</div>
-
-            <div>
-              <div class="flex items-center gap-2 mb-3 pb-2 border-b border-gray-100">
-                <i class="fas fa-sliders-h text-green-500 text-sm"></i>
-                <span class="text-sm font-medium text-gray-800">自定义参数</span>
-              </div>
-              <div class="grid grid-cols-2 gap-4">
-                <div>
-                  <label class="form-label">describe</label>
-                  <input type="text" class="input-field" value="Open Source Omnimodal AI Creative Agent" />
-                </div>
-                <div>
-                  <label class="form-label">author</label>
-                  <input type="text" class="input-field" value="@Pixelle.AI" />
-                </div>
-                <div>
-                  <label class="form-label">brand</label>
-                  <input type="text" class="input-field" value="Pixelle-Video" />
-                </div>
-              </div>
-            </div>
-
-            <div class="accordion open">
-              <div class="accordion-header">
-                <i class="fas fa-chevron-right acc-arrow"></i>
-                <i class="fas fa-eye text-gray-500"></i>
-                <span>预览模板</span>
-              </div>
-              <div class="accordion-body space-y-4">
-                <div class="grid grid-cols-2 gap-4">
-                  <div>
-                    <label class="form-label">标题</label>
-                    <input type="text" class="input-field" value="AI 改变内容创作" />
-                  </div>
-                  <div class="row-span-2">
-                    <label class="form-label">文本</label>
-                    <textarea class="input-field textarea-field" rows="4">Pixelle.AI 正在用人工智能改变内容创作的方式，让每个人都能轻松制作专业级视频。</textarea>
-                  </div>
-                  <div>
-                    <label class="form-label label-with-help">
-                      <span>图片路径</span>
-                      <i class="fas fa-circle-question help-icon" title="预览用的示例图片路径，相对于 resources 目录"></i>
-                    </label>
-                    <input type="text" class="input-field" value="resources/example.png" />
-                  </div>
-                </div>
-
-                <div class="info-banner">
-                  <i class="fas fa-drafting-compass"></i>
-                  <span>模板尺寸：<strong>1080 × 1920</strong></span>
-                </div>
-
-                <button class="w-full btn-secondary">
-                  <i class="fas fa-image text-gray-500 mr-2"></i>生成预览
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      
-
-      
-        <div class="panel">
-          <div class="section-content">
-            <button class="btn-primary w-full" id="generate-btn">
-              <i class="fas fa-play"></i>
-              生成视频
-            </button>
-          </div>
-        </div>
-      
-
-      
                 </div>
                 <div class="module-preview-panel">
-                  <div class="video-preview" style="max-height: 600px; max-width: 340px; width: 100%;">
-                    <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Minimalist%20black-and-white%20matchstick%20figure%20style%20illustration%20of%20a%20person%20reading%20a%20book%20with%20question%20mark%20above%20head%20next%20to%20stairs%2C%20clean%20lines%2C%20simple%20sketch%20style&image_size=portrait_9_16" alt="视频预览" />
-                    <div class="video-controls">
-                      <div class="control-bar">
-                        <div class="control-fill" style="width: 22%"></div>
+                  <!-- 筛选标签 -->
+                  <div class="preview-filter-tabs">
+                    <button class="preview-filter-tab active" data-filter="all">全部</button>
+                    <button class="preview-filter-tab" data-filter="video">视频</button>
+                    <button class="preview-filter-tab" data-filter="image">图片</button>
+                    <button class="preview-filter-tab" data-filter="ai">AI生成</button>
+                    <button class="preview-filter-tab" data-filter="mine">我创建的</button>
+                  </div>
+                  <!-- 作品列表 -->
+                  <div class="preview-work-list">
+                    <!-- 作品项 1 -->
+                    <div class="preview-work-item">
+                      <div class="preview-work-header">
+                        <div class="preview-work-info">
+                          <span class="preview-work-type"><i class="fas fa-image"></i> 图生视频</span>
+                          <img class="preview-work-thumb" src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Cute%20puppy%20dog%20closeup%20photo&image_size=square" alt="缩略图" />
+                          <span class="preview-work-model">Wan 3.0 Prime</span>
+                          <span class="preview-work-res">480P</span>
+                          <span class="preview-work-ratio">16:9</span>
+                        </div>
+                        <div class="preview-work-actions">
+                          <button class="preview-action-btn"><i class="fas fa-pen"></i></button>
+                          <button class="preview-action-btn"><i class="fas fa-info-circle"></i></button>
+                        </div>
                       </div>
-                      <div class="control-time">
-                        <span>0:08</span>
-                        <span>0:36</span>
+                      <div class="preview-work-prompt">大院刚开始养了一个小狗，后来又养了一个猫咪</div>
+                      <div class="preview-work-media">
+                        <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Cute%20puppy%20dog%20closeup%20photo%20realistic%20cinematic%20lighting&image_size=landscape_16_9" alt="预览" />
+                        <span class="preview-ai-badge">AI生成</span>
+                      </div>
+                    </div>
+                    <!-- 作品项 2 -->
+                    <div class="preview-work-item">
+                      <div class="preview-work-header">
+                        <div class="preview-work-info">
+                          <span class="preview-work-type"><i class="fas fa-photo-film"></i> 参考生视频</span>
+                          <img class="preview-work-thumb" src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Orange%20tabby%20cat%20closeup%20photo&image_size=square" alt="缩略图" />
+                          <span class="preview-work-model">Wan 3.0 Prime</span>
+                          <span class="preview-work-res">480P</span>
+                          <span class="preview-work-ratio">9:16</span>
+                        </div>
+                        <div class="preview-work-actions">
+                          <button class="preview-action-btn"><i class="fas fa-pen"></i></button>
+                          <button class="preview-action-btn"><i class="fas fa-info-circle"></i></button>
+                        </div>
+                      </div>
+                      <div class="preview-work-prompt">@图片1 @图片2 小狗和小猫是好朋友，他们一起抓老鼠</div>
+                      <div class="preview-work-media">
+                        <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Cat%20and%20dog%20playing%20together%20cinematic%20scene&image_size=landscape_16_9" alt="预览" />
+                        <span class="preview-ai-badge">AI生成</span>
                       </div>
                     </div>
                   </div>
@@ -1232,6 +1101,166 @@
           </div>
 
           <div class="module-content" data-module-content="custom-material">
+            <div class="module-split">
+              <div class="module-input-panel">
+            <div class="ref2vid-container">
+
+              <!-- 上传区域 -->
+              <div class="ref2vid-upload-zone" id="ref2vid-upload-zone">
+                <div class="ref2vid-upload-inner">
+                  <i class="fas fa-plus ref2vid-upload-icon"></i>
+                  <div class="ref2vid-upload-text">从<a href="#" class="ref2vid-link">资产</a>中上传</div>
+                  <div class="ref2vid-upload-hint">支持 图片(0/10)、视频(0/5)、音频(0/5)、文档(0/1)</div>
+                </div>
+              </div>
+
+              <!-- 已上传缩略图 -->
+              <div class="ref2vid-thumbnails" id="ref2vid-thumbnails">
+                <div class="ref2vid-thumb-item">
+                  <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Cute%20puppy%20dog%20closeup%20photo&image_size=square" alt="图片1" />
+                  <span class="ref2vid-thumb-label">图片1</span>
+                </div>
+                <div class="ref2vid-thumb-item">
+                  <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Orange%20tabby%20cat%20closeup%20photo&image_size=square" alt="图片2" />
+                  <span class="ref2vid-thumb-label">图片2</span>
+                </div>
+              </div>
+
+              <!-- 提示词输入区 -->
+              <div class="ref2vid-prompt-area">
+                <div class="ref2vid-prompt-tags" id="ref2vid-prompt-tags">
+                  <span class="ref2vid-tag">@图片1</span>
+                  <span class="ref2vid-tag">@图片2</span>
+                </div>
+                <textarea class="ref2vid-prompt-input" id="ref2vid-prompt-input" placeholder="请结合图片描述您想要生成的内容，输入 @ 后出现下拉选择，可选择场景、角色、图片。"></textarea>
+              </div>
+
+              <!-- 声音配置 -->
+              <div class="ref2vid-voice-row">
+                <span class="ref2vid-voice-label">声音配置</span>
+                <div class="ref2vid-voice-btns">
+                  <button class="ref2vid-voice-btn active" data-voice="off">声音关闭</button>
+                  <button class="ref2vid-voice-btn" data-voice="auto">自动配音</button>
+                </div>
+              </div>
+
+              <!-- 智能扩写 -->
+              <div class="ref2vid-expand-row">
+                <span class="ref2vid-expand-label">智能扩写</span>
+                <label class="ref2vid-toggle">
+                  <input type="checkbox" checked id="ref2vid-expand-toggle" />
+                  <span class="ref2vid-toggle-slider"></span>
+                </label>
+              </div>
+
+              <!-- 底部设置栏 -->
+              <div class="ref2vid-settings-bar">
+                <div class="ref2vid-setting-item ref2vid-dropdown" data-dropdown="ref2vid-dd-quality">
+                  <span class="ref2vid-setting-value ref2vid-setting-w" data-label="480P">480P</span>
+                  <i class="fas fa-chevron-down ref2vid-setting-arrow"></i>
+                  <div class="ref2vid-dropdown-menu" id="ref2vid-dd-quality">
+                    <div class="ref2vid-dd-title">清晰度</div>
+                    <div class="ref2vid-dd-option" data-val="480P">480P</div>
+                    <div class="ref2vid-dd-option" data-val="720P">720P</div>
+                    <div class="ref2vid-dd-option" data-val="1080P">1080P</div>
+                  </div>
+                </div>
+                <div class="ref2vid-setting-item ref2vid-dropdown" data-dropdown="ref2vid-dd-ratio">
+                  <i class="fas fa-mobile-alt ref2vid-setting-icon"></i>
+                  <span class="ref2vid-setting-value ref2vid-setting-w" data-label="9:16">9:16</span>
+                  <i class="fas fa-chevron-down ref2vid-setting-arrow"></i>
+                  <div class="ref2vid-dropdown-menu" id="ref2vid-dd-ratio">
+                    <div class="ref2vid-dd-title">画面比例</div>
+                    <div class="ref2vid-dd-option" data-val="16:9">16:9</div>
+                    <div class="ref2vid-dd-option" data-val="9:16">9:16</div>
+                    <div class="ref2vid-dd-option" data-val="1:1">1:1</div>
+                    <div class="ref2vid-dd-option" data-val="3:4">3:4</div>
+                    <div class="ref2vid-dd-option" data-val="4:3">4:3</div>
+                  </div>
+                </div>
+                <div class="ref2vid-setting-item ref2vid-dropdown" data-dropdown="ref2vid-dd-duration">
+                  <span class="ref2vid-setting-value ref2vid-setting-w" data-label="5s">5s</span>
+                  <i class="fas fa-chevron-down ref2vid-setting-arrow"></i>
+                  <div class="ref2vid-dropdown-menu" id="ref2vid-dd-duration">
+                    <div class="ref2vid-dd-title">视频时长</div>
+                    <div class="ref2vid-dd-option" data-val="5s">5 秒</div>
+                    <div class="ref2vid-dd-option" data-val="10s">10 秒</div>
+                    <div class="ref2vid-dd-option" data-val="15s">15 秒</div>
+                    <div class="ref2vid-dd-option" data-val="20s">20 秒</div>
+                    <div class="ref2vid-dd-option" data-val="30s">30 秒</div>
+                  </div>
+                </div>
+                <div class="ref2vid-setting-item ref2vid-dropdown" data-dropdown="ref2vid-dd-count">
+                  <span class="ref2vid-setting-value ref2vid-setting-w" data-label="1个">1个</span>
+                  <i class="fas fa-chevron-down ref2vid-setting-arrow"></i>
+                  <div class="ref2vid-dropdown-menu" id="ref2vid-dd-count">
+                    <div class="ref2vid-dd-title">生成数量</div>
+                    <div class="ref2vid-dd-option" data-val="1个">1 个</div>
+                    <div class="ref2vid-dd-option" data-val="2个">2 个</div>
+                    <div class="ref2vid-dd-option" data-val="3个">3 个</div>
+                    <div class="ref2vid-dd-option" data-val="4个">4 个</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 生成按钮 -->
+              <button class="ref2vid-generate-btn" id="ref2vid-generate-btn">
+                生成视频
+              </button>
+
+              <!-- 底部提示 -->
+              <div class="ref2vid-footer">
+                <span class="ref2vid-footer-text">内容由AI生成，禁止利用功能从事违法行为</span>
+                <span class="ref2vid-footer-watermark">
+                  水印
+                  <label class="ref2vid-toggle ref2vid-toggle-sm">
+                    <input type="checkbox" checked id="ref2vid-watermark-toggle" />
+                    <span class="ref2vid-toggle-slider"></span>
+                  </label>
+                </span>
+              </div>
+
+            </div>
+            </div><!-- /module-input-panel -->
+
+              <div class="module-preview-panel">
+                <!-- 筛选标签 -->
+                <div class="preview-filter-tabs">
+                  <button class="preview-filter-tab active" data-filter="all">全部</button>
+                  <button class="preview-filter-tab" data-filter="video">视频</button>
+                  <button class="preview-filter-tab" data-filter="image">图片</button>
+                  <button class="preview-filter-tab" data-filter="ai">AI生成</button>
+                  <button class="preview-filter-tab" data-filter="mine">我创建的</button>
+                </div>
+                <!-- 作品列表 -->
+                <div class="preview-work-list">
+                  <div class="preview-work-item">
+                    <div class="preview-work-header">
+                      <div class="preview-work-info">
+                        <span class="preview-work-type"><i class="fas fa-photo-film"></i> 参考生视频</span>
+                        <img class="preview-work-thumb" src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Cute%20puppy%20dog%20closeup%20photo&image_size=square" alt="缩略图" />
+                        <span class="preview-work-model">Wan 3.0 Prime</span>
+                        <span class="preview-work-res">480P</span>
+                        <span class="preview-work-ratio">9:16</span>
+                      </div>
+                      <div class="preview-work-actions">
+                        <button class="preview-action-btn"><i class="fas fa-pen"></i></button>
+                        <button class="preview-action-btn"><i class="fas fa-info-circle"></i></button>
+                      </div>
+                    </div>
+                    <div class="preview-work-prompt">@图片1 @图片2 小狗和小猫是好朋友，他们一起抓老鼠</div>
+                    <div class="preview-work-media">
+                      <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Cat%20and%20dog%20playing%20together%20cinematic%20scene&image_size=landscape_16_9" alt="预览" />
+                      <span class="preview-ai-badge">AI生成</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div><!-- /module-split -->
+          </div>
+
+          <!-- ===== 以下为被替换的旧内容占位（已移至 ref2vid-old-block 供参考） ===== -->
+          <div class="ref2vid-old-block" style="display:none">
             <div class="module-split">
               <div class="module-input-panel">
         
@@ -1457,171 +1486,444 @@
         
               </div>
               <div class="module-preview-panel">
-                <div class="video-preview" style="max-height: 600px; max-width: 340px; width: 100%;">
-                  <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Modern%20office%20workspace%20with%20city%20view%20professional%20business%20video%20frame&image_size=portrait_9_16" alt="视频预览" />
-                  <div class="video-controls">
-                    <div class="control-bar">
-                      <div class="control-fill" style="width: 35%"></div>
+                <!-- 筛选标签 -->
+                <div class="preview-filter-tabs">
+                  <button class="preview-filter-tab active" data-filter="all">全部</button>
+                  <button class="preview-filter-tab" data-filter="video">视频</button>
+                  <button class="preview-filter-tab" data-filter="image">图片</button>
+                  <button class="preview-filter-tab" data-filter="ai">AI生成</button>
+                  <button class="preview-filter-tab" data-filter="mine">我创建的</button>
+                </div>
+                <!-- 作品列表 -->
+                <div class="preview-work-list">
+                  <div class="preview-work-item">
+                    <div class="preview-work-header">
+                      <div class="preview-work-info">
+                        <span class="preview-work-type"><i class="fas fa-photo-film"></i> 参考生视频</span>
+                        <img class="preview-work-thumb" src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Cute%20puppy%20dog%20closeup%20photo&image_size=square" alt="缩略图" />
+                        <span class="preview-work-model">Wan 3.0 Prime</span>
+                        <span class="preview-work-res">480P</span>
+                        <span class="preview-work-ratio">9:16</span>
+                      </div>
+                      <div class="preview-work-actions">
+                        <button class="preview-action-btn"><i class="fas fa-pen"></i></button>
+                        <button class="preview-action-btn"><i class="fas fa-info-circle"></i></button>
+                      </div>
                     </div>
-                    <div class="control-time">
-                      <span>0:11</span>
-                      <span>0:30</span>
+                    <div class="preview-work-prompt">@图片1 @图片2 小狗和小猫是好朋友，他们一起抓老鼠</div>
+                    <div class="preview-work-media">
+                      <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Cat%20and%20dog%20playing%20together%20cinematic%20scene&image_size=landscape_16_9" alt="预览" />
+                      <span class="preview-ai-badge">AI生成</span>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
+          </div><!-- /ref2vid-old-block -->
 
           <div class="module-content" data-module-content="image-to-video">
             <div class="module-split">
               <div class="module-input-panel">
-        
+            <div class="ref2vid-container">
 
-        
-          <div class="panel">
-            <div class="section-content space-y-4">
-              <div>
-                <label class="form-label">上传视频首帧图像</label>
-                <p class="hint-text" style="margin-top:0; margin-bottom:8px;">上传作为视频起始画面的图片</p>
-                <div class="cm-upload-zone" id="i2v-image-upload">
-                  <i class="fas fa-image"></i>
-                  <div class="cm-upload-title">点击或拖拽首帧图像到此处</div>
-                  <div class="cm-upload-hint">200MB per file · JPG, PNG, WEBP 格式</div>
-                  <button class="btn-primary" style="padding: 8px 20px; margin-top: 12px;">
-                    <i class="fas fa-plus"></i> 选择图片
-                  </button>
+              <!-- 上传区域：首帧图 + 尾帧图 -->
+              <div class="i2v-upload-row">
+                <div class="i2v-upload-box" id="i2v-first-frame">
+                  <i class="fas fa-image i2v-upload-icon"></i>
+                  <div class="i2v-upload-text">添加首帧图</div>
                 </div>
-                <div class="cm-material-list" id="i2v-image-list"></div>
-              </div>
-
-              <div>
-                <label class="form-label label-with-help">
-                  <span>视频提示词</span>
-                  <i class="fas fa-circle-question help-icon" title="描述视频中的动作、场景变化等内容"></i>
-                </label>
-                <textarea class="input-field textarea-field" rows="4" id="i2v-prompt" placeholder="例如：镜头缓慢推进，人物微笑点头，背景逐渐虚化">A camera slowly zooms in, the character smiles and nods, and the background gradually blurs</textarea>
-              </div>
-
-              <div>
-                <label class="form-label label-with-help">
-                  <span>生成来源</span>
-                  <i class="fas fa-circle-question help-icon" title="选择图生视频服务的运行位置"></i>
-                </label>
-                <div class="radio-group">
-                  <label class="radio-option">
-                    <input type="radio" name="i2v-source" value="runninghub" checked />
-                    <span class="radio-label"><i class="fas fa-cloud text-blue-500 mr-1"></i>RunningHub（云端）</span>
-                  </label>
-                  <label class="radio-option">
-                    <input type="radio" name="i2v-source" value="api" />
-                    <span class="radio-label"><i class="fas fa-plug text-purple-500 mr-1"></i>API 模型</span>
-                  </label>
+                <div class="i2v-upload-box" id="i2v-last-frame">
+                  <i class="fas fa-image i2v-upload-icon"></i>
+                  <div class="i2v-upload-text">添加尾帧图（选填）</div>
                 </div>
               </div>
+              <div class="i2v-upload-hint">支持 png/jpg/bmp/jpeg/webp 格式</div>
 
-              <div>
-                <label class="form-label">图生视频工作流选择</label>
-                <select class="input-field dropdown-field" id="i2v-workflow">
-                  <optgroup label="RunningHub 云端">
-                    <option>svd-xt-1.1.workflow - RunningHub</option>
-                    <option>animatediff-v3.workflow - RunningHub</option>
-                    <option>cogvideox-i2v.workflow - RunningHub</option>
-                  </optgroup>
-                  <optgroup label="本地 ComfyUI">
-                    <option>svd-local.workflow - ComfyUI</option>
-                    <option>animatediff-local.workflow - ComfyUI</option>
-                  </optgroup>
-                  <optgroup label="API 模型">
-                    <option>runway-gen3-turbo.api</option>
-                    <option>pika-v1.5.api</option>
-                    <option>kling-v1.api</option>
-                  </optgroup>
-                </select>
+              <!-- 提示词输入区 -->
+              <div class="ref2vid-prompt-area">
+                <textarea class="ref2vid-prompt-input" id="i2v-prompt-input" placeholder="请结合图片描述您想要生成的内容"></textarea>
               </div>
 
-            </div>
-          </div>
-        
+              <!-- 类别选择器 -->
+              <div class="i2v-category-selector">
+                <div class="i2v-category-item" data-category="shot-type">
+                  <button class="i2v-category-btn">景别</button>
+                  <div class="i2v-category-panel">
+                    <button class="i2v-option-btn" data-value="特写">特写</button>
+                    <button class="i2v-option-btn" data-value="近景">近景</button>
+                    <button class="i2v-option-btn" data-value="中景">中景</button>
+                    <button class="i2v-option-btn" data-value="远景">远景</button>
+                    <button class="i2v-option-btn" data-value="全景">全景</button>
+                  </div>
+                </div>
+                <div class="i2v-category-item" data-category="view-angle">
+                  <button class="i2v-category-btn">视角</button>
+                  <div class="i2v-category-panel">
+                    <button class="i2v-option-btn" data-value="平视">平视</button>
+                    <button class="i2v-option-btn" data-value="俯视">俯视</button>
+                    <button class="i2v-option-btn" data-value="仰视">仰视</button>
+                    <button class="i2v-option-btn" data-value="鸟瞰">鸟瞰</button>
+                    <button class="i2v-option-btn" data-value="倾斜">倾斜</button>
+                  </div>
+                </div>
+                <div class="i2v-category-item" data-category="lighting">
+                  <button class="i2v-category-btn">光线</button>
+                  <div class="i2v-category-panel">
+                    <button class="i2v-option-btn" data-value="逆光">逆光</button>
+                    <button class="i2v-option-btn" data-value="自然光">自然光</button>
+                    <button class="i2v-option-btn" data-value="柔光">柔光</button>
+                    <button class="i2v-option-btn" data-value="霓虹光">霓虹光</button>
+                    <button class="i2v-option-btn" data-value="戏剧光">戏剧光</button>
+                    <button class="i2v-option-btn" data-value="侧光">侧光</button>
+                  </div>
+                </div>
+                <div class="i2v-category-item" data-category="lens-effect">
+                  <button class="i2v-category-btn">镜头特效</button>
+                  <div class="i2v-category-panel">
+                    <button class="i2v-option-btn" data-value="景深虚化">景深虚化</button>
+                    <button class="i2v-option-btn" data-value="升格镜头">升格镜头</button>
+                    <button class="i2v-option-btn" data-value="动态模糊">动态模糊</button>
+                    <button class="i2v-option-btn" data-value="闪回镜头">闪回镜头</button>
+                    <button class="i2v-option-btn" data-value="定格镜头">定格镜头</button>
+                    <button class="i2v-option-btn" data-value="子弹时间">子弹时间</button>
+                    <button class="i2v-option-btn" data-value="移轴镜头">移轴镜头</button>
+                    <button class="i2v-option-btn" data-value="长曝光镜头">长曝光镜头</button>
+                  </div>
+                </div>
+                <div class="i2v-category-item" data-category="lens-type">
+                  <button class="i2v-category-btn">镜头类型</button>
+                  <div class="i2v-category-panel">
+                    <button class="i2v-option-btn" data-value="广角">广角</button>
+                    <button class="i2v-option-btn" data-value="长焦">长焦</button>
+                    <button class="i2v-option-btn" data-value="微距">微距</button>
+                    <button class="i2v-option-btn" data-value="鱼眼">鱼眼</button>
+                    <button class="i2v-option-btn" data-value="标准">标准</button>
+                  </div>
+                </div>
+                <div class="i2v-category-item" data-category="camera-move">
+                  <button class="i2v-category-btn">运镜</button>
+                  <div class="i2v-category-panel">
+                    <button class="i2v-option-btn" data-value="推镜头">推镜头</button>
+                    <button class="i2v-option-btn" data-value="拉镜头">拉镜头</button>
+                    <button class="i2v-option-btn" data-value="摇镜头">摇镜头</button>
+                    <button class="i2v-option-btn" data-value="移镜头">移镜头</button>
+                    <button class="i2v-option-btn" data-value="环绕镜头">环绕镜头</button>
+                    <button class="i2v-option-btn" data-value="升降镜头">升降镜头</button>
+                    <button class="i2v-option-btn" data-value="变焦镜头">变焦镜头</button>
+                    <button class="i2v-option-btn" data-value="手持镜头">手持镜头</button>
+                  </div>
+                </div>
+                <div class="i2v-category-item" data-category="visual-style">
+                  <button class="i2v-category-btn">视觉风格</button>
+                  <div class="i2v-category-panel">
+                    <button class="i2v-option-btn" data-value="写实">写实</button>
+                    <button class="i2v-option-btn" data-value="动漫">动漫</button>
+                    <button class="i2v-option-btn" data-value="电影质感">电影质感</button>
+                    <button class="i2v-option-btn" data-value="赛博朋克">赛博朋克</button>
+                    <button class="i2v-option-btn" data-value="水彩">水彩</button>
+                  </div>
+                </div>
+                <div class="i2v-category-item" data-category="mood">
+                  <button class="i2v-category-btn">氛围/情绪</button>
+                  <div class="i2v-category-panel">
+                    <button class="i2v-option-btn" data-value="宁静平和">宁静平和</button>
+                    <button class="i2v-option-btn" data-value="紧张悬疑">紧张悬疑</button>
+                    <button class="i2v-option-btn" data-value="欢快愉悦">欢快愉悦</button>
+                    <button class="i2v-option-btn" data-value="孤独寂寞">孤独寂寞</button>
+                    <button class="i2v-option-btn" data-value="庄严神圣">庄严神圣</button>
+                    <button class="i2v-option-btn" data-value="梦幻朦胧">梦幻朦胧</button>
+                    <button class="i2v-option-btn" data-value="激昂热血">激昂热血</button>
+                    <button class="i2v-option-btn" data-value="幽默诙谐">幽默诙谐</button>
+                  </div>
+                </div>
+              </div>
 
-        
-          <div class="panel">
-            <div class="section-content">
-              <button class="btn-primary w-full" id="i2v-generate-btn">
-                <i class="fas fa-play"></i>
+              <!-- 声音配置 -->
+              <div class="ref2vid-voice-row">
+                <span class="ref2vid-voice-label">声音配置</span>
+                <div class="ref2vid-voice-btns">
+                  <button class="ref2vid-voice-btn active" data-voice="off">声音关闭</button>
+                  <button class="ref2vid-voice-btn" data-voice="auto">自动配音</button>
+                </div>
+              </div>
+
+              <!-- 智能扩写 -->
+              <div class="ref2vid-expand-row">
+                <span class="ref2vid-expand-label">智能扩写</span>
+                <label class="ref2vid-toggle">
+                  <input type="checkbox" checked id="i2v-expand-toggle" />
+                  <span class="ref2vid-toggle-slider"></span>
+                </label>
+              </div>
+
+              <!-- 底部设置栏 -->
+              <div class="ref2vid-settings-bar">
+                <div class="ref2vid-setting-item ref2vid-dropdown" data-dropdown="i2v-dd-quality">
+                  <span class="ref2vid-setting-value ref2vid-setting-w" data-label="480P">480P</span>
+                  <i class="fas fa-chevron-down ref2vid-setting-arrow"></i>
+                  <div class="ref2vid-dropdown-menu" id="i2v-dd-quality">
+                    <div class="ref2vid-dd-title">清晰度</div>
+                    <div class="ref2vid-dd-option" data-val="480P">480P</div>
+                    <div class="ref2vid-dd-option" data-val="720P">720P</div>
+                    <div class="ref2vid-dd-option" data-val="1080P">1080P</div>
+                  </div>
+                </div>
+                <div class="ref2vid-setting-item ref2vid-dropdown" data-dropdown="i2v-dd-ratio">
+                  <i class="fas fa-mobile-alt ref2vid-setting-icon"></i>
+                  <span class="ref2vid-setting-value ref2vid-setting-w" data-label="16:9">16:9</span>
+                  <i class="fas fa-chevron-down ref2vid-setting-arrow"></i>
+                  <div class="ref2vid-dropdown-menu" id="i2v-dd-ratio">
+                    <div class="ref2vid-dd-title">画面比例</div>
+                    <div class="ref2vid-dd-option" data-val="16:9">16:9</div>
+                    <div class="ref2vid-dd-option" data-val="9:16">9:16</div>
+                    <div class="ref2vid-dd-option" data-val="1:1">1:1</div>
+                    <div class="ref2vid-dd-option" data-val="3:4">3:4</div>
+                    <div class="ref2vid-dd-option" data-val="4:3">4:3</div>
+                  </div>
+                </div>
+                <div class="ref2vid-setting-item ref2vid-dropdown" data-dropdown="i2v-dd-duration">
+                  <span class="ref2vid-setting-value ref2vid-setting-w" data-label="5s">5s</span>
+                  <i class="fas fa-chevron-down ref2vid-setting-arrow"></i>
+                  <div class="ref2vid-dropdown-menu" id="i2v-dd-duration">
+                    <div class="ref2vid-dd-title">视频时长</div>
+                    <div class="ref2vid-dd-option" data-val="5s">5 秒</div>
+                    <div class="ref2vid-dd-option" data-val="10s">10 秒</div>
+                    <div class="ref2vid-dd-option" data-val="15s">15 秒</div>
+                    <div class="ref2vid-dd-option" data-val="20s">20 秒</div>
+                    <div class="ref2vid-dd-option" data-val="30s">30 秒</div>
+                  </div>
+                </div>
+                <div class="ref2vid-setting-item ref2vid-dropdown" data-dropdown="i2v-dd-count">
+                  <span class="ref2vid-setting-value ref2vid-setting-w" data-label="1个">1个</span>
+                  <i class="fas fa-chevron-down ref2vid-setting-arrow"></i>
+                  <div class="ref2vid-dropdown-menu" id="i2v-dd-count">
+                    <div class="ref2vid-dd-title">生成数量</div>
+                    <div class="ref2vid-dd-option" data-val="1个">1 个</div>
+                    <div class="ref2vid-dd-option" data-val="2个">2 个</div>
+                    <div class="ref2vid-dd-option" data-val="3个">3 个</div>
+                    <div class="ref2vid-dd-option" data-val="4个">4 个</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 生成按钮 -->
+              <button class="ref2vid-generate-btn" id="i2v-generate-btn">
                 生成视频
               </button>
-            </div>
-          </div>
-        
 
-        
+              <!-- 底部提示 -->
+              <div class="ref2vid-footer">
+                <span class="ref2vid-footer-text">内容由AI生成，禁止利用功能从事违法行为</span>
+                <span class="ref2vid-footer-watermark">
+                  水印
+                  <label class="ref2vid-toggle ref2vid-toggle-sm">
+                    <input type="checkbox" checked id="i2v-watermark-toggle" />
+                    <span class="ref2vid-toggle-slider"></span>
+                  </label>
+                </span>
               </div>
+
+            </div>
+            </div><!-- /module-input-panel -->
+
               <div class="module-preview-panel">
-                <div class="video-preview" style="max-height: 600px; max-width: 400px; width: 100%;">
-                  <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Cinematic%20scene%20transition%20motion%20blur%20dynamic%20movement&image_size=landscape_16_9" alt="视频预览" />
-                  <div class="video-controls">
-                    <div class="control-bar">
-                      <div class="control-fill" style="width: 42%"></div>
+                <!-- 筛选标签 -->
+                <div class="preview-filter-tabs">
+                  <button class="preview-filter-tab active" data-filter="all">全部</button>
+                  <button class="preview-filter-tab" data-filter="video">视频</button>
+                  <button class="preview-filter-tab" data-filter="image">图片</button>
+                  <button class="preview-filter-tab" data-filter="ai">AI生成</button>
+                  <button class="preview-filter-tab" data-filter="mine">我创建的</button>
+                </div>
+                <!-- 作品列表 -->
+                <div class="preview-work-list">
+                  <div class="preview-work-item">
+                    <div class="preview-work-header">
+                      <div class="preview-work-info">
+                        <span class="preview-work-type"><i class="fas fa-film"></i> 图生视频</span>
+                        <img class="preview-work-thumb" src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=First%20frame%20image%20thumbnail&image_size=square" alt="缩略图" />
+                        <span class="preview-work-model">Wan 3.0 Prime</span>
+                        <span class="preview-work-res">480P</span>
+                        <span class="preview-work-ratio">16:9</span>
+                      </div>
+                      <div class="preview-work-actions">
+                        <button class="preview-action-btn"><i class="fas fa-pen"></i></button>
+                        <button class="preview-action-btn"><i class="fas fa-info-circle"></i></button>
+                      </div>
                     </div>
-                    <div class="control-time">
-                      <span>0:03</span>
-                      <span>0:08</span>
+                    <div class="preview-work-prompt">请结合图片描述您想要生成的内容</div>
+                    <div class="preview-work-media">
+                      <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Cinematic%20scene%20transition%20motion%20blur%20dynamic%20movement&image_size=landscape_16_9" alt="预览" />
+                      <span class="preview-ai-badge">AI生成</span>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
+            </div><!-- /module-split -->
           </div>
 
           <!-- 文生图 -->
           <div class="module-content" data-module-content="text-to-image">
             <div class="module-split">
               <div class="module-input-panel">
-        <div class="panel">
-          <div class="section-content space-y-4">
-            <div>
-              <label class="form-label">图片描述</label>
-              <textarea class="input-field textarea-field" rows="5" id="t2i-prompt" placeholder="描述你想要生成的图片，例如：一只橘猫坐在窗台上，阳光洒在身上，水彩风格"></textarea>
-            </div>
+                <div class="ref2vid-container">
 
-            <div>
-              <label class="form-label">图片风格</label>
-              <select class="input-field dropdown-field" id="t2i-style">
-                <option>写实照片</option>
-                <option>水彩画</option>
-                <option>油画</option>
-                <option>动漫风格</option>
-                <option>像素艺术</option>
-                <option>3D 渲染</option>
-                <option>素描</option>
-              </select>
-            </div>
+                  <!-- 提示词输入区 -->
+                  <div class="ref2vid-prompt-area">
+                    <textarea class="ref2vid-prompt-input" id="t2i-prompt" placeholder="描述你想要生成的图片，例如：一只橘猫坐在窗台上，阳光洒在身上，水彩风格"></textarea>
+                  </div>
 
-            <div>
-              <label class="form-label">图片尺寸</label>
-              <select class="input-field dropdown-field" id="t2i-size">
-                <option>1024 × 1024（正方形）</option>
-                <option>1280 × 720（横版）</option>
-                <option>720 × 1280（竖版）</option>
-                <option>1920 × 1080（宽屏）</option>
-              </select>
-            </div>
+                  <!-- 类别选择器 -->
+                  <div class="i2v-category-selector">
+                    <div class="i2v-category-item" data-category="shot-type">
+                      <button class="i2v-category-btn">景别</button>
+                      <div class="i2v-category-panel">
+                        <button class="i2v-option-btn" data-value="特写">特写</button>
+                        <button class="i2v-option-btn" data-value="近景">近景</button>
+                        <button class="i2v-option-btn" data-value="中景">中景</button>
+                        <button class="i2v-option-btn" data-value="远景">远景</button>
+                        <button class="i2v-option-btn" data-value="全景">全景</button>
+                      </div>
+                    </div>
+                    <div class="i2v-category-item" data-category="composition">
+                      <button class="i2v-category-btn">构图</button>
+                      <div class="i2v-category-panel">
+                        <button class="i2v-option-btn" data-value="三分构图">三分构图</button>
+                        <button class="i2v-option-btn" data-value="中心构图">中心构图</button>
+                        <button class="i2v-option-btn" data-value="对角线构图">对角线构图</button>
+                        <button class="i2v-option-btn" data-value="引导线构图">引导线构图</button>
+                        <button class="i2v-option-btn" data-value="框架式构图">框架式构图</button>
+                      </div>
+                    </div>
+                    <div class="i2v-category-item" data-category="view-angle">
+                      <button class="i2v-category-btn">视角</button>
+                      <div class="i2v-category-panel">
+                        <button class="i2v-option-btn" data-value="平视">平视</button>
+                        <button class="i2v-option-btn" data-value="俯视">俯视</button>
+                        <button class="i2v-option-btn" data-value="仰视">仰视</button>
+                        <button class="i2v-option-btn" data-value="鸟瞰">鸟瞰</button>
+                        <button class="i2v-option-btn" data-value="倾斜">倾斜</button>
+                      </div>
+                    </div>
+                    <div class="i2v-category-item" data-category="lighting">
+                      <button class="i2v-category-btn">光线</button>
+                      <div class="i2v-category-panel">
+                        <button class="i2v-option-btn" data-value="逆光">逆光</button>
+                        <button class="i2v-option-btn" data-value="自然光">自然光</button>
+                        <button class="i2v-option-btn" data-value="柔光">柔光</button>
+                        <button class="i2v-option-btn" data-value="霓虹光">霓虹光</button>
+                        <button class="i2v-option-btn" data-value="戏剧光">戏剧光</button>
+                        <button class="i2v-option-btn" data-value="侧光">侧光</button>
+                      </div>
+                    </div>
+                    <div class="i2v-category-item" data-category="lens-type">
+                      <button class="i2v-category-btn">镜头类型</button>
+                      <div class="i2v-category-panel">
+                        <button class="i2v-option-btn" data-value="广角">广角</button>
+                        <button class="i2v-option-btn" data-value="长焦">长焦</button>
+                        <button class="i2v-option-btn" data-value="微距">微距</button>
+                        <button class="i2v-option-btn" data-value="鱼眼">鱼眼</button>
+                        <button class="i2v-option-btn" data-value="标准">标准</button>
+                      </div>
+                    </div>
+                    <div class="i2v-category-item" data-category="visual-style">
+                      <button class="i2v-category-btn">视觉风格</button>
+                      <div class="i2v-category-panel">
+                        <button class="i2v-option-btn" data-value="写实">写实</button>
+                        <button class="i2v-option-btn" data-value="动漫">动漫</button>
+                        <button class="i2v-option-btn" data-value="电影质感">电影质感</button>
+                        <button class="i2v-option-btn" data-value="赛博朋克">赛博朋克</button>
+                        <button class="i2v-option-btn" data-value="水彩">水彩</button>
+                      </div>
+                    </div>
+                  </div>
 
-            <div class="flex items-center gap-4 pt-2">
-              <button class="btn-primary" id="t2i-generate-btn" style="padding: 10px 28px;">
-                <i class="fas fa-wand-magic-sparkles mr-1"></i> 生成图片
-              </button>
-              <span class="text-sm text-gray-400" id="t2i-status">等待生成...</span>
-            </div>
+                  <!-- 声音配置 -->
+                  <div class="ref2vid-voice-row">
+                    <span class="ref2vid-voice-label">声音配置</span>
+                    <div class="ref2vid-voice-btns">
+                      <button class="ref2vid-voice-btn active" data-voice="off">声音关闭</button>
+                      <button class="ref2vid-voice-btn" data-voice="auto">自动配音</button>
+                    </div>
+                  </div>
 
-            <div id="t2i-result" class="mt-4" style="display:none;">
-              <div class="video-preview" style="max-width: 512px;">
-                <img id="t2i-result-img" src="" alt="生成结果" />
-              </div>
-            </div>
-              </div>
-              </div>
+                  <!-- 智能扩写 -->
+                  <div class="ref2vid-expand-row">
+                    <span class="ref2vid-expand-label">智能扩写</span>
+                    <label class="ref2vid-toggle">
+                      <input type="checkbox" checked id="t2i-expand-toggle" />
+                      <span class="ref2vid-toggle-slider"></span>
+                    </label>
+                  </div>
+
+                  <!-- 底部设置栏 -->
+                  <div class="ref2vid-settings-bar">
+                    <div class="ref2vid-setting-item ref2vid-dropdown" data-dropdown="t2i-dd-quality">
+                      <span class="ref2vid-setting-value ref2vid-setting-w" data-label="1K">1K</span>
+                      <i class="fas fa-chevron-down ref2vid-setting-arrow"></i>
+                      <div class="ref2vid-dropdown-menu" id="t2i-dd-quality">
+                        <div class="ref2vid-dd-title">清晰度</div>
+                        <div class="ref2vid-dd-option" data-val="1K">1K</div>
+                        <div class="ref2vid-dd-option" data-val="2K">2K</div>
+                        <div class="ref2vid-dd-option" data-val="4K">4K</div>
+                      </div>
+                    </div>
+                    <div class="ref2vid-setting-item ref2vid-dropdown" data-dropdown="t2i-dd-ratio">
+                      <i class="fas fa-mobile-alt ref2vid-setting-icon"></i>
+                      <span class="ref2vid-setting-value ref2vid-setting-w" data-label="16:9">16:9</span>
+                      <i class="fas fa-chevron-down ref2vid-setting-arrow"></i>
+                      <div class="ref2vid-dropdown-menu" id="t2i-dd-ratio">
+                        <div class="ref2vid-dd-title">画面比例</div>
+                        <div class="ref2vid-dd-option" data-val="16:9">16:9</div>
+                        <div class="ref2vid-dd-option" data-val="9:16">9:16</div>
+                        <div class="ref2vid-dd-option" data-val="1:1">1:1</div>
+                        <div class="ref2vid-dd-option" data-val="3:4">3:4</div>
+                        <div class="ref2vid-dd-option" data-val="4:3">4:3</div>
+                      </div>
+                    </div>
+                    <div class="ref2vid-setting-item ref2vid-dropdown" data-dropdown="t2i-dd-duration">
+                      <span class="ref2vid-setting-value ref2vid-setting-w" data-label="10s">10s</span>
+                      <i class="fas fa-chevron-down ref2vid-setting-arrow"></i>
+                      <div class="ref2vid-dropdown-menu" id="t2i-dd-duration">
+                        <div class="ref2vid-dd-title">视频时长</div>
+                        <div class="ref2vid-dd-option" data-val="10s">10 秒</div>
+                        <div class="ref2vid-dd-option" data-val="15s">15 秒</div>
+                        <div class="ref2vid-dd-option" data-val="20s">20 秒</div>
+                        <div class="ref2vid-dd-option" data-val="30s">30 秒</div>
+                      </div>
+                    </div>
+                    <div class="ref2vid-setting-item ref2vid-dropdown" data-dropdown="t2i-dd-count">
+                      <span class="ref2vid-setting-value ref2vid-setting-w" data-label="1个">1个</span>
+                      <i class="fas fa-chevron-down ref2vid-setting-arrow"></i>
+                      <div class="ref2vid-dropdown-menu" id="t2i-dd-count">
+                        <div class="ref2vid-dd-title">生成数量</div>
+                        <div class="ref2vid-dd-option" data-val="1个">1 个</div>
+                        <div class="ref2vid-dd-option" data-val="2个">2 个</div>
+                        <div class="ref2vid-dd-option" data-val="3个">3 个</div>
+                        <div class="ref2vid-dd-option" data-val="4个">4 个</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- 生成按钮 -->
+                  <button class="ref2vid-generate-btn" id="t2i-generate-btn">
+                    生成图片
+                  </button>
+
+                  <!-- 底部提示 -->
+                  <div class="ref2vid-footer">
+                    <span class="ref2vid-footer-text">内容由AI生成，禁止利用功能从事违法行为</span>
+                    <span class="ref2vid-footer-watermark">
+                      水印
+                      <label class="ref2vid-toggle ref2vid-toggle-sm">
+                        <input type="checkbox" checked id="t2i-watermark-toggle" />
+                        <span class="ref2vid-toggle-slider"></span>
+                      </label>
+                    </span>
+                  </div>
+
+                </div>
               </div>
               <div class="module-preview-panel">
                 <div class="module-preview-placeholder">
@@ -1636,62 +1938,174 @@
           <div class="module-content" data-module-content="img-to-img">
             <div class="module-split">
               <div class="module-input-panel">
-        <div class="panel">
-          <div class="section-content space-y-4">
-            <div>
-              <label class="form-label">上传参考图片</label>
-              <p class="hint-text" style="margin-top:0; margin-bottom:8px;">可上传多张图片作为参考</p>
-              <div class="cm-upload-zone" id="i2i-upload-zone">
-                <i class="fas fa-cloud-upload-alt"></i>
-                <div class="cm-upload-title">点击或拖拽图片到此处</div>
-                <div class="cm-upload-hint">支持 JPG, PNG, WEBP 格式，可上传多张</div>
-                <button class="btn-primary" style="padding: 8px 20px; margin-top: 12px;">
-                  <i class="fas fa-plus"></i> 选择图片
-                </button>
-              </div>
-              <div class="cm-material-list" id="i2i-image-list"></div>
-            </div>
+                <div class="ref2vid-container">
 
-            <div>
-              <label class="form-label">生成描述</label>
-              <textarea class="input-field textarea-field" rows="4" id="i2i-prompt" placeholder="描述你想要生成的效果，例如：将这张照片转为宫崎骏动漫风格，保持人物姿态不变"></textarea>
-            </div>
+                  <!-- 上传参考图片 -->
+                  <div class="cm-upload-zone" id="i2i-upload-zone">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <div class="cm-upload-title">点击或拖拽图片到此处</div>
+                    <div class="cm-upload-hint">支持 JPG, PNG, WEBP 格式，可上传多张</div>
+                    <button class="btn-primary" style="padding: 8px 20px; margin-top: 12px;">
+                      <i class="fas fa-plus"></i> 选择图片
+                    </button>
+                  </div>
+                  <div class="cm-material-list" id="i2i-image-list"></div>
 
-            <div>
-              <label class="form-label">转换风格</label>
-              <select class="input-field dropdown-field" id="i2i-style">
-                <option>风格迁移</option>
-                <option>动漫化</option>
-                <option>素描化</option>
-                <option>油画风</option>
-                <option>超分辨率增强</option>
-                <option>背景替换</option>
-              </select>
-            </div>
+                  <!-- 提示词输入区 -->
+                  <div class="ref2vid-prompt-area">
+                    <textarea class="ref2vid-prompt-input" id="i2i-prompt" placeholder="描述你想要生成的效果，例如：将这张照片转为宫崎骏动漫风格，保持人物姿态不变"></textarea>
+                  </div>
 
-            <div>
-              <label class="form-label">生成强度</label>
-              <div class="flex items-center gap-3">
-                <input type="range" min="1" max="10" value="5" class="flex-1" id="i2i-strength" />
-                <span class="text-sm text-gray-500 w-8" id="i2i-strength-val">5</span>
-              </div>
-              <p class="hint-text">值越低越接近原图，值越高创意变化越大</p>
-            </div>
+                  <!-- 类别选择器 -->
+                  <div class="i2v-category-selector">
+                    <div class="i2v-category-item" data-category="shot-type">
+                      <button class="i2v-category-btn">景别</button>
+                      <div class="i2v-category-panel">
+                        <button class="i2v-option-btn" data-value="特写">特写</button>
+                        <button class="i2v-option-btn" data-value="近景">近景</button>
+                        <button class="i2v-option-btn" data-value="中景">中景</button>
+                        <button class="i2v-option-btn" data-value="远景">远景</button>
+                        <button class="i2v-option-btn" data-value="全景">全景</button>
+                      </div>
+                    </div>
+                    <div class="i2v-category-item" data-category="composition">
+                      <button class="i2v-category-btn">构图</button>
+                      <div class="i2v-category-panel">
+                        <button class="i2v-option-btn" data-value="三分构图">三分构图</button>
+                        <button class="i2v-option-btn" data-value="中心构图">中心构图</button>
+                        <button class="i2v-option-btn" data-value="对角线构图">对角线构图</button>
+                        <button class="i2v-option-btn" data-value="引导线构图">引导线构图</button>
+                        <button class="i2v-option-btn" data-value="框架式构图">框架式构图</button>
+                      </div>
+                    </div>
+                    <div class="i2v-category-item" data-category="view-angle">
+                      <button class="i2v-category-btn">视角</button>
+                      <div class="i2v-category-panel">
+                        <button class="i2v-option-btn" data-value="平视">平视</button>
+                        <button class="i2v-option-btn" data-value="俯视">俯视</button>
+                        <button class="i2v-option-btn" data-value="仰视">仰视</button>
+                        <button class="i2v-option-btn" data-value="鸟瞰">鸟瞰</button>
+                        <button class="i2v-option-btn" data-value="倾斜">倾斜</button>
+                      </div>
+                    </div>
+                    <div class="i2v-category-item" data-category="lighting">
+                      <button class="i2v-category-btn">光线</button>
+                      <div class="i2v-category-panel">
+                        <button class="i2v-option-btn" data-value="逆光">逆光</button>
+                        <button class="i2v-option-btn" data-value="自然光">自然光</button>
+                        <button class="i2v-option-btn" data-value="柔光">柔光</button>
+                        <button class="i2v-option-btn" data-value="霓虹光">霓虹光</button>
+                        <button class="i2v-option-btn" data-value="戏剧光">戏剧光</button>
+                        <button class="i2v-option-btn" data-value="侧光">侧光</button>
+                      </div>
+                    </div>
+                    <div class="i2v-category-item" data-category="lens-type">
+                      <button class="i2v-category-btn">镜头类型</button>
+                      <div class="i2v-category-panel">
+                        <button class="i2v-option-btn" data-value="广角">广角</button>
+                        <button class="i2v-option-btn" data-value="长焦">长焦</button>
+                        <button class="i2v-option-btn" data-value="微距">微距</button>
+                        <button class="i2v-option-btn" data-value="鱼眼">鱼眼</button>
+                        <button class="i2v-option-btn" data-value="标准">标准</button>
+                      </div>
+                    </div>
+                    <div class="i2v-category-item" data-category="visual-style">
+                      <button class="i2v-category-btn">视觉风格</button>
+                      <div class="i2v-category-panel">
+                        <button class="i2v-option-btn" data-value="写实">写实</button>
+                        <button class="i2v-option-btn" data-value="动漫">动漫</button>
+                        <button class="i2v-option-btn" data-value="电影质感">电影质感</button>
+                        <button class="i2v-option-btn" data-value="赛博朋克">赛博朋克</button>
+                        <button class="i2v-option-btn" data-value="水彩">水彩</button>
+                      </div>
+                    </div>
+                  </div>
 
-            <div class="flex items-center gap-4 pt-2">
-              <button class="btn-primary" id="i2i-generate-btn" style="padding: 10px 28px;">
-                <i class="fas fa-wand-magic-sparkles mr-1"></i> 生成图片
-              </button>
-              <span class="text-sm text-gray-400" id="i2i-status">等待生成...</span>
-            </div>
+                  <!-- 声音配置 -->
+                  <div class="ref2vid-voice-row">
+                    <span class="ref2vid-voice-label">声音配置</span>
+                    <div class="ref2vid-voice-btns">
+                      <button class="ref2vid-voice-btn active" data-voice="off">声音关闭</button>
+                      <button class="ref2vid-voice-btn" data-voice="auto">自动配音</button>
+                    </div>
+                  </div>
 
-            <div id="i2i-result" class="mt-4" style="display:none;">
-              <div class="video-preview" style="max-width: 512px;">
-                <img id="i2i-result-img" src="" alt="生成结果" />
-              </div>
-            </div>
-              </div>
-              </div>
+                  <!-- 智能扩写 -->
+                  <div class="ref2vid-expand-row">
+                    <span class="ref2vid-expand-label">智能扩写</span>
+                    <label class="ref2vid-toggle">
+                      <input type="checkbox" checked id="i2i-expand-toggle" />
+                      <span class="ref2vid-toggle-slider"></span>
+                    </label>
+                  </div>
+
+                  <!-- 底部设置栏 -->
+                  <div class="ref2vid-settings-bar">
+                    <div class="ref2vid-setting-item ref2vid-dropdown" data-dropdown="i2i-dd-quality">
+                      <span class="ref2vid-setting-value ref2vid-setting-w" data-label="1K">1K</span>
+                      <i class="fas fa-chevron-down ref2vid-setting-arrow"></i>
+                      <div class="ref2vid-dropdown-menu" id="i2i-dd-quality">
+                        <div class="ref2vid-dd-title">清晰度</div>
+                        <div class="ref2vid-dd-option" data-val="1K">1K</div>
+                        <div class="ref2vid-dd-option" data-val="2K">2K</div>
+                        <div class="ref2vid-dd-option" data-val="4K">4K</div>
+                      </div>
+                    </div>
+                    <div class="ref2vid-setting-item ref2vid-dropdown" data-dropdown="i2i-dd-ratio">
+                      <i class="fas fa-mobile-alt ref2vid-setting-icon"></i>
+                      <span class="ref2vid-setting-value ref2vid-setting-w" data-label="16:9">16:9</span>
+                      <i class="fas fa-chevron-down ref2vid-setting-arrow"></i>
+                      <div class="ref2vid-dropdown-menu" id="i2i-dd-ratio">
+                        <div class="ref2vid-dd-title">画面比例</div>
+                        <div class="ref2vid-dd-option" data-val="16:9">16:9</div>
+                        <div class="ref2vid-dd-option" data-val="9:16">9:16</div>
+                        <div class="ref2vid-dd-option" data-val="1:1">1:1</div>
+                        <div class="ref2vid-dd-option" data-val="3:4">3:4</div>
+                        <div class="ref2vid-dd-option" data-val="4:3">4:3</div>
+                      </div>
+                    </div>
+                    <div class="ref2vid-setting-item ref2vid-dropdown" data-dropdown="i2i-dd-duration">
+                      <span class="ref2vid-setting-value ref2vid-setting-w" data-label="10s">10s</span>
+                      <i class="fas fa-chevron-down ref2vid-setting-arrow"></i>
+                      <div class="ref2vid-dropdown-menu" id="i2i-dd-duration">
+                        <div class="ref2vid-dd-title">视频时长</div>
+                        <div class="ref2vid-dd-option" data-val="10s">10 秒</div>
+                        <div class="ref2vid-dd-option" data-val="15s">15 秒</div>
+                        <div class="ref2vid-dd-option" data-val="20s">20 秒</div>
+                        <div class="ref2vid-dd-option" data-val="30s">30 秒</div>
+                      </div>
+                    </div>
+                    <div class="ref2vid-setting-item ref2vid-dropdown" data-dropdown="i2i-dd-count">
+                      <span class="ref2vid-setting-value ref2vid-setting-w" data-label="1个">1个</span>
+                      <i class="fas fa-chevron-down ref2vid-setting-arrow"></i>
+                      <div class="ref2vid-dropdown-menu" id="i2i-dd-count">
+                        <div class="ref2vid-dd-title">生成数量</div>
+                        <div class="ref2vid-dd-option" data-val="1个">1 个</div>
+                        <div class="ref2vid-dd-option" data-val="2个">2 个</div>
+                        <div class="ref2vid-dd-option" data-val="3个">3 个</div>
+                        <div class="ref2vid-dd-option" data-val="4个">4 个</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- 生成按钮 -->
+                  <button class="ref2vid-generate-btn" id="i2i-generate-btn">
+                    生成图片
+                  </button>
+
+                  <!-- 底部提示 -->
+                  <div class="ref2vid-footer">
+                    <span class="ref2vid-footer-text">内容由AI生成，禁止利用功能从事违法行为</span>
+                    <span class="ref2vid-footer-watermark">
+                      水印
+                      <label class="ref2vid-toggle ref2vid-toggle-sm">
+                        <input type="checkbox" checked id="i2i-watermark-toggle" />
+                        <span class="ref2vid-toggle-slider"></span>
+                      </label>
+                    </span>
+                  </div>
+
+                </div>
               </div>
               <div class="module-preview-panel">
                 <div class="module-preview-placeholder">
@@ -3137,6 +3551,7 @@
     </div>
   </div>
 
-  <script src="js/main.js?v=20260917a"></script>
+  <script src="js/main.js?v=20260922c"></script>
 </body>
 </html>
+

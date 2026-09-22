@@ -6,21 +6,6 @@ const DEFAULT_ACCOUNTS = [
 ];
 
 const USERS_STORAGE_KEY = 'yimirror_users';
-const PASSWORD_OVERRIDES_KEY = 'yimirror_password_overrides';
-
-function getPasswordOverrides() {
-  try {
-    return JSON.parse(localStorage.getItem(PASSWORD_OVERRIDES_KEY) || '{}');
-  } catch (e) {
-    return {};
-  }
-}
-
-function setPasswordOverride(email, password) {
-  const overrides = getPasswordOverrides();
-  overrides[email] = password;
-  localStorage.setItem(PASSWORD_OVERRIDES_KEY, JSON.stringify(overrides));
-}
 
 function getAccounts() {
   let extra = [];
@@ -30,10 +15,7 @@ function getAccounts() {
   } catch (e) {
     extra = [];
   }
-  const overrides = getPasswordOverrides();
-  return [...extra, ...DEFAULT_ACCOUNTS].map(a =>
-    overrides[a.email] ? { ...a, password: overrides[a.email] } : a
-  );
+  return [...extra, ...DEFAULT_ACCOUNTS];
 }
 
 function saveAccounts(accounts) {
@@ -75,44 +57,19 @@ function initLogin() {
   const logoutBtn       = document.getElementById('logout-btn');
   const footerHint      = document.getElementById('login-footer-hint');
 
-  const loginTabs       = document.getElementById('login-tabs');
-  const forgotPanel     = document.getElementById('forgot-form-panel');
-  const forgotLink      = document.getElementById('forgot-password-link');
-  const backToLoginLink = document.getElementById('back-to-login-link');
-  const resetEmail      = document.getElementById('reset-email');
-  const resetCodeEl     = document.getElementById('reset-code');
-  const resetSendCodeBtn= document.getElementById('reset-send-code-btn');
-  const resetCodeHint   = document.getElementById('reset-code-hint');
-  const resetPassword   = document.getElementById('reset-password');
-  const resetPasswordConfirm = document.getElementById('reset-password-confirm');
-  const resetError      = document.getElementById('reset-error');
-  const resetBtn        = document.getElementById('reset-btn');
-
-  let resetCode = null;
-  let resetCodeTimer = null;
-
   loginEmail.value = 'admin@yimirror.com';
   loginPassword.value = 'admin123';
 
   function switchMode(mode) {
     const isLogin = mode === 'login';
-    const isRegister = mode === 'register';
-    const isForgot = mode === 'forgot';
-    if (loginTabs) loginTabs.style.display = isForgot ? 'none' : 'flex';
     tabLogin.classList.toggle('active', isLogin);
-    tabRegister.classList.toggle('active', isRegister);
+    tabRegister.classList.toggle('active', !isLogin);
     loginPanel.style.display = isLogin ? 'block' : 'none';
-    registerPanel.style.display = isRegister ? 'block' : 'none';
-    if (forgotPanel) forgotPanel.style.display = isForgot ? 'block' : 'none';
+    registerPanel.style.display = isLogin ? 'none' : 'block';
     loginError.textContent = '';
     registerError.textContent = '';
-    if (resetError) resetError.textContent = '';
-    footerHint.textContent = isLogin
-      ? '演示账号：admin@yimirror.com / admin123'
-      : (isRegister ? '注册成功后即可使用邮箱登录' : '通过邮箱验证码重置密码');
-    if (isLogin) loginEmail.focus();
-    else if (isRegister) registerEmail.focus();
-    else if (isForgot && resetEmail) resetEmail.focus();
+    footerHint.textContent = isLogin ? '演示账号：admin@yimirror.com / admin123' : '注册成功后即可使用邮箱登录';
+    if (isLogin) loginEmail.focus(); else registerEmail.focus();
   }
 
   function doLogin() {
@@ -229,91 +186,6 @@ function initLogin() {
     loginError.textContent = '注册成功，请登录';
   }
 
-  function resetResetCodeButton() {
-    if (resetCodeTimer) {
-      clearInterval(resetCodeTimer);
-      resetCodeTimer = null;
-    }
-    if (resetSendCodeBtn) {
-      resetSendCodeBtn.disabled = false;
-      resetSendCodeBtn.textContent = '获取验证码';
-    }
-  }
-
-  function sendResetCode() {
-    const email = resetEmail.value.trim().toLowerCase();
-    if (!email) {
-      resetError.textContent = '请先输入邮箱';
-      resetEmail.focus();
-      return;
-    }
-    if (!isValidEmail(email)) {
-      resetError.textContent = '邮箱格式不正确';
-      resetEmail.focus();
-      return;
-    }
-    if (!getAccounts().some(a => a.email === email)) {
-      resetError.textContent = '该邮箱未注册，请先注册';
-      return;
-    }
-    resetError.textContent = '';
-    resetCode = String(Math.floor(100000 + Math.random() * 900000));
-    resetCodeHint.textContent = '验证码已发送（演示环境）：' + resetCode + '，5 分钟内有效';
-    let seconds = 60;
-    resetSendCodeBtn.disabled = true;
-    resetSendCodeBtn.textContent = seconds + 's 后重发';
-    resetCodeTimer = setInterval(() => {
-      seconds--;
-      if (seconds <= 0) {
-        resetResetCodeButton();
-      } else {
-        resetSendCodeBtn.textContent = seconds + 's 后重发';
-      }
-    }, 1000);
-  }
-
-  function doResetPassword() {
-    const email = resetEmail.value.trim().toLowerCase();
-    const code = resetCodeEl.value.trim();
-    const pwd = resetPassword.value;
-    const confirm = resetPasswordConfirm.value;
-    if (!email || !code || !pwd || !confirm) {
-      resetError.textContent = '请填写完整信息';
-      return;
-    }
-    if (!isValidEmail(email)) {
-      resetError.textContent = '邮箱格式不正确';
-      return;
-    }
-    if (!getAccounts().some(a => a.email === email)) {
-      resetError.textContent = '该邮箱未注册，请先注册';
-      return;
-    }
-    if (!resetCode || code !== resetCode) {
-      resetError.textContent = '验证码错误';
-      return;
-    }
-    if (pwd.length < 6) {
-      resetError.textContent = '密码至少需要 6 位';
-      return;
-    }
-    if (pwd !== confirm) {
-      resetError.textContent = '两次输入的密码不一致';
-      return;
-    }
-    setPasswordOverride(email, pwd);
-    resetResetCodeButton();
-    resetCode = null;
-    resetCodeEl.value = '';
-    resetPassword.value = '';
-    resetPasswordConfirm.value = '';
-    resetCodeHint.textContent = '';
-    loginEmail.value = email;
-    loginPassword.value = '';
-    switchMode('login');
-    loginError.textContent = '密码已重置，请用新密码登录';
-  }
-
   if (tabLogin) tabLogin.addEventListener('click', () => switchMode('login'));
   if (tabRegister) tabRegister.addEventListener('click', () => switchMode('register'));
   if (loginBtn) loginBtn.addEventListener('click', doLogin);
@@ -322,10 +194,6 @@ function initLogin() {
   if (registerBtn) registerBtn.addEventListener('click', doRegister);
   if (sendCodeBtn) sendCodeBtn.addEventListener('click', sendCode);
   if (logoutBtn) logoutBtn.addEventListener('click', doLogout);
-  if (forgotLink) forgotLink.addEventListener('click', () => switchMode('forgot'));
-  if (backToLoginLink) backToLoginLink.addEventListener('click', () => switchMode('login'));
-  if (resetSendCodeBtn) resetSendCodeBtn.addEventListener('click', sendResetCode);
-  if (resetBtn) resetBtn.addEventListener('click', doResetPassword);
 }
 
 const TOTAL_STEPS = 6;
@@ -1653,7 +1521,7 @@ const projectData = {
 function loadProject(id, status) {
   const data = projectData[id];
   if (!data) return;
-  const textInput = document.getElementById('qv-script-input');
+  const textInput = document.querySelector('[data-panel="1"] textarea');
   const titleInput = document.querySelector('[data-panel="1"] input[type="text"]');
   const framesLabel = document.querySelector('[data-panel="1"] .whitespace-nowrap span');
   const framesSlider = document.querySelector('[data-panel="1"] input[type="range"]');
@@ -1847,38 +1715,6 @@ document.querySelectorAll('.accordion-header').forEach(header => {
     this.parentElement.classList.toggle('open');
   });
 });
-
-const quickGenBtn = document.getElementById('generate-btn');
-if (quickGenBtn) {
-  quickGenBtn.addEventListener('click', function() {
-    const btn = this;
-    const promptInput = document.getElementById('qv-script-input');
-    const prompt = promptInput ? promptInput.value.trim() : '';
-    if (!prompt) {
-      alert('请输入要生成视频的文字');
-      return;
-    }
-
-    const placeholder = document.getElementById('qv-preview-placeholder');
-    const result = document.getElementById('qv-preview-result');
-    const image = document.getElementById('qv-preview-image');
-    const messages = document.getElementById('generate-messages');
-
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在生成...';
-    btn.disabled = true;
-
-    setTimeout(() => {
-      if (image) {
-        image.src = 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=' + encodeURIComponent(prompt) + '&image_size=portrait_9_16';
-      }
-      if (placeholder) placeholder.style.display = 'none';
-      if (result) result.style.display = 'block';
-      if (messages) messages.style.display = 'block';
-      btn.innerHTML = '<i class="fas fa-check"></i> 生成完成';
-      btn.disabled = false;
-    }, 1500);
-  });
-}
 
 document.querySelectorAll('.param-slider').forEach(slider => {
   slider.addEventListener('input', function() {
@@ -5900,18 +5736,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   })();
 
-  // 类别选择器通用绑定：将所选标签追加到对应模块的提示词输入框
-  function bindCategorySelector(moduleSelector, promptInputId) {
-    document.querySelectorAll(moduleSelector + ' .i2v-category-item').forEach(item => {
+  // ===== 图生视频交互 =====
+  (function initI2V() {
+    // 类别选择器交互
+    document.querySelectorAll('.i2v-category-item').forEach(item => {
       const btn = item.querySelector('.i2v-category-btn');
       const panel = item.querySelector('.i2v-category-panel');
-      if (!btn) return;
 
       // 点击类别按钮 → 展开/收起
       btn.addEventListener('click', function(e) {
         e.stopPropagation();
         const wasOpen = item.classList.contains('open');
+        // 关闭所有类别面板
         document.querySelectorAll('.i2v-category-item').forEach(i => i.classList.remove('open'));
+        // 切换当前面板
         if (!wasOpen) item.classList.add('open');
       });
 
@@ -5922,15 +5760,19 @@ document.addEventListener('DOMContentLoaded', () => {
           if (opt) {
             e.stopPropagation();
             const value = opt.dataset.value;
+            // 切换选项的激活状态
             opt.classList.toggle('active');
-            const promptInput = document.getElementById(promptInputId);
+            // 更新提示词
+            const promptInput = document.getElementById('i2v-prompt-input');
             if (promptInput) {
               if (opt.classList.contains('active')) {
+                // 添加选项
                 if (promptInput.value && !promptInput.value.endsWith('，') && !promptInput.value.endsWith(',')) {
                   promptInput.value += '，';
                 }
                 promptInput.value += value;
               } else {
+                // 移除选项
                 promptInput.value = promptInput.value
                   .replace('，' + value, '')
                   .replace(value + '，', '')
@@ -5942,11 +5784,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
       }
     });
-  }
-
-  // ===== 图生视频交互 =====
-  (function initI2V() {
-    bindCategorySelector('[data-module-content="image-to-video"]', 'i2v-prompt-input');
 
     // 点击外部关闭所有类别面板
     document.addEventListener('click', function(e) {
@@ -5969,11 +5806,71 @@ document.addEventListener('DOMContentLoaded', () => {
   })();
 
   // ===== 文生视频交互 =====
-  bindCategorySelector('[data-module-content="quick-create"]', 'qv-script-input');
+  (function initT2V() {
+    // 类别选择器交互
+    document.querySelectorAll('.i2v-category-item').forEach(item => {
+      const btn = item.querySelector('.i2v-category-btn');
+      const panel = item.querySelector('.i2v-category-panel');
 
-  // ===== 文生图交互 =====
-  bindCategorySelector('[data-module-content="text-to-image"]', 't2i-prompt');
+      // 点击类别按钮 → 展开/收起
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        const wasOpen = item.classList.contains('open');
+        // 关闭所有类别面板
+        document.querySelectorAll('.i2v-category-item').forEach(i => i.classList.remove('open'));
+        // 切换当前面板
+        if (!wasOpen) item.classList.add('open');
+      });
 
-  // ===== 图生图交互 =====
-  bindCategorySelector('[data-module-content="img-to-img"]', 'i2i-prompt');
+      // 点击选项 → 选中并添加到提示词
+      if (panel) {
+        panel.addEventListener('click', function(e) {
+          const opt = e.target.closest('.i2v-option-btn');
+          if (opt) {
+            e.stopPropagation();
+            const value = opt.dataset.value;
+            // 切换选项的激活状态
+            opt.classList.toggle('active');
+            // 更新提示词
+            const promptInput = document.getElementById('t2v-prompt-input');
+            if (promptInput) {
+              if (opt.classList.contains('active')) {
+                // 添加选项
+                if (promptInput.value && !promptInput.value.endsWith('，') && !promptInput.value.endsWith(',')) {
+                  promptInput.value += '，';
+                }
+                promptInput.value += value;
+              } else {
+                // 移除选项
+                promptInput.value = promptInput.value
+                  .replace('，' + value, '')
+                  .replace(value + '，', '')
+                  .replace(value, '')
+                  .trim();
+              }
+            }
+          }
+        });
+      }
+    });
+
+    // 点击外部关闭所有类别面板
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('.i2v-category-item')) {
+        document.querySelectorAll('.i2v-category-item').forEach(i => i.classList.remove('open'));
+      }
+    });
+
+    // 生成按钮点击
+    const t2vGenBtn = document.getElementById('t2v-generate-btn');
+    if (t2vGenBtn) {
+      t2vGenBtn.addEventListener('click', function() {
+        const originalHTML = this.innerHTML;
+        this.textContent = '生成中...';
+        this.style.opacity = '0.7';
+        this.style.pointerEvents = 'none';
+        setTimeout(() => { this.innerHTML = originalHTML; this.style.opacity = '1'; this.style.pointerEvents = ''; }, 3000);
+      });
+    }
+  })();
 });
