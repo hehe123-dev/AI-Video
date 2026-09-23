@@ -53,7 +53,7 @@
   </script>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-  <link rel="stylesheet" href="css/main.css?v=20260922n">
+  <link rel="stylesheet" href="css/main.css?v=20260923a">
 </head>
 <body class="flex flex-col h-screen">
   <!-- 登录遮罩 -->
@@ -1839,24 +1839,6 @@
                     </div>
                   </div>
 
-                  <!-- 声音配置 -->
-                  <div class="ref2vid-voice-row">
-                    <span class="ref2vid-voice-label">声音配置</span>
-                    <div class="ref2vid-voice-btns">
-                      <button class="ref2vid-voice-btn active" data-voice="off">声音关闭</button>
-                      <button class="ref2vid-voice-btn" data-voice="auto">自动配音</button>
-                    </div>
-                  </div>
-
-                  <!-- 智能扩写 -->
-                  <div class="ref2vid-expand-row">
-                    <span class="ref2vid-expand-label">智能扩写</span>
-                    <label class="ref2vid-toggle">
-                      <input type="checkbox" checked id="t2i-expand-toggle" />
-                      <span class="ref2vid-toggle-slider"></span>
-                    </label>
-                  </div>
-
                   <!-- 底部设置栏 -->
                   <div class="ref2vid-settings-bar">
                     <div class="ref2vid-setting-item ref2vid-dropdown" data-dropdown="t2i-dd-quality">
@@ -1878,19 +1860,13 @@
                         <div class="ref2vid-dd-option" data-val="16:9">16:9</div>
                         <div class="ref2vid-dd-option" data-val="9:16">9:16</div>
                         <div class="ref2vid-dd-option" data-val="1:1">1:1</div>
-                        <div class="ref2vid-dd-option" data-val="3:4">3:4</div>
                         <div class="ref2vid-dd-option" data-val="4:3">4:3</div>
-                      </div>
-                    </div>
-                    <div class="ref2vid-setting-item ref2vid-dropdown" data-dropdown="t2i-dd-duration">
-                      <span class="ref2vid-setting-value ref2vid-setting-w" data-label="10s">10s</span>
-                      <i class="fas fa-chevron-down ref2vid-setting-arrow"></i>
-                      <div class="ref2vid-dropdown-menu" id="t2i-dd-duration">
-                        <div class="ref2vid-dd-title">视频时长</div>
-                        <div class="ref2vid-dd-option" data-val="10s">10 秒</div>
-                        <div class="ref2vid-dd-option" data-val="15s">15 秒</div>
-                        <div class="ref2vid-dd-option" data-val="20s">20 秒</div>
-                        <div class="ref2vid-dd-option" data-val="30s">30 秒</div>
+                        <div class="ref2vid-dd-option" data-val="3:4">3:4</div>
+                        <div class="ref2vid-dd-option" data-val="5:4">5:4</div>
+                        <div class="ref2vid-dd-option" data-val="4:5">4:5</div>
+                        <div class="ref2vid-dd-option" data-val="3:2">3:2</div>
+                        <div class="ref2vid-dd-option" data-val="2:3">2:3</div>
+                        <div class="ref2vid-dd-option" data-val="21:9">21:9</div>
                       </div>
                     </div>
                     <div class="ref2vid-setting-item ref2vid-dropdown" data-dropdown="t2i-dd-count">
@@ -2021,24 +1997,6 @@
                     </div>
                   </div>
 
-                  <!-- 声音配置 -->
-                  <div class="ref2vid-voice-row">
-                    <span class="ref2vid-voice-label">声音配置</span>
-                    <div class="ref2vid-voice-btns">
-                      <button class="ref2vid-voice-btn active" data-voice="off">声音关闭</button>
-                      <button class="ref2vid-voice-btn" data-voice="auto">自动配音</button>
-                    </div>
-                  </div>
-
-                  <!-- 智能扩写 -->
-                  <div class="ref2vid-expand-row">
-                    <span class="ref2vid-expand-label">智能扩写</span>
-                    <label class="ref2vid-toggle">
-                      <input type="checkbox" checked id="i2i-expand-toggle" />
-                      <span class="ref2vid-toggle-slider"></span>
-                    </label>
-                  </div>
-
                   <!-- 底部设置栏 -->
                   <div class="ref2vid-settings-bar">
                     <div class="ref2vid-setting-item ref2vid-dropdown" data-dropdown="i2i-dd-quality">
@@ -2060,19 +2018,13 @@
                         <div class="ref2vid-dd-option" data-val="16:9">16:9</div>
                         <div class="ref2vid-dd-option" data-val="9:16">9:16</div>
                         <div class="ref2vid-dd-option" data-val="1:1">1:1</div>
-                        <div class="ref2vid-dd-option" data-val="3:4">3:4</div>
                         <div class="ref2vid-dd-option" data-val="4:3">4:3</div>
-                      </div>
-                    </div>
-                    <div class="ref2vid-setting-item ref2vid-dropdown" data-dropdown="i2i-dd-duration">
-                      <span class="ref2vid-setting-value ref2vid-setting-w" data-label="10s">10s</span>
-                      <i class="fas fa-chevron-down ref2vid-setting-arrow"></i>
-                      <div class="ref2vid-dropdown-menu" id="i2i-dd-duration">
-                        <div class="ref2vid-dd-title">视频时长</div>
-                        <div class="ref2vid-dd-option" data-val="10s">10 秒</div>
-                        <div class="ref2vid-dd-option" data-val="15s">15 秒</div>
-                        <div class="ref2vid-dd-option" data-val="20s">20 秒</div>
-                        <div class="ref2vid-dd-option" data-val="30s">30 秒</div>
+                        <div class="ref2vid-dd-option" data-val="3:4">3:4</div>
+                        <div class="ref2vid-dd-option" data-val="5:4">5:4</div>
+                        <div class="ref2vid-dd-option" data-val="4:5">4:5</div>
+                        <div class="ref2vid-dd-option" data-val="3:2">3:2</div>
+                        <div class="ref2vid-dd-option" data-val="2:3">2:3</div>
+                        <div class="ref2vid-dd-option" data-val="21:9">21:9</div>
                       </div>
                     </div>
                     <div class="ref2vid-setting-item ref2vid-dropdown" data-dropdown="i2i-dd-count">
