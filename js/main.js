@@ -6405,7 +6405,7 @@ function initCreatePreviewRoom() {
   tabs.className = 'preview-stage-tabs';
   var tabsDef = [
     { k: 'all', label: '全部' }, { k: 'video', label: '视频' },
-    { k: 'image', label: '图片' }, { k: 'ai', label: 'AI生成' }, { k: 'mine', label: '我创建的' }
+    { k: 'image', label: '图片' }
   ];
   tabsDef.forEach(function(t, idx) {
     var b = document.createElement('button');

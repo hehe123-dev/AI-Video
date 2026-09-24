@@ -20,16 +20,6 @@
   .toolbar{display:flex;align-items:center;gap:12px;padding:8px 14px;background:var(--panel);border-bottom:1px solid var(--border);flex-shrink:0}
   .toolbar .back,.toolbar .btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);background:var(--panel);border-radius:var(--radius);padding:6px 12px;font-size:13px;cursor:pointer;color:var(--text)}
   .toolbar .back:hover,.toolbar .btn:hover{background:var(--hover)}
-  .toolbar .btn.generate-btn{
-    background:linear-gradient(135deg, #7B5CF5 0%, #4A7CFF 100%);
-    color:#fff;border:none;
-    box-shadow:0 0 14px rgba(123,92,245,0.28);
-    font-weight:600;
-  }
-  .toolbar .btn.generate-btn:hover{
-    background:linear-gradient(135deg, #6B4FE0 0%, #3A6CE0 100%);
-    box-shadow:0 0 20px rgba(123,92,245,0.4);
-  }
   .toolbar .title{font-size:14px;font-weight:600;margin-left:4px}
   .spacer{flex:1}
   .save-state{font-size:12px;color:var(--text2);display:inline-flex;align-items:center;gap:5px}
@@ -338,6 +328,16 @@
   .canvas-node .node-more-menu .menu-item.danger:hover{background:rgba(248,113,113,.1)}
   .canvas-node .node-more-menu .menu-item svg{width:14px;height:14px;flex-shrink:0}
 
+  /* 轻提示 */
+  .toast{
+    position:fixed;left:50%;bottom:32px;transform:translateX(-50%);
+    background:var(--panel);border:1px solid var(--accent);color:var(--text);
+    padding:8px 16px;border-radius:999px;font-size:13px;
+    box-shadow:0 8px 24px rgba(0,0,0,.4);z-index:200;
+    opacity:0;transition:opacity .2s;pointer-events:none;
+  }
+  .toast.show{opacity:1}
+
   .hidden{display:none!important}
 </style>
 </head>
@@ -348,7 +348,6 @@
     <div class="spacer"></div>
     <span class="save-state"><span class="dot"></span>已全部保存</span>
     <button class="btn">保存草稿</button>
-    <button class="btn generate-btn">✦ 开始生成</button>
   </div>
 
   <!-- 主体 -->
@@ -437,6 +436,7 @@
   const nodePickerOverlay = document.getElementById('nodePickerOverlay');
   let nodeCount = 0;
   let pickerOpen = false;
+  let toastTimer = null;
 
   const nodeConfig = {
     text:  { icon:'T', title:'文本节点', placeholder:'双击即可编写或编辑这个文本节点。', prompt:'描述这个文本节点应当写什么、总结什么，或如何改写内容。' },
@@ -480,6 +480,10 @@
           <div class="menu-item" data-action="copy">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
             <span>复制节点</span>
+          </div>
+          <div class="menu-item" data-action="save-asset">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+            <span>保存到资产</span>
           </div>
           <div class="menu-item danger" data-action="delete">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
@@ -573,12 +577,18 @@
     }
 
     // 从资产中选择
-    el.querySelectorAll('.asset-item').forEach(item => {
+    bindAssetItems(el, type);
+  }
+
+  function bindAssetItems(nodeEl, type){
+    const cfg = nodeConfig[type] || nodeConfig.text;
+    const contentText = nodeEl.querySelector('.node-content-text');
+    nodeEl.querySelectorAll('.asset-item').forEach(item => {
       item.addEventListener('click', function(e){
         e.stopPropagation();
         const name = item.dataset.asset;
         if(type === 'text' || type === 'note'){
-          const ta = el.querySelector('[data-tab-content="generate"] textarea');
+          const ta = nodeEl.querySelector('[data-tab-content="generate"] textarea');
           if(ta) ta.value = name;
           contentText.textContent = '已选择资产：' + name;
         } else if(type === 'audio'){
@@ -595,6 +605,7 @@
     const moreBtn = nodeEl.querySelector('.node-more-btn');
     const menu = nodeEl.querySelector('.node-more-menu');
     const copyItem = menu.querySelector('[data-action="copy"]');
+    const saveAssetItem = menu.querySelector('[data-action="save-asset"]');
     const deleteItem = menu.querySelector('[data-action="delete"]');
 
     // 点击三个点按钮，切换菜单
@@ -610,14 +621,29 @@
     // 复制节点
     copyItem.addEventListener('click', function(e){
       e.stopPropagation();
-      const type = nodeEl.querySelector('.node-title').textContent;
-      let nodeType = 'text';
-      for(let key in nodeConfig){
-        if(nodeConfig[key].title === type){ nodeType = key; break; }
-      }
+      const nodeType = getNodeType(nodeEl);
       const x = parseInt(nodeEl.style.left) + 30;
       const y = parseInt(nodeEl.style.top) + 30;
       createNode(nodeType, x, y);
+      menu.classList.remove('show');
+    });
+
+    // 保存到资产
+    saveAssetItem.addEventListener('click', function(e){
+      e.stopPropagation();
+      const type = getNodeType(nodeEl);
+      const name = getNodeContentName(nodeEl);
+      if(!name){
+        showToast('当前节点没有可保存的内容');
+        menu.classList.remove('show');
+        return;
+      }
+      if(!mockAssets[type]) mockAssets[type] = [];
+      if(mockAssets[type].indexOf(name) === -1){
+        mockAssets[type].push(name);
+      }
+      refreshAssetList(nodeEl, type);
+      showToast('已保存到资产');
       menu.classList.remove('show');
     });
 
@@ -631,6 +657,51 @@
         hintBar.classList.remove('hidden');
       }
     });
+  }
+
+  // 根据节点标题反查节点类型
+  function getNodeType(nodeEl){
+    const title = nodeEl.querySelector('.node-title').textContent;
+    for(let key in nodeConfig){
+      if(nodeConfig[key].title === title) return key;
+    }
+    return 'text';
+  }
+
+  // 提取节点当前内容（用于保存到资产）
+  function getNodeContentName(nodeEl){
+    const label = nodeEl.querySelector('.upload-label');
+    if(label && label.classList.contains('has-file')) return label.textContent.trim();
+    const fname = nodeEl.querySelector('.fname');
+    if(fname && fname.textContent.trim()) return fname.textContent.trim();
+    const assetSel = nodeEl.querySelector('.node-asset-selected span');
+    if(assetSel && assetSel.textContent.trim()) return assetSel.textContent.trim();
+    const ta = nodeEl.querySelector('[data-tab-content="generate"] textarea');
+    if(ta && ta.value.trim()) return ta.value.trim();
+    return '';
+  }
+
+  // 刷新节点面板中的资产列表
+  function refreshAssetList(nodeEl, type){
+    const listEl = nodeEl.querySelector('[data-tab-content="asset"] .asset-list');
+    if(listEl){
+      listEl.innerHTML = assetItemsHtml(type, nodeConfig[type] || nodeConfig.text);
+      bindAssetItems(nodeEl, type);
+    }
+  }
+
+  // 轻提示
+  function showToast(msg){
+    let t = document.querySelector('.toast');
+    if(!t){
+      t = document.createElement('div');
+      t.className = 'toast';
+      document.body.appendChild(t);
+    }
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ t.classList.remove('show'); }, 1800);
   }
 
   // 点击其他地方关闭菜单
