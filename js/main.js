@@ -520,6 +520,33 @@ document.querySelectorAll('#module-nav .module-nav-item').forEach(item => {
       '</div>';
   }
 
+  // 生成主视图描述输入弹窗
+  var promptModal    = document.getElementById('gen-prompt-modal');
+  var promptInner    = promptModal ? promptModal.querySelector('.prompt-modal') : null;
+  var promptInput    = document.getElementById('gen-prompt-input');
+  var promptTitle    = document.getElementById('gen-prompt-title');
+  var promptConfirm  = document.getElementById('gen-prompt-confirm');
+  var currentGenerate = null;
+
+  function closePrompt() {
+    if (promptModal) promptModal.classList.remove('open');
+  }
+  document.querySelectorAll('[data-gen-prompt-close]').forEach(function(btn) {
+    btn.addEventListener('click', closePrompt);
+  });
+  // 点击外部区域关闭弹窗
+  if (promptModal) {
+    promptModal.addEventListener('click', function(e) {
+      if (e.target === promptModal) closePrompt();
+    });
+  }
+  if (promptConfirm) {
+    promptConfirm.addEventListener('click', function() {
+      closePrompt();
+      if (currentGenerate) currentGenerate();
+    });
+  }
+
   function bindDetail(container) {
     // 名称字数统计
     const nameInput = container.querySelector('.name-input');
@@ -538,15 +565,72 @@ document.querySelectorAll('#module-nav .module-nav-item').forEach(item => {
 
     // 生成主视图
     primaryBtn.addEventListener('click', function() {
-      primaryBtn.disabled = true;
-      primaryBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 生成中...';
-      setTimeout(function() {
-        renderMock(mainStage, primaryBtn.dataset.mainLabel || '主视图');
-        primaryBtn.innerHTML = '<i class="fas fa-wand-magic-sparkles"></i> ' + (primaryBtn.dataset.genLabel || '生成主视图');
-        primaryBtn.disabled = false;
-        if (secondaryBtn) secondaryBtn.disabled = false;
-      }, 1200);
+      currentGenerate = function() {
+        primaryBtn.disabled = true;
+        primaryBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 生成中...';
+        // 显示加载弹窗
+        var loadingModal = document.getElementById('loading-modal');
+        if (loadingModal) loadingModal.classList.add('open');
+        setTimeout(function() {
+          renderMock(mainStage, primaryBtn.dataset.mainLabel || '主视图');
+          primaryBtn.innerHTML = '<i class="fas fa-wand-magic-sparkles"></i> ' + (primaryBtn.dataset.genLabel || '生成主视图');
+          primaryBtn.disabled = false;
+          if (secondaryBtn) secondaryBtn.disabled = false;
+          // 隐藏加载弹窗
+          if (loadingModal) loadingModal.classList.remove('open');
+        }, 1200);
+      };
+      var opened = false;
+      if (promptModal && promptInput) {
+        promptTitle.textContent = primaryBtn.dataset.mainLabel || '生成主视图';
+        promptInput.value = '';
+        promptInput.placeholder = primaryBtn.dataset.prompt || '请描述角色的身份、年龄、体型、五官、发型、服装和饰品等形象特征。';
+        
+        // 延迟计算位置，确保按钮已渲染
+        setTimeout(function() {
+          var btnRect = primaryBtn.getBoundingClientRect();
+          // 如果按钮不可见，使用默认位置
+          if (btnRect.width === 0 || btnRect.height === 0) {
+            btnRect = { left: window.innerWidth / 2 - 60, top: window.innerHeight / 2, width: 120, height: 40, bottom: window.innerHeight / 2 + 40 };
+          }
+          
+          var modalWidth = 480;
+          var modalHeight = 280;
+          
+          // 尝试定位在按钮上方居中
+          var left = btnRect.left + (btnRect.width / 2) - (modalWidth / 2);
+          var top = btnRect.top - modalHeight - 12;
+          
+          // 如果上方空间不够，定位在按钮下方
+          if (top < 10) {
+            top = btnRect.bottom + 12;
+          }
+          
+          // 水平方向边界检查
+          if (left < 10) left = 10;
+          if (left + modalWidth > window.innerWidth - 10) left = window.innerWidth - modalWidth - 10;
+          
+          if (promptInner) {
+            promptInner.style.position = 'fixed';
+            promptInner.style.left = left + 'px';
+            promptInner.style.top = top + 'px';
+          }
+          promptModal.classList.add('open');
+          if (promptInput) promptInput.focus();
+        }, 50);
+        opened = true;
+      }
+      if (!opened) currentGenerate();
     });
+
+    // 加载弹窗取消按钮
+    var loadingCancelBtn = document.getElementById('loading-cancel-btn');
+    if (loadingCancelBtn) {
+      loadingCancelBtn.addEventListener('click', function() {
+        var loadingModal = document.getElementById('loading-modal');
+        if (loadingModal) loadingModal.classList.remove('open');
+      });
+    }
 
     // 创作三视图 / 多视图（依赖主视图生成后启用）
     if (secondaryBtn && subStage) {
@@ -563,6 +647,149 @@ document.querySelectorAll('#module-nav .module-nav-item').forEach(item => {
   }
 
   document.querySelectorAll('[data-view-panel="gen-tools"] .module-content[data-gen-content]').forEach(bindDetail);
+})();
+
+// ===== 选择主视图弹窗（从创作资产选图 / 本地上传） =====
+(function initPickViewModal() {
+  const overlay   = document.getElementById('pick-view-modal');
+  const grid      = document.getElementById('pick-grid');
+  const emptyEl   = document.getElementById('pick-empty');
+  const confirmBtn= document.getElementById('pick-confirm-btn');
+  const uploadBtn = document.getElementById('pick-upload-btn');
+  const fileInput = document.getElementById('pick-file-input');
+  if (!overlay || !grid) return;
+
+  const UPLOAD_KEY = 'yimirror_uploads';
+  const isImage = (name) => /\.(png|jpe?g|gif|webp|bmp|svg|ico)$/i.test(name || '');
+
+  let targetStage = null;
+  let targetCard = null;
+
+  function open(stage, card) {
+    targetStage = stage;
+    targetCard = card || null;
+    renderAssets();
+    overlay.classList.add('open');
+  }
+  function close() {
+    overlay.classList.remove('open');
+    targetStage = null;
+    targetCard = null;
+    if (confirmBtn) confirmBtn.disabled = true;
+  }
+
+  function loadUploads() {
+    try {
+      return JSON.parse(localStorage.getItem(UPLOAD_KEY) || '[]');
+    } catch (e) {
+      return [];
+    }
+  }
+  function saveUploads(list) {
+    localStorage.setItem(UPLOAD_KEY, JSON.stringify(list));
+  }
+
+  function renderAssets() {
+    const assets = loadUploads().filter(u => isImage(u.name));
+    grid.innerHTML = '';
+    if (assets.length === 0) {
+      if (emptyEl) emptyEl.style.display = assets.length === 0 ? 'flex' : 'none';
+      if (confirmBtn) confirmBtn.disabled = true;
+      return;
+    }
+    if (emptyEl) emptyEl.style.display = 'none';
+    assets.forEach(u => {
+      const card = document.createElement('div');
+      card.className = 'pick-asset';
+      card.dataset.assetId = u.id;
+      card.innerHTML = u.thumb
+        ? '<img src="' + u.thumb + '" alt="" />'
+        : '<div class="pick-asset-fallback"><i class="fas fa-file-image"></i></div>' +
+          '<span class="pick-asset-name"></span>';
+      if (!u.thumb) card.querySelector('.pick-asset-name').textContent = u.name;
+      card.addEventListener('click', function() {
+        grid.querySelectorAll('.pick-asset').forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+        if (confirmBtn) confirmBtn.disabled = false;
+      });
+      grid.appendChild(card);
+    });
+  }
+
+  // 确认：把选中的资产放入主视图舞台
+  confirmBtn.addEventListener('click', function() {
+    const sel = grid.querySelector('.pick-asset.selected');
+    if (!sel || !targetStage) return;
+    const asset = loadUploads().find(u => u.id === sel.dataset.assetId);
+    if (!asset) { close(); return; }
+    targetStage.classList.add('has-result');
+    if (asset.thumb) {
+      targetStage.innerHTML = '<img class="gen-view-img" src="' + asset.thumb + '" alt="主视图" />';
+    } else {
+      targetStage.innerHTML =
+        '<div class="gen-result">' +
+        '<i class="fas fa-file-image gen-result-icon"></i>' +
+        '<div class="gen-result-label">' + escapeHtml(asset.name) + '</div>' +
+        '</div>';
+    }
+    const cardForSecondary = targetCard;
+    close();
+    if (cardForSecondary) {
+      const secBtn = cardForSecondary.querySelector('.gen-secondary-btn');
+      if (secBtn) secBtn.disabled = false;
+    }
+  });
+
+  // 上传并添加到创作资产
+  uploadBtn.addEventListener('click', function() {
+    fileInput.click();
+  });
+
+  fileInput.addEventListener('change', function() {
+    const file = fileInput.files[0];
+    if (!file) return;
+    if (!isImage(file.name)) { alert('请选择图片文件'); fileInput.value = ''; return; }
+    const reader = new FileReader();
+    reader.onload = function() {
+      const url = reader.result;
+      const uploads = loadUploads();
+      const id = 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+      uploads.push({ id: id, name: file.name, size: file.size, folderId: null, thumb: url });
+      saveUploads(uploads);
+      fileInput.value = '';
+      renderAssets();
+      const card = grid.querySelector('.pick-asset[data-asset-id="' + id + '"]');
+      if (card) {
+        grid.querySelectorAll('.pick-asset').forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+        if (confirmBtn) confirmBtn.disabled = false;
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+
+  // 关闭入口
+  overlay.querySelectorAll('[data-pick-close]').forEach(el => {
+    el.addEventListener('click', close);
+  });
+  overlay.addEventListener('click', function(e) {
+    if (e.target === overlay) close();
+  });
+
+  function escapeHtml(str) {
+    const d = document.createElement('div');
+    d.textContent = str || '';
+    return d.innerHTML;
+  }
+
+  // 事件委托：点击"选择主视图"按钮 → 打开弹窗
+  document.addEventListener('click', function(e) {
+    const btn = e.target.closest('[data-pick-view="main"]');
+    if (!btn) return;
+    const card = btn.closest('.gen-view-card');
+    const stage = card ? card.querySelector('.gen-view-stage') : null;
+    if (stage) open(stage, card);
+  });
 })();
 
 // ===== 顶部 Tab 切换（创作中心 + 资产库） =====
@@ -740,15 +967,6 @@ document.querySelectorAll('#module-nav .module-nav-item').forEach(item => {
     return { icon: 'fa-file', cls: 'type-file' };
   };
 
-  const formatSize = (bytes) => {
-    if (bytes === null || bytes === undefined) return '';
-    const units = ['B', 'KB', 'MB', 'GB'];
-    let i = 0;
-    let v = bytes;
-    while (v >= 1024 && i < units.length - 1) { v /= 1024; i++; }
-    return (v >= 100 || i === 0 ? Math.round(v) : v.toFixed(1)) + ' ' + units[i];
-  };
-
   function renderFolders() {
     folderGrid.innerHTML = '';
     folders.forEach(folder => {
@@ -770,8 +988,20 @@ document.querySelectorAll('#module-nav .module-nav-item').forEach(item => {
   function renderUploads() {
     uploadGrid.innerHTML = '';
     const list = uploads.filter(u => u.folderId === currentFolderId);
+
+    // 第一个位置：上传入口卡片
+    const uploadCard = document.createElement('div');
+    uploadCard.className = 'pm-upload-card';
+    uploadCard.addEventListener('click', () => pickFiles());
+    uploadCard.innerHTML =
+      '<div class="pm-upload-card-inner">' +
+      '<i class="fas fa-plus"></i>' +
+      '<span>本地上传 / 拖拽素材</span>' +
+      '</div>';
+    uploadGrid.appendChild(uploadCard);
+
     if (currentFolderId !== null && list.length === 0) {
-      uploadGrid.innerHTML = '<div class="pm-empty-tip"><i class="fas fa-folder-open"></i><span>该文件夹为空，可将文件拖拽到上方上传区域</span></div>';
+      uploadGrid.innerHTML += '<div class="pm-empty-tip"><i class="fas fa-folder-open"></i><span>该文件夹为空，可将文件拖拽到上方上传区域</span></div>';
       return;
     }
     list.forEach(u => {
@@ -779,18 +1009,46 @@ document.querySelectorAll('#module-nav .module-nav-item').forEach(item => {
       const card = document.createElement('div');
       card.className = 'pm-file-card';
       card.dataset.fileId = u.id;
-      card.innerHTML = `
-        <i class="fas ${t.icon} file-icon ${t.cls}"></i>
-        <div class="pm-file-info">
-          <span class="pm-file-name"></span>
-          <span class="pm-file-size"></span>
-        </div>
-        <button class="pm-action-btn danger" title="删除" data-file-delete><i class="fas fa-trash"></i></button>
-      `;
-      card.querySelector('.pm-file-name').textContent = u.name;
-      card.querySelector('.pm-file-size').textContent = formatSize(u.size);
+
+      if (u.thumb) {
+        const img = document.createElement('img');
+        img.className = 'pm-file-thumb';
+        img.src = u.thumb;
+        img.alt = '';
+        card.appendChild(img);
+      } else {
+        const fb = document.createElement('div');
+        fb.className = 'pm-file-fallback';
+        const ic = document.createElement('i');
+        ic.className = 'fas ' + t.icon + ' file-icon ' + t.cls;
+        fb.appendChild(ic);
+        card.appendChild(fb);
+      }
+
+      // 视频时长标签
+      if (t.cls === 'type-video' && u.duration) {
+        const dur = document.createElement('div');
+        dur.className = 'pm-file-duration';
+        dur.textContent = formatDuration(u.duration);
+        card.appendChild(dur);
+      }
+
+      const actions = document.createElement('div');
+      actions.className = 'pm-file-actions';
+      actions.innerHTML =
+        '<button class="pm-action-btn" title="下载" data-file-download><i class="fas fa-download"></i></button>' +
+        '<button class="pm-action-btn danger" title="删除" data-file-delete><i class="fas fa-trash"></i></button>';
+      card.appendChild(actions);
+
       uploadGrid.appendChild(card);
     });
+  }
+
+  function formatDuration(sec) {
+    sec = Math.round(sec || 0);
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return (m < 10 ? '0' + m : m) + ':' + (s < 10 ? '0' + s : s);
   }
 
   function renderAll() {
@@ -855,11 +1113,73 @@ document.querySelectorAll('#module-nav .module-nav-item').forEach(item => {
   function addFiles(fileList) {
     const files = Array.from(fileList || []);
     if (!files.length) return;
-    files.forEach(f => uploads.push({ id: genId(), name: f.name, size: f.size, folderId: currentFolderId }));
-    save(UPLOAD_KEY, uploads);
-    renderUploads();
-    const target = currentFolder() ? '「' + currentFolder().name + '」' : '资产库';
-    alert('已上传 ' + files.length + ' 个文件到' + target);
+    Promise.all(files.map(f => makeThumb(f))).then(results => {
+      files.forEach((f, i) => uploads.push({
+        id: genId(), name: f.name, size: f.size, folderId: currentFolderId,
+        thumb: results[i].thumb, duration: results[i].duration
+      }));
+      save(UPLOAD_KEY, uploads);
+      renderUploads();
+      const target = currentFolder() ? '「' + currentFolder().name + '」' : '资产库';
+      alert('已上传 ' + files.length + ' 个文件到' + target);
+    });
+  }
+
+  function makeThumb(file) {
+    const cls = fileType(file.name).cls;
+    if (cls === 'type-image') return imageThumb(file).then(thumb => ({ thumb, duration: null }));
+    if (cls === 'type-video') return videoThumb(file);
+    return Promise.resolve({ thumb: null, duration: null });
+  }
+
+  function imageThumb(file) {
+    return new Promise(resolve => {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        resolve(scaleToDataUrl(img, img.naturalWidth, img.naturalHeight));
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); resolve(null); };
+      img.src = url;
+    });
+  }
+
+  function videoThumb(file) {
+    return new Promise(resolve => {
+      const url = URL.createObjectURL(file);
+      const video = document.createElement('video');
+      let settled = false;
+      const finish = val => {
+        if (settled) return;
+        settled = true;
+        URL.revokeObjectURL(url);
+        resolve({ thumb: val, duration: video.duration || 0 });
+      };
+      video.muted = true;
+      video.preload = 'auto';
+      video.onloadeddata = () => {
+        video.currentTime = Math.min(0.1, (video.duration || 1) / 2);
+      };
+      video.onseeked = () => finish(scaleToDataUrl(video, video.videoWidth, video.videoHeight));
+      video.onerror = () => finish(null);
+      setTimeout(() => finish(null), 4000);
+      video.src = url;
+    });
+  }
+
+  function scaleToDataUrl(source, w, h) {
+    if (!w || !h) return null;
+    const scale = Math.min(1, 360 / Math.max(w, h));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(w * scale);
+    canvas.height = Math.round(h * scale);
+    canvas.getContext('2d').drawImage(source, 0, 0, canvas.width, canvas.height);
+    try {
+      return canvas.toDataURL('image/jpeg', 0.7);
+    } catch (e) {
+      return null;
+    }
   }
 
   function pickFiles() {
@@ -898,13 +1218,33 @@ document.querySelectorAll('#module-nav .module-nav-item').forEach(item => {
   });
 
   uploadGrid.addEventListener('click', (ev) => {
-    const delBtn = ev.target.closest('[data-file-delete]');
-    if (!delBtn) return;
-    const card = delBtn.closest('.pm-file-card');
-    uploads = uploads.filter(u => u.id !== card.dataset.fileId);
-    save(UPLOAD_KEY, uploads);
-    renderUploads();
+    const card = ev.target.closest('.pm-file-card');
+    if (!card) return;
+    const file = uploads.find(u => u.id === card.dataset.fileId);
+    if (!file) return;
+    if (ev.target.closest('[data-file-delete]')) {
+      uploads = uploads.filter(u => u.id !== card.dataset.fileId);
+      save(UPLOAD_KEY, uploads);
+      renderUploads();
+      return;
+    }
+    if (ev.target.closest('[data-file-download]')) {
+      downloadUpload(file);
+    }
   });
+
+  function downloadUpload(file) {
+    if (!file.thumb) {
+      alert('该文件暂不支持下载');
+      return;
+    }
+    const a = document.createElement('a');
+    a.href = file.thumb;
+    a.download = file.name.replace(/\.[^.]+$/, '') + '.jpg';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
 
   if (backBtn) backBtn.addEventListener('click', goRoot);
 

@@ -53,9 +53,60 @@
   </script>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-  <link rel="stylesheet" href="css/main.css?v=20260923a">
+  <link rel="stylesheet" href="css/main.css?v=20260923c">
 </head>
 <body class="flex flex-col h-screen">
+  <!-- 生成中加载弹窗 -->
+  <div class="loading-modal-overlay" id="loading-modal">
+    <div class="loading-modal">
+      <div class="loading-spinner"></div>
+      <div class="loading-text">生成中...</div>
+      <button class="loading-cancel-btn" id="loading-cancel-btn">取消</button>
+    </div>
+  </div>
+
+  <!-- 生成主视图描述输入弹窗 -->
+  <div class="prompt-modal-overlay" id="gen-prompt-modal">
+    <div class="prompt-modal">
+      <div class="prompt-modal-head">
+        <span class="prompt-modal-title" id="gen-prompt-title">生成主视图</span>
+        <button class="prompt-modal-close" data-gen-prompt-close><i class="fas fa-times"></i></button>
+      </div>
+      <div class="prompt-modal-body">
+        <textarea class="prompt-input" id="gen-prompt-input"></textarea>
+      </div>
+      <div class="prompt-modal-foot">
+        <button class="prompt-cancel-btn" data-gen-prompt-close>取消</button>
+        <button class="prompt-confirm-btn" id="gen-prompt-confirm"><i class="fas fa-wand-magic-sparkles"></i> 生成</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 选择主视图弹窗 -->
+  <div class="pick-modal-overlay" id="pick-view-modal">
+    <div class="pick-modal">
+      <div class="pick-modal-head">
+        <span class="pick-modal-title">选择主视图</span>
+        <button class="pick-modal-close" data-pick-close><i class="fas fa-times"></i></button>
+      </div>
+      <div class="pick-modal-body">
+        <div class="pick-upload-bar">
+          <button class="pick-upload-btn" id="pick-upload-btn"><i class="fas fa-cloud-upload-alt"></i> 上传图片</button>
+        </div>
+        <div class="pick-grid" id="pick-grid"></div>
+        <div class="pick-empty" id="pick-empty" style="display:none">
+          <i class="fas fa-folder-open"></i>
+          <span>创作资产中暂无可用图片，可点击上方"上传图片"添加</span>
+        </div>
+      </div>
+      <div class="pick-modal-foot">
+        <button class="pick-cancel-btn" data-pick-close>取消</button>
+        <button class="pick-confirm-btn" id="pick-confirm-btn" disabled>确定</button>
+      </div>
+      <input type="file" accept="image/*" id="pick-file-input" hidden />
+    </div>
+  </div>
+
   <!-- 登录遮罩 -->
   <div id="login-overlay">
     <div class="login-card">
@@ -589,16 +640,6 @@
                     </div>
                   </div>
                   <div class="field">
-                    <select class="field-select">
-                      <option>请选择音色</option>
-                      <option>男声-专业（云健）</option>
-                      <option>女声-温柔（晓晓）</option>
-                      <option>男声-活力（小刚）</option>
-                      <option>女声-知性（云希）</option>
-                      <option>童声-可爱（小小）</option>
-                    </select>
-                  </div>
-                  <div class="field">
                     <button class="style-btn">选择风格 <i class="fas fa-chevron-right"></i></button>
                   </div>
                   <div class="gen-top-actions">
@@ -618,9 +659,50 @@
                       <i class="fas fa-user stage-icon"></i>
                       <span class="stage-tip">生成或上传角色主视图</span>
                     </div>
+                    <div class="ref2vid-settings-bar">
+                      <div class="ref2vid-setting-item ref2vid-dropdown" data-dropdown="char-main-dd-quality">
+                        <span class="ref2vid-setting-value ref2vid-setting-w" data-label="1K">1K</span>
+                        <i class="fas fa-chevron-down ref2vid-setting-arrow"></i>
+                        <div class="ref2vid-dropdown-menu" id="char-main-dd-quality">
+                          <div class="ref2vid-dd-title">清晰度</div>
+                          <div class="ref2vid-dd-option" data-val="1K">1K</div>
+                          <div class="ref2vid-dd-option" data-val="2K">2K</div>
+                          <div class="ref2vid-dd-option" data-val="4K">4K</div>
+                        </div>
+                      </div>
+                      <div class="ref2vid-setting-item ref2vid-dropdown" data-dropdown="char-main-dd-ratio">
+                        <i class="fas fa-mobile-alt ref2vid-setting-icon"></i>
+                        <span class="ref2vid-setting-value ref2vid-setting-w" data-label="16:9">16:9</span>
+                        <i class="fas fa-chevron-down ref2vid-setting-arrow"></i>
+                        <div class="ref2vid-dropdown-menu" id="char-main-dd-ratio">
+                          <div class="ref2vid-dd-title">画面比例</div>
+                          <div class="ref2vid-dd-option" data-val="16:9">16:9</div>
+                          <div class="ref2vid-dd-option" data-val="9:16">9:16</div>
+                          <div class="ref2vid-dd-option" data-val="1:1">1:1</div>
+                          <div class="ref2vid-dd-option" data-val="4:3">4:3</div>
+                          <div class="ref2vid-dd-option" data-val="3:4">3:4</div>
+                          <div class="ref2vid-dd-option" data-val="5:4">5:4</div>
+                          <div class="ref2vid-dd-option" data-val="4:5">4:5</div>
+                          <div class="ref2vid-dd-option" data-val="3:2">3:2</div>
+                          <div class="ref2vid-dd-option" data-val="2:3">2:3</div>
+                          <div class="ref2vid-dd-option" data-val="21:9">21:9</div>
+                        </div>
+                      </div>
+                      <div class="ref2vid-setting-item ref2vid-dropdown" data-dropdown="char-main-dd-count">
+                        <span class="ref2vid-setting-value ref2vid-setting-w" data-label="1个">1个</span>
+                        <i class="fas fa-chevron-down ref2vid-setting-arrow"></i>
+                        <div class="ref2vid-dropdown-menu" id="char-main-dd-count">
+                          <div class="ref2vid-dd-title">生成个数</div>
+                          <div class="ref2vid-dd-option" data-val="1个">1 个</div>
+                          <div class="ref2vid-dd-option" data-val="2个">2 个</div>
+                          <div class="ref2vid-dd-option" data-val="3个">3 个</div>
+                          <div class="ref2vid-dd-option" data-val="4个">4 个</div>
+                        </div>
+                      </div>
+                    </div>
                     <div class="gen-view-actions">
-                      <button class="gen-add-btn"><i class="fas fa-plus"></i> 添加主视图</button>
-                      <button class="gen-primary-btn" data-gen-label="生成主视图" data-main-label="角色主视图"><i class="fas fa-wand-magic-sparkles"></i> 生成主视图</button>
+                      <button class="gen-add-btn" data-pick-view="main"><i class="fas fa-folder-open"></i> 选择主视图</button>
+                      <button class="gen-primary-btn" data-gen-label="生成主视图" data-main-label="角色主视图" data-prompt="请描述角色的身份、年龄、体型、五官、发型、服装和饰品等形象特征。"><i class="fas fa-wand-magic-sparkles"></i> 生成主视图</button>
                     </div>
                   </div>
                   <div class="gen-view-card">
@@ -631,6 +713,47 @@
                     <div class="gen-view-stage sub">
                       <i class="fas fa-id-card stage-icon"></i>
                       <span class="stage-tip">生成角色三视图</span>
+                    </div>
+                    <div class="ref2vid-settings-bar">
+                      <div class="ref2vid-setting-item ref2vid-dropdown" data-dropdown="char-sub-dd-quality">
+                        <span class="ref2vid-setting-value ref2vid-setting-w" data-label="1K">1K</span>
+                        <i class="fas fa-chevron-down ref2vid-setting-arrow"></i>
+                        <div class="ref2vid-dropdown-menu" id="char-sub-dd-quality">
+                          <div class="ref2vid-dd-title">清晰度</div>
+                          <div class="ref2vid-dd-option" data-val="1K">1K</div>
+                          <div class="ref2vid-dd-option" data-val="2K">2K</div>
+                          <div class="ref2vid-dd-option" data-val="4K">4K</div>
+                        </div>
+                      </div>
+                      <div class="ref2vid-setting-item ref2vid-dropdown" data-dropdown="char-sub-dd-ratio">
+                        <i class="fas fa-mobile-alt ref2vid-setting-icon"></i>
+                        <span class="ref2vid-setting-value ref2vid-setting-w" data-label="16:9">16:9</span>
+                        <i class="fas fa-chevron-down ref2vid-setting-arrow"></i>
+                        <div class="ref2vid-dropdown-menu" id="char-sub-dd-ratio">
+                          <div class="ref2vid-dd-title">画面比例</div>
+                          <div class="ref2vid-dd-option" data-val="16:9">16:9</div>
+                          <div class="ref2vid-dd-option" data-val="9:16">9:16</div>
+                          <div class="ref2vid-dd-option" data-val="1:1">1:1</div>
+                          <div class="ref2vid-dd-option" data-val="4:3">4:3</div>
+                          <div class="ref2vid-dd-option" data-val="3:4">3:4</div>
+                          <div class="ref2vid-dd-option" data-val="5:4">5:4</div>
+                          <div class="ref2vid-dd-option" data-val="4:5">4:5</div>
+                          <div class="ref2vid-dd-option" data-val="3:2">3:2</div>
+                          <div class="ref2vid-dd-option" data-val="2:3">2:3</div>
+                          <div class="ref2vid-dd-option" data-val="21:9">21:9</div>
+                        </div>
+                      </div>
+                      <div class="ref2vid-setting-item ref2vid-dropdown" data-dropdown="char-sub-dd-count">
+                        <span class="ref2vid-setting-value ref2vid-setting-w" data-label="1个">1个</span>
+                        <i class="fas fa-chevron-down ref2vid-setting-arrow"></i>
+                        <div class="ref2vid-dropdown-menu" id="char-sub-dd-count">
+                          <div class="ref2vid-dd-title">生成个数</div>
+                          <div class="ref2vid-dd-option" data-val="1个">1 个</div>
+                          <div class="ref2vid-dd-option" data-val="2个">2 个</div>
+                          <div class="ref2vid-dd-option" data-val="3个">3 个</div>
+                          <div class="ref2vid-dd-option" data-val="4个">4 个</div>
+                        </div>
+                      </div>
                     </div>
                     <div class="gen-view-actions">
                       <button class="gen-add-btn"><i class="fas fa-plus"></i> 添加三视图</button>
@@ -694,18 +817,6 @@
                       <span class="char-count">0/20</span>
                     </div>
                   </div>
-                  <div class="field">
-                    <select class="field-select">
-                      <option>请选择场景</option>
-                      <option>自然风光</option>
-                      <option>城市街景</option>
-                      <option>室内空间</option>
-                      <option>奇幻场景</option>
-                    </select>
-                  </div>
-                  <div class="field">
-                    <button class="style-btn">选择风格 <i class="fas fa-chevron-right"></i></button>
-                  </div>
                   <div class="gen-top-actions">
                     <button class="gen-save-btn">保存草稿</button>
                     <button class="gen-create-btn">创建场景</button>
@@ -723,9 +834,50 @@
                       <i class="fas fa-mountain-sun stage-icon"></i>
                       <span class="stage-tip">生成或上传场景主视图</span>
                     </div>
+                    <div class="ref2vid-settings-bar">
+                      <div class="ref2vid-setting-item ref2vid-dropdown" data-dropdown="scene-main-dd-quality">
+                        <span class="ref2vid-setting-value ref2vid-setting-w" data-label="1K">1K</span>
+                        <i class="fas fa-chevron-down ref2vid-setting-arrow"></i>
+                        <div class="ref2vid-dropdown-menu" id="scene-main-dd-quality">
+                          <div class="ref2vid-dd-title">清晰度</div>
+                          <div class="ref2vid-dd-option" data-val="1K">1K</div>
+                          <div class="ref2vid-dd-option" data-val="2K">2K</div>
+                          <div class="ref2vid-dd-option" data-val="4K">4K</div>
+                        </div>
+                      </div>
+                      <div class="ref2vid-setting-item ref2vid-dropdown" data-dropdown="scene-main-dd-ratio">
+                        <i class="fas fa-mobile-alt ref2vid-setting-icon"></i>
+                        <span class="ref2vid-setting-value ref2vid-setting-w" data-label="16:9">16:9</span>
+                        <i class="fas fa-chevron-down ref2vid-setting-arrow"></i>
+                        <div class="ref2vid-dropdown-menu" id="scene-main-dd-ratio">
+                          <div class="ref2vid-dd-title">画面比例</div>
+                          <div class="ref2vid-dd-option" data-val="16:9">16:9</div>
+                          <div class="ref2vid-dd-option" data-val="9:16">9:16</div>
+                          <div class="ref2vid-dd-option" data-val="1:1">1:1</div>
+                          <div class="ref2vid-dd-option" data-val="4:3">4:3</div>
+                          <div class="ref2vid-dd-option" data-val="3:4">3:4</div>
+                          <div class="ref2vid-dd-option" data-val="5:4">5:4</div>
+                          <div class="ref2vid-dd-option" data-val="4:5">4:5</div>
+                          <div class="ref2vid-dd-option" data-val="3:2">3:2</div>
+                          <div class="ref2vid-dd-option" data-val="2:3">2:3</div>
+                          <div class="ref2vid-dd-option" data-val="21:9">21:9</div>
+                        </div>
+                      </div>
+                      <div class="ref2vid-setting-item ref2vid-dropdown" data-dropdown="scene-main-dd-count">
+                        <span class="ref2vid-setting-value ref2vid-setting-w" data-label="1个">1个</span>
+                        <i class="fas fa-chevron-down ref2vid-setting-arrow"></i>
+                        <div class="ref2vid-dropdown-menu" id="scene-main-dd-count">
+                          <div class="ref2vid-dd-title">生成个数</div>
+                          <div class="ref2vid-dd-option" data-val="1个">1 个</div>
+                          <div class="ref2vid-dd-option" data-val="2个">2 个</div>
+                          <div class="ref2vid-dd-option" data-val="3个">3 个</div>
+                          <div class="ref2vid-dd-option" data-val="4个">4 个</div>
+                        </div>
+                      </div>
+                    </div>
                     <div class="gen-view-actions">
-                      <button class="gen-add-btn"><i class="fas fa-plus"></i> 添加主视图</button>
-                      <button class="gen-primary-btn" data-gen-label="生成主视图" data-main-label="场景主视图"><i class="fas fa-wand-magic-sparkles"></i> 生成主视图</button>
+                      <button class="gen-add-btn" data-pick-view="main"><i class="fas fa-folder-open"></i> 选择主视图</button>
+                      <button class="gen-primary-btn" data-gen-label="生成主视图" data-main-label="场景主视图" data-prompt="请描述场景的整体风格、主题元素、光线氛围以及细节特征。"><i class="fas fa-wand-magic-sparkles"></i> 生成主视图</button>
                     </div>
                   </div>
                   <div class="gen-view-card">
@@ -736,6 +888,47 @@
                     <div class="gen-view-stage sub">
                       <i class="fas fa-th-large stage-icon"></i>
                       <span class="stage-tip">生成场景多视图</span>
+                    </div>
+                    <div class="ref2vid-settings-bar">
+                      <div class="ref2vid-setting-item ref2vid-dropdown" data-dropdown="scene-sub-dd-quality">
+                        <span class="ref2vid-setting-value ref2vid-setting-w" data-label="1K">1K</span>
+                        <i class="fas fa-chevron-down ref2vid-setting-arrow"></i>
+                        <div class="ref2vid-dropdown-menu" id="scene-sub-dd-quality">
+                          <div class="ref2vid-dd-title">清晰度</div>
+                          <div class="ref2vid-dd-option" data-val="1K">1K</div>
+                          <div class="ref2vid-dd-option" data-val="2K">2K</div>
+                          <div class="ref2vid-dd-option" data-val="4K">4K</div>
+                        </div>
+                      </div>
+                      <div class="ref2vid-setting-item ref2vid-dropdown" data-dropdown="scene-sub-dd-ratio">
+                        <i class="fas fa-mobile-alt ref2vid-setting-icon"></i>
+                        <span class="ref2vid-setting-value ref2vid-setting-w" data-label="16:9">16:9</span>
+                        <i class="fas fa-chevron-down ref2vid-setting-arrow"></i>
+                        <div class="ref2vid-dropdown-menu" id="scene-sub-dd-ratio">
+                          <div class="ref2vid-dd-title">画面比例</div>
+                          <div class="ref2vid-dd-option" data-val="16:9">16:9</div>
+                          <div class="ref2vid-dd-option" data-val="9:16">9:16</div>
+                          <div class="ref2vid-dd-option" data-val="1:1">1:1</div>
+                          <div class="ref2vid-dd-option" data-val="4:3">4:3</div>
+                          <div class="ref2vid-dd-option" data-val="3:4">3:4</div>
+                          <div class="ref2vid-dd-option" data-val="5:4">5:4</div>
+                          <div class="ref2vid-dd-option" data-val="4:5">4:5</div>
+                          <div class="ref2vid-dd-option" data-val="3:2">3:2</div>
+                          <div class="ref2vid-dd-option" data-val="2:3">2:3</div>
+                          <div class="ref2vid-dd-option" data-val="21:9">21:9</div>
+                        </div>
+                      </div>
+                      <div class="ref2vid-setting-item ref2vid-dropdown" data-dropdown="scene-sub-dd-count">
+                        <span class="ref2vid-setting-value ref2vid-setting-w" data-label="1个">1个</span>
+                        <i class="fas fa-chevron-down ref2vid-setting-arrow"></i>
+                        <div class="ref2vid-dropdown-menu" id="scene-sub-dd-count">
+                          <div class="ref2vid-dd-title">生成个数</div>
+                          <div class="ref2vid-dd-option" data-val="1个">1 个</div>
+                          <div class="ref2vid-dd-option" data-val="2个">2 个</div>
+                          <div class="ref2vid-dd-option" data-val="3个">3 个</div>
+                          <div class="ref2vid-dd-option" data-val="4个">4 个</div>
+                        </div>
+                      </div>
                     </div>
                     <div class="gen-view-actions">
                       <button class="gen-add-btn"><i class="fas fa-plus"></i> 添加多视图</button>
@@ -784,6 +977,50 @@
                       <option>俯视图</option>
                       <option>360度旋转</option>
                     </select>
+                  </div>
+                  <div class="input-section">
+                    <label class="input-label">生成参数</label>
+                    <div class="ref2vid-settings-bar">
+                      <div class="ref2vid-setting-item ref2vid-dropdown" data-dropdown="prop-dd-quality">
+                        <span class="ref2vid-setting-value ref2vid-setting-w" data-label="1K">1K</span>
+                        <i class="fas fa-chevron-down ref2vid-setting-arrow"></i>
+                        <div class="ref2vid-dropdown-menu" id="prop-dd-quality">
+                          <div class="ref2vid-dd-title">清晰度</div>
+                          <div class="ref2vid-dd-option" data-val="1K">1K</div>
+                          <div class="ref2vid-dd-option" data-val="2K">2K</div>
+                          <div class="ref2vid-dd-option" data-val="4K">4K</div>
+                        </div>
+                      </div>
+                      <div class="ref2vid-setting-item ref2vid-dropdown" data-dropdown="prop-dd-ratio">
+                        <i class="fas fa-mobile-alt ref2vid-setting-icon"></i>
+                        <span class="ref2vid-setting-value ref2vid-setting-w" data-label="16:9">16:9</span>
+                        <i class="fas fa-chevron-down ref2vid-setting-arrow"></i>
+                        <div class="ref2vid-dropdown-menu" id="prop-dd-ratio">
+                          <div class="ref2vid-dd-title">画面比例</div>
+                          <div class="ref2vid-dd-option" data-val="16:9">16:9</div>
+                          <div class="ref2vid-dd-option" data-val="9:16">9:16</div>
+                          <div class="ref2vid-dd-option" data-val="1:1">1:1</div>
+                          <div class="ref2vid-dd-option" data-val="4:3">4:3</div>
+                          <div class="ref2vid-dd-option" data-val="3:4">3:4</div>
+                          <div class="ref2vid-dd-option" data-val="5:4">5:4</div>
+                          <div class="ref2vid-dd-option" data-val="4:5">4:5</div>
+                          <div class="ref2vid-dd-option" data-val="3:2">3:2</div>
+                          <div class="ref2vid-dd-option" data-val="2:3">2:3</div>
+                          <div class="ref2vid-dd-option" data-val="21:9">21:9</div>
+                        </div>
+                      </div>
+                      <div class="ref2vid-setting-item ref2vid-dropdown" data-dropdown="prop-dd-count">
+                        <span class="ref2vid-setting-value ref2vid-setting-w" data-label="1个">1个</span>
+                        <i class="fas fa-chevron-down ref2vid-setting-arrow"></i>
+                        <div class="ref2vid-dropdown-menu" id="prop-dd-count">
+                          <div class="ref2vid-dd-title">生成个数</div>
+                          <div class="ref2vid-dd-option" data-val="1个">1 个</div>
+                          <div class="ref2vid-dd-option" data-val="2个">2 个</div>
+                          <div class="ref2vid-dd-option" data-val="3个">3 个</div>
+                          <div class="ref2vid-dd-option" data-val="4个">4 个</div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                   <button class="generate-btn-full"><i class="fas fa-wand-magic-sparkles"></i> 生成道具</button>
                 </div>
@@ -3503,7 +3740,7 @@
     </div>
   </div>
 
-  <script src="js/main.js?v=20260922zz"></script>
+  <script src="js/main.js?v=20260923c"></script>
 </body>
 </html>
 
